@@ -19,48 +19,59 @@ export function parseRawDeck(jsonData) {
   let wIndex = 1;
   let rIndex = 1;
 
-  // 1. Perks (White Cards)
-  if (jsonData.Perks) {
-    Object.entries(jsonData.Perks).forEach(([category, list]) => {
-      if (Array.isArray(list)) {
-        list.forEach(text => {
-          const trimmed = (text || '').trim();
-          if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
-            const standardized = standardizeBlankTokens(trimmed);
-            whiteCards.push({
-              id: `w_${String(wIndex++).padStart(4, '0')}`,
-              text: standardized,
-              type: 'perk',
-              category
-            });
-          }
-        });
-      }
-    });
+  if (!jsonData || typeof jsonData !== 'object') {
+    return { raw: { Perks: {}, 'Red Flags': {} }, whiteCards: [], redCards: [], allCards: [] };
   }
+
+  // Extract perks regardless of key casing
+  const perksObj = jsonData.Perks || jsonData.perks || jsonData.PERKS || jsonData.whiteCards || jsonData.white || {};
+  // Extract red flags regardless of key casing
+  const redFlagsObj = jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags || jsonData.RedFlags || jsonData.RED_FLAGS || jsonData.redCards || jsonData.red || {};
+
+  // Standardized raw object
+  const normalizedRaw = {
+    Perks: perksObj,
+    'Red Flags': redFlagsObj
+  };
+
+  // 1. Perks (White Cards)
+  Object.entries(perksObj).forEach(([category, list]) => {
+    if (Array.isArray(list)) {
+      list.forEach(text => {
+        const trimmed = (text || '').trim();
+        if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
+          const standardized = standardizeBlankTokens(trimmed);
+          whiteCards.push({
+            id: `w_${String(wIndex++).padStart(4, '0')}`,
+            text: standardized,
+            type: 'perk',
+            category
+          });
+        }
+      });
+    }
+  });
 
   // 2. Red Flags
-  if (jsonData['Red Flags']) {
-    Object.entries(jsonData['Red Flags']).forEach(([category, list]) => {
-      if (Array.isArray(list)) {
-        list.forEach(text => {
-          const trimmed = (text || '').trim();
-          if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
-            const standardized = standardizeBlankTokens(trimmed);
-            redCards.push({
-              id: `r_${String(rIndex++).padStart(4, '0')}`,
-              text: standardized,
-              type: 'redflag',
-              category
-            });
-          }
-        });
-      }
-    });
-  }
+  Object.entries(redFlagsObj).forEach(([category, list]) => {
+    if (Array.isArray(list)) {
+      list.forEach(text => {
+        const trimmed = (text || '').trim();
+        if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
+          const standardized = standardizeBlankTokens(trimmed);
+          redCards.push({
+            id: `r_${String(rIndex++).padStart(4, '0')}`,
+            text: standardized,
+            type: 'redflag',
+            category
+          });
+        }
+      });
+    }
+  });
 
   return {
-    raw: jsonData,
+    raw: normalizedRaw,
     whiteCards,
     redCards,
     allCards: [...whiteCards, ...redCards]

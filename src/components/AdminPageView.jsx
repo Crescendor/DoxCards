@@ -116,11 +116,13 @@ export default function AdminPageView({ onBack, discordUser }) {
     setJsonError(null);
     try {
       const parsed = JSON.parse(jsonText);
-      if (!parsed.Perks && !parsed['Red Flags']) {
-        throw new Error("JSON içerisinde 'Perks' veya 'Red Flags' anahtarları bulunmalıdır.");
+      const parsedDeck = parseRawDeck(parsed);
+      if (parsedDeck.allCards.length === 0) {
+        throw new Error("JSON içerisinde 'perks'/'Perks' veya 'red_flags'/'Red Flags' kartları bulunmalıdır.");
       }
-      saveActiveDeck(parsed);
-      setDeckState(parseRawDeck(parsed));
+      saveActiveDeck(parsedDeck.raw);
+      setDeckState(parsedDeck);
+      setJsonText(JSON.stringify(parsedDeck.raw, null, 2));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
@@ -139,9 +141,14 @@ export default function AdminPageView({ onBack, discordUser }) {
       try {
         const text = event.target.result;
         const parsed = JSON.parse(text);
-        setJsonText(JSON.stringify(parsed, null, 2));
-        saveActiveDeck(parsed);
-        setDeckState(parseRawDeck(parsed));
+        const parsedDeck = parseRawDeck(parsed);
+        if (parsedDeck.allCards.length === 0) {
+          alert("Yüklenen JSON içerisinde 'perks'/'Perks' veya 'red_flags'/'Red Flags' kartları bulunamadı!");
+          return;
+        }
+        setJsonText(JSON.stringify(parsedDeck.raw, null, 2));
+        saveActiveDeck(parsedDeck.raw);
+        setDeckState(parsedDeck);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
       } catch (err) {
