@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Target, Hourglass, ArrowRight, ChevronRight } from 'lucide-react';
 import TabletopView from './TabletopView';
 import GameOverModal from './GameOverModal';
 import { sounds } from '../services/soundEffects';
@@ -121,14 +122,30 @@ export default function GameView({
           boxShadow: isMyTurn ? '0 0 12px rgba(217, 4, 41, 0.25)' : 'none'
         }}>
           {isMyTurn ? (
-            <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff' }}>
-              🎯 senin sıran! <span style={{ color: '#f87171', fontWeight: 600 }}>{phase === 'PERKS' ? '(2 beyaz kartını masana sürükle)' : `(kırmızı kartını ${mySabotageTarget?.targetPlayerName || 'rakibin'} masasına sürükle)`}</span>
+            <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Target size={15} color="#ef4444" />
+              <span>senin sıran! <span style={{ color: '#f87171', fontWeight: 600 }}>{phase === 'PERKS' ? '(2 beyaz kartını masana sürükle)' : `(kırmızı kartını ${mySabotageTarget?.targetPlayerName || 'rakibin'} masasına sürükle)`}</span></span>
             </span>
           ) : (
-            <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>
-              {phase === 'VOTING'
-                ? (isSingle ? '👉 tüm adayları incele ve kazanana tıkla!' : `bekâr (${singlePlayerName}) karar veriyor...`)
-                : `⏳ sıra: ${turnPlayerName} (kart koyuyor...)`}
+            <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {phase === 'VOTING' ? (
+                isSingle ? (
+                  <>
+                    <ArrowRight size={14} color="#f59e0b" />
+                    <span>tüm adayları incele ve kazanana tıkla!</span>
+                  </>
+                ) : (
+                  <>
+                    <Hourglass size={14} color="#f59e0b" />
+                    <span>bekâr ({singlePlayerName}) karar veriyor...</span>
+                  </>
+                )
+              ) : (
+                <>
+                  <Hourglass size={14} color="#94a3b8" />
+                  <span>sıra: {turnPlayerName} (kart koyuyor...)</span>
+                </>
+              )}
             </span>
           )}
         </div>
@@ -139,10 +156,11 @@ export default function GameView({
           color: 'rgba(255, 255, 255, 0.5)',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '4px',
           fontWeight: 600
         }}>
-          <span>puanlar & oda menüsü sağ kenarda ❯</span>
+          <span>puanlar & oda menüsü sağ kenarda</span>
+          <ChevronRight size={14} />
         </div>
       </div>
 

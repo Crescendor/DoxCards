@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Sparkles, Check, Flame, ShieldAlert, Clock, ArrowRight, UserCheck } from 'lucide-react';
+import { Crown, Sparkles, Check, Flame, ShieldAlert, Clock, ArrowRight, UserCheck, Layers, ChevronUp, ChevronDown } from 'lucide-react';
 import CardItem from './CardItem';
 import FillBlankModal, { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
@@ -61,7 +61,8 @@ function SingleDeckStack() {
   return (
     <div style={{
       position: 'relative',
-      width: '105px',
+      width: '120px',
+      height: '168px',
       aspectRatio: '5 / 7',
       margin: '0 auto'
     }}>
@@ -70,7 +71,7 @@ function SingleDeckStack() {
         position: 'absolute',
         inset: '8px -8px -8px 8px',
         background: '#ffffff',
-        borderRadius: '12px',
+        borderRadius: '14px',
         border: '1px solid #cbd5e1',
         boxShadow: '0 4px 8px rgba(0,0,0,0.4)'
       }} />
@@ -78,7 +79,7 @@ function SingleDeckStack() {
         position: 'absolute',
         inset: '4px -4px -4px 4px',
         background: '#ffffff',
-        borderRadius: '12px',
+        borderRadius: '14px',
         border: '1px solid #cbd5e1',
         boxShadow: '0 4px 8px rgba(0,0,0,0.4)'
       }} />
@@ -87,7 +88,7 @@ function SingleDeckStack() {
         position: 'relative',
         width: '100%',
         height: '100%',
-        borderRadius: '12px',
+        borderRadius: '14px',
         overflow: 'hidden',
         boxShadow: '0 6px 20px rgba(0,0,0,0.65)',
         border: '1px solid rgba(0,0,0,0.2)',
@@ -157,13 +158,13 @@ function TableSlotsRow({
   const isVoting = (phase === 'VOTING' || phase === 'REVEAL') && isSingle;
 
   const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '132px',
-    minWidth: '132px',
-    maxWidth: '132px',
-    height: '185px',
-    minHeight: '185px',
-    maxHeight: '185px',
-    borderRadius: '14px',
+    width: '154px',
+    minWidth: '154px',
+    maxWidth: '154px',
+    height: '216px',
+    minHeight: '216px',
+    maxHeight: '216px',
+    borderRadius: '16px',
     border: hasCard
       ? 'none'
       : (isHovered
@@ -186,17 +187,17 @@ function TableSlotsRow({
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 16px rgba(255, 255, 255, 0.35)' : 'none'
+    boxShadow: isHovered ? '0 0 18px rgba(255, 255, 255, 0.4)' : 'none'
   });
 
   const redSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '132px',
-    minWidth: '132px',
-    maxWidth: '132px',
-    height: '185px',
-    minHeight: '185px',
-    maxHeight: '185px',
-    borderRadius: '14px',
+    width: '154px',
+    minWidth: '154px',
+    maxWidth: '154px',
+    height: '216px',
+    minHeight: '216px',
+    maxHeight: '216px',
+    borderRadius: '16px',
     border: hasCard
       ? 'none'
       : (isHovered
@@ -230,14 +231,14 @@ function TableSlotsRow({
         alignItems: 'center',
         justifyContent: 'center',
         gap: '12px',
-        width: '446px',
-        minWidth: '446px',
-        maxWidth: '446px',
-        height: '209px',
-        minHeight: '209px',
-        maxHeight: '209px',
+        width: '512px',
+        minWidth: '512px',
+        maxWidth: '512px',
+        height: '238px',
+        minHeight: '238px',
+        maxHeight: '238px',
         margin: '0 auto',
-        padding: '12px',
+        padding: '10px',
         boxSizing: 'border-box',
         borderRadius: '20px',
         background: isWinner
@@ -457,35 +458,42 @@ export default function TabletopView({
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-around',
+        justifyContent: 'space-evenly',
         alignItems: 'center',
-        padding: '16px 20px 60px 20px',
-        maxWidth: '1440px',
-        margin: '0 auto',
+        padding: '10px 20px 60px 20px',
         width: '100%',
+        maxWidth: '100%',
         overflowY: 'auto',
         boxSizing: 'border-box'
       }}>
 
-        {/* TOP ROW: Opponents & Bekâr Seated Around Table */}
+        {/* TOP / CENTER ROW: Opponents & Bekâr Seated Around Table */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'flex-start',
-          gap: '28px',
-          flexWrap: 'wrap'
+          alignItems: 'center',
+          gap: '24px',
+          flexWrap: 'wrap',
+          width: '100%',
+          maxWidth: '1800px',
+          margin: '0 auto'
         }}>
           {/* Bekâr Player Zone */}
           {!isSingle && singlePlayer && (
-            <div style={{ textAlign: 'center', minWidth: '180px' }}>
+            <div style={{ textAlign: 'center', minWidth: '190px', margin: '6px 12px' }}>
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 marginBottom: '10px',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                textTransform: 'lowercase'
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                textTransform: 'lowercase',
+                color: '#fbbf24',
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '4px 14px',
+                borderRadius: '9999px'
               }}>
                 <img
                   src={singlePlayer.avatar || defaultAvatarImg}
@@ -500,7 +508,7 @@ export default function TabletopView({
                   }}
                 />
                 <span>{singlePlayer.name}</span>
-                <span title="bekâr">👑</span>
+                <Crown size={15} color="#fbbf24" title="bekâr" />
               </div>
               <SingleDeckStack />
             </div>
@@ -518,30 +526,29 @@ export default function TabletopView({
                 key={opp.id}
                 style={{
                   textAlign: 'center',
-                  width: '470px',
-                  minWidth: '470px',
-                  maxWidth: '470px',
-                  minHeight: '390px',
-                  maxHeight: '390px',
+                  width: '536px',
+                  minWidth: '500px',
+                  maxWidth: '536px',
                   padding: '14px',
                   boxSizing: 'border-box',
                   borderRadius: '24px',
-                  background: isOppTurn ? 'rgba(217, 4, 41, 0.12)' : 'rgba(20, 20, 20, 0.6)',
+                  background: isOppTurn ? 'rgba(217, 4, 41, 0.14)' : 'rgba(20, 20, 20, 0.65)',
                   border: isOppTurn ? '1.5px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: isOppTurn ? '0 0 24px rgba(217, 4, 41, 0.3)' : 'none',
+                  boxShadow: isOppTurn ? '0 0 28px rgba(217, 4, 41, 0.35)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
               >
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  marginBottom: '6px',
-                  fontSize: '0.92rem',
+                  marginBottom: '4px',
+                  fontSize: '0.94rem',
                   fontWeight: 600,
                   textTransform: 'lowercase'
                 }}>
@@ -608,7 +615,7 @@ export default function TabletopView({
         </div>
 
         {/* BOTTOM ROW: Local Player's Zone & Slots */}
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <div style={{ marginTop: '16px', textAlign: 'center', width: '100%', maxWidth: '1800px', display: 'flex', justifyContent: 'center' }}>
           {isSingle ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{
@@ -617,8 +624,12 @@ export default function TabletopView({
                 gap: '8px',
                 marginBottom: '10px',
                 fontSize: '0.94rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 color: '#fbbf24',
+                background: 'rgba(245, 158, 11, 0.12)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '4px 16px',
+                borderRadius: '9999px',
                 textTransform: 'lowercase'
               }}>
                 <img
@@ -634,6 +645,7 @@ export default function TabletopView({
                   }}
                 />
                 <span>bu tur bekârsın ({player.name})</span>
+                <Crown size={15} color="#fbbf24" />
               </div>
               <SingleDeckStack />
             </div>
@@ -641,15 +653,15 @@ export default function TabletopView({
             <div
               style={{
                 textAlign: 'center',
-                width: '470px',
-                minWidth: '470px',
-                maxWidth: '470px',
+                width: '536px',
+                minWidth: '500px',
+                maxWidth: '536px',
                 margin: '0 auto',
                 padding: '14px',
                 borderRadius: '24px',
-                background: isMyTurn ? 'rgba(217, 4, 41, 0.14)' : 'rgba(20, 20, 20, 0.6)',
+                background: isMyTurn ? 'rgba(217, 4, 41, 0.16)' : 'rgba(20, 20, 20, 0.65)',
                 border: isMyTurn ? '1.5px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: isMyTurn ? '0 0 28px rgba(217, 4, 41, 0.4)' : 'none',
+                boxShadow: isMyTurn ? '0 0 30px rgba(217, 4, 41, 0.45)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
                 transition: 'all 0.3s ease'
               }}
             >
@@ -723,8 +735,8 @@ export default function TabletopView({
             })`,
             transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
             zIndex: 85,
-            width: '92%',
-            maxWidth: '1200px',
+            width: '94%',
+            maxWidth: '1400px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -762,7 +774,8 @@ export default function TabletopView({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                🎴 destem
+                <Layers size={16} color="#ef4444" />
+                <span>destem</span>
               </span>
               <span style={{ fontSize: '0.74rem', background: '#ffffff', color: '#000000', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
                 {availableWhiteCards.length} beyaz
@@ -780,7 +793,17 @@ export default function TabletopView({
               fontSize: '0.78rem',
               fontWeight: 700
             }}>
-              <span>{(isHandDrawerOpen || isDragging) ? '▼ desteyi gizle' : '▲ kartlarını görmek için üzerine gel'}</span>
+              {(isHandDrawerOpen || isDragging) ? (
+                <>
+                  <ChevronDown size={14} />
+                  <span>desteyi gizle</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp size={14} />
+                  <span>kartlarını görmek için üzerine gel</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -790,7 +813,7 @@ export default function TabletopView({
             alignItems: 'flex-end',
             justifyContent: 'center',
             position: 'relative',
-            height: '240px',
+            height: '260px',
             width: '100%',
             paddingTop: '12px'
           }}>
@@ -820,8 +843,8 @@ export default function TabletopView({
                   onMouseLeave={() => setHoveredCardId(null)}
                   style={{
                     position: 'relative',
-                    width: '168px',
-                    marginRight: '-44px',
+                    width: '180px',
+                    marginRight: '-40px',
                     cursor: canInteract ? 'grab' : 'not-allowed',
                     opacity: canInteract ? 1 : 0.7,
                     transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, z-index 0.2s ease',

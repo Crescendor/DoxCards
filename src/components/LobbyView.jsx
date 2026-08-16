@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers, Lock } from 'lucide-react';
+import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers, Lock, Hourglass } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 import { ADMIN_DISCORD_ID } from './AdminPageView';
@@ -435,8 +435,8 @@ export default function LobbyView({
               </button>
 
               {!allNonHostsReady && players.length >= 2 && (
-                <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 600 }}>
-                  ⏳ tüm oyuncuların hazır olması bekleniyor
+                <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Hourglass size={12} /> tüm oyuncuların hazır olması bekleniyor
                 </span>
               )}
             </div>

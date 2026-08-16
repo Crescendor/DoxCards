@@ -233,7 +233,7 @@ export default function RightSidebarDrawer({
                       </span>
                     )}
                     {p.isHost && <Crown size={14} color="#fbbf24" title="Oda Kurucusu" />}
-                    {isSingle && !p.isHost && <span style={{ fontSize: '0.7rem' }}>👑</span>}
+                    {isSingle && !p.isHost && <Crown size={13} color="#f59e0b" title="Bekâr" />}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
