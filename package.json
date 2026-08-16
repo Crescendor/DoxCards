@@ -1,32 +1,24 @@
 {
   "name": "doxcards",
-  "version": "1.0.0",
   "private": true,
-  "description": "DoxCards - Multiplayer Red Flags Türkçe Kart Oyunu",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "node build.js",
-    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"red,cyan\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-    "dev:win": "concurrently -n \"SERVER,CLIENT\" -c \"red,cyan\" \"npm.cmd --prefix server run dev\" \"npm.cmd --prefix client run dev\"",
-    "start": "node server/index.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.3",
-    "cors": "^2.8.5",
-    "express": "^4.21.0",
     "lucide-react": "^0.453.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "concurrently": "^9.1.2",
     "vite": "^5.4.2"
-  },
-  "author": "Burak",
-  "license": "MIT"
+  }
 }
