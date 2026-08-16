@@ -65,6 +65,20 @@ export async function checkDiscordAuthCallback() {
 
     saveDiscordUser(user);
 
+    // Immediately push user to Cloudflare Database
+    try {
+      fetch('https://doxcards-server.burakcnaydin.workers.dev/api/users/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatar: user.avatarUrl
+        })
+      }).catch(() => {});
+    } catch (e) {}
+
     // Clean /callback and hash from URL back to base root /
     window.history.replaceState(null, '', window.location.origin + window.location.search);
     return user;

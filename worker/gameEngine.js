@@ -329,9 +329,15 @@ export class GameEngine {
   }
 
   bekarSelectWinner(singlePlayerId, winningMatchmakerId, players) {
-    if (this.phase !== PHASES.VOTING && this.phase !== PHASES.REVEAL) return false;
-    if (singlePlayerId !== this.singlePlayerId) return false;
-    if (!this.candidates[winningMatchmakerId]) return false;
+    if (this.phase !== PHASES.VOTING && this.phase !== PHASES.REVEAL) {
+      return { error: 'henüz oy verme aşaması değil.' };
+    }
+    if (singlePlayerId !== this.singlePlayerId) {
+      return { error: 'sadece bekâr kazananı seçebilir.' };
+    }
+    if (!this.candidates[winningMatchmakerId]) {
+      return { error: 'seçilen aday bulunamadı.' };
+    }
 
     this.roundWinner = winningMatchmakerId;
     this.winningCandidate = this.candidates[winningMatchmakerId];
@@ -346,15 +352,20 @@ export class GameEngine {
       this.phase = PHASES.GAME_OVER;
     } else {
       this.phase = PHASES.ROUND_SUMMARY;
-      setTimeout(() => {
-        this.singleIndex++;
-        this.startRound(players);
-        if (this.onStateChange) this.onStateChange();
-      }, 5000);
     }
 
     if (this.onStateChange) this.onStateChange();
-    return true;
+    return { success: true, wonGame };
+  }
+
+  selectWinner(singlePlayerId, winningMatchmakerId, players) {
+    return this.bekarSelectWinner(singlePlayerId, winningMatchmakerId, players);
+  }
+
+  nextRound(players) {
+    this.singleIndex++;
+    this.startRound(players);
+    if (this.onStateChange) this.onStateChange();
   }
 
   clearTimer() {

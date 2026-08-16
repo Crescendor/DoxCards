@@ -3,10 +3,11 @@
 .game-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  padding-bottom: 230px; /* Space for bottom hand tray */
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  position: relative;
   background: radial-gradient(ellipse at 50% 15%, #4a0707 0%, #1f0303 55%, #0d0101 100%);
-  background-attachment: fixed;
   color: #ffffff;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   letter-spacing: -0.02em;
@@ -17,8 +18,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
-  background: rgba(12, 2, 2, 0.9);
+  padding: 8px 24px;
+  background: rgba(12, 2, 2, 0.92);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: sticky;
@@ -73,12 +74,12 @@
   background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(15, 2, 2, 0.9), rgba(239, 68, 68, 0.15));
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 14px 20px;
+  padding: 8px 20px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   position: relative;
 }
 
@@ -102,7 +103,7 @@
 }
 
 .phase-title {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   text-transform: lowercase;
   letter-spacing: -0.025em;
@@ -110,7 +111,7 @@
 }
 
 .phase-desc {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: #fca5a5;
   font-weight: 600;
   text-transform: lowercase;
@@ -141,23 +142,25 @@
 
 /* Table Area */
 .game-table {
-  max-width: 1250px;
+  flex: 1;
+  max-width: 1300px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px 20px 60px 20px;
   width: 100%;
+  overflow-y: auto;
 }
 
 .table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .candidates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
 }
 
 /* Candidate Slot Card */
@@ -166,10 +169,10 @@
   backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   position: relative;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
@@ -205,18 +208,50 @@
   padding-bottom: 4px;
 }
 
-/* Bottom Player Hand Tray */
+/* Bottom Player Hand Tray (Peek & Slide on Hover) */
 .player-hand-tray {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(14, 2, 2, 0.95);
+  background: rgba(14, 2, 2, 0.96);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 12px 20px;
+  border-top: 2px solid rgba(239, 68, 68, 0.5);
+  padding: 6px 20px 14px 20px;
   z-index: 90;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.85);
+  transform: translateY(calc(100% - 38px));
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.player-hand-tray:hover,
+.player-hand-tray:focus-within {
+  transform: translateY(0%);
+  border-top-color: #ef4444;
+  box-shadow: 0 -14px 44px rgba(217, 4, 41, 0.4);
+}
+
+.hand-tray-pull-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fca5a5;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: lowercase;
+  padding-bottom: 6px;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pull-tab-arrow {
+  transition: transform 0.25s ease;
+}
+
+.player-hand-tray:hover .pull-tab-arrow {
+  transform: rotate(180deg);
 }
 
 .hand-tray-inner {

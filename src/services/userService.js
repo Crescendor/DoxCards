@@ -13,7 +13,16 @@ export const DEFAULT_CONFIG = {
     'Sekso Paket',
     'Kara Paket',
     'Zifiri Paket'
-  ]
+  ],
+  deckMetadata: {
+    'Ana Deste': { isSecret: false, lockDescription: 'Temel oyun destesi. Herkese açıktır.' },
+    'Ek Paket': { isSecret: false, lockDescription: 'Discord ile giriş yapan tüm kullanıcılara açıktır.' },
+    'Nerd Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için VIP yetkisi gereklidir.' },
+    'Fenasal Nerd Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için VIP yetkisi gereklidir.' },
+    'Sekso Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium veya VIP yetkisi gereklidir.' },
+    'Kara Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium yetkisi gereklidir.' },
+    'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' }
+  }
 };
 
 // Get locally cached user profile

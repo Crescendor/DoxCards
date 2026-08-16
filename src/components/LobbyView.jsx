@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers, Lock } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 import { ADMIN_DISCORD_ID } from './AdminPageView';
 import { getDiscordUser } from '../services/discordAuth';
-import { getLocalUserProfile, DEFAULT_CONFIG } from '../services/userService';
+import { getLocalUserProfile, fetchAppConfig, DEFAULT_CONFIG } from '../services/userService';
 
 const MAX_SLOTS = 6;
 
@@ -19,15 +19,24 @@ export default function LobbyView({
 }) {
   const [copied, setCopied] = useState(false);
   const [isReadyHovered, setIsReadyHovered] = useState(false);
+  const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
+  const [hoveredLockedDeck, setHoveredLockedDeck] = useState(null);
+
   const isHost = room.hostId === player.id;
   const players = room.players || [];
   const discordUser = getDiscordUser();
   const userProfile = getLocalUserProfile();
 
+  useEffect(() => {
+    fetchAppConfig().then(cfg => {
+      if (cfg) setAppConfig(cfg);
+    });
+  }, []);
+
   const isMainAdmin = discordUser?.id === ADMIN_DISCORD_ID;
   const availableDecksForHost = isMainAdmin
-    ? DEFAULT_CONFIG.allDecks
-    : (discordUser ? (userProfile?.unlockedDecks || DEFAULT_CONFIG.discordDecks) : DEFAULT_CONFIG.guestDecks);
+    ? (appConfig.allDecks || DEFAULT_CONFIG.allDecks)
+    : (discordUser ? (userProfile?.unlockedDecks || appConfig.discordDecks || DEFAULT_CONFIG.discordDecks) : (appConfig.guestDecks || DEFAULT_CONFIG.guestDecks));
 
   const selectedDecks = room.settings?.selectedDecks || availableDecksForHost;
 
@@ -272,7 +281,42 @@ export default function LobbyView({
             </label>
 
             <div className="deck-tags-container">
-              {availableDecksForHost.map(deckName => {
+              {(appConfig.allDecks || DEFAULT_CONFIG.allDecks).map(deckName => {
+                const isUnlocked = availableDecksForHost.includes(deckName);
+                const meta = appConfig.deckMetadata?.[deckName] || { isSecret: false, lockDescription: '' };
+
+                // 1. If not unlocked and marked as secret: hide completely
+                if (!isUnlocked && meta.isSecret) {
+                  return null;
+                }
+
+                // 2. If not unlocked and not secret: render as locked (silik) with hover tooltip
+                if (!isUnlocked) {
+                  return (
+                    <div
+                      key={deckName}
+                      className="deck-tooltip-wrapper"
+                      onMouseEnter={() => setHoveredLockedDeck(deckName)}
+                      onMouseLeave={() => setHoveredLockedDeck(null)}
+                    >
+                      <button
+                        type="button"
+                        disabled
+                        className="deck-tag-btn locked"
+                      >
+                        <Lock size={12} /> {deckName}
+                      </button>
+
+                      {hoveredLockedDeck === deckName && (
+                        <div className="deck-tooltip-box">
+                          {meta.lockDescription || 'Bu deste kilitlidir.'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // 3. Unlocked deck: render normal toggleable pill
                 const isSelected = selectedDecks.includes(deckName);
                 return (
                   <button

@@ -26,7 +26,16 @@ const DEFAULT_CONFIG = {
     'Sekso Paket',
     'Kara Paket',
     'Zifiri Paket'
-  ]
+  ],
+  deckMetadata: {
+    'Ana Deste': { isSecret: false, lockDescription: 'Temel oyun destesi. Herkese açıktır.' },
+    'Ek Paket': { isSecret: false, lockDescription: 'Discord ile giriş yapan tüm kullanıcılara açıktır.' },
+    'Nerd Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için VIP yetkisi gereklidir.' },
+    'Fenasal Nerd Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için VIP yetkisi gereklidir.' },
+    'Sekso Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium veya VIP yetkisi gereklidir.' },
+    'Kara Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium yetkisi gereklidir.' },
+    'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' }
+  }
 };
 
 // Durable Object class for 100% synchronized stateful multiplayer rooms
@@ -441,11 +450,12 @@ export class GameRoomDO {
         }
 
         // 8. Select Winner (Single)
-        else if (evt === 'bekar_select_winner') {
-          const { singlePlayerId, winningMatchmakerId } = data;
+        else if (evt === 'bekar_select_winner' || evt === 'select_winner') {
+          const singlePlayerId = data.singlePlayerId || data.playerId;
+          const winningMatchmakerId = data.winningMatchmakerId || data.winnerMatchmakerId || data.matchmakerId;
           if (!this.room || !this.room.game) return;
 
-          const res = this.room.game.selectWinner(singlePlayerId, winningMatchmakerId);
+          const res = this.room.game.selectWinner(singlePlayerId, winningMatchmakerId, this.room.players);
           if (res?.error) {
             sendAck({ error: res.error });
             return;

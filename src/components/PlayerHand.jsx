@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Flag, ShieldAlert, Sparkles, Check } from 'lucide-react';
+import { Heart, Flag, ShieldAlert, Sparkles, Check, ChevronUp } from 'lucide-react';
 import CardItem from './CardItem';
 import { sounds } from '../services/soundEffects';
 
@@ -77,6 +77,11 @@ export default function PlayerHand({
   if (isSingle) {
     return (
       <div className="player-hand-tray">
+        <div className="hand-tray-pull-tab">
+          <ChevronUp size={14} className="pull-tab-arrow" />
+          <span>bu tur bekârsın — adayları bekliyorsun</span>
+          <ChevronUp size={14} className="pull-tab-arrow" />
+        </div>
         <div className="hand-tray-inner" style={{ textAlign: 'center', padding: '10px 0' }}>
           <div style={{
             display: 'inline-flex',
@@ -101,6 +106,13 @@ export default function PlayerHand({
 
   return (
     <div className="player-hand-tray">
+      {/* Pull Tab Handle */}
+      <div className="hand-tray-pull-tab">
+        <ChevronUp size={14} className="pull-tab-arrow" />
+        <span>kartlarım ({hand.whiteCards?.length || 0} beyaz / {hand.redCards?.length || 0} kırmızı) — üzerine gelince açılır</span>
+        <ChevronUp size={14} className="pull-tab-arrow" />
+      </div>
+
       <div className="hand-tray-inner">
         {/* Hand Top Bar */}
         <div className="hand-header-bar">

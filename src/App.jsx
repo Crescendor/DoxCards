@@ -230,10 +230,12 @@ export default function App() {
   // Select Winner (Single Player)
   const handleSelectWinner = (winnerMatchmakerId) => {
     if (!currentRoom) return;
+    sounds.playWin();
     socket.emit('select_winner', {
       roomCode: currentRoom.code,
       playerId: player.id,
-      winnerMatchmakerId
+      singlePlayerId: player.id,
+      winningMatchmakerId: winnerMatchmakerId
     });
   };
 

@@ -1358,16 +1358,41 @@ export default function AdminPageView({ onBack, discordUser }) {
                 </p>
               </div>
 
-              <div style={{ position: 'relative', minWidth: '280px' }}>
-                <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '13px' }} />
-                <input
-                  type="text"
-                  placeholder="kullanıcı adı veya id ara..."
-                  value={usersSearch}
-                  onChange={(e) => setUsersSearch(e.target.value)}
-                  className="form-input"
-                  style={{ paddingLeft: '38px', padding: '10px 14px 10px 38px' }}
-                />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  onClick={() => {
+                    sounds.playClick();
+                    setIsUsersRefreshing(true);
+                    fetchAllUsers().then(users => {
+                      if (Array.isArray(users)) setUsersList(users);
+                      setIsUsersRefreshing(false);
+                    }).catch(() => setIsUsersRefreshing(false));
+                  }}
+                  className="btn-secondary"
+                  style={{
+                    padding: '9px 14px',
+                    fontSize: '0.82rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                  title="kullanıcı listesini veritabanından yenile"
+                >
+                  <RefreshCw size={14} style={{ animation: isUsersRefreshing ? 'spin 1s linear infinite' : 'none' }} /> yenile
+                </button>
+
+                <div style={{ position: 'relative', minWidth: '280px' }}>
+                  <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '13px' }} />
+                  <input
+                    type="text"
+                    placeholder="kullanıcı adı veya id ara..."
+                    value={usersSearch}
+                    onChange={(e) => setUsersSearch(e.target.value)}
+                    className="form-input"
+                    style={{ paddingLeft: '38px', padding: '10px 14px 10px 38px' }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -1618,16 +1643,16 @@ export default function AdminPageView({ onBack, discordUser }) {
         )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* SECTION C: DESTE İZİNLERİ (GLOBAL DECK DEFAULTS) */}
+        {/* SECTION C: DESTE İZİNLERİ (GLOBAL DECK DEFAULTS & SECRET / LOCK INFO) */}
         {/* ----------------------------------------------------------------------- */}
         {mainNav === 'permissions' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '850px' }}>
             <div>
               <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
-                genel deste izin kuralları
+                genel deste izin kuralları & gizlilik ayarları
               </h2>
               <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
-                giriş yapmayan misafirlerin ve yeni discord girişi yapan standart kullanıcıların varsayılan olarak hangi destelere sahip olacağını ayarlayın.
+                misafirlerin, standart discord kullanıcılarının varsayılan destelerini ayarlayın; kilitli desteler için açıklama metinleri ve gizli (secret) deste kurallarını belirleyin.
               </p>
             </div>
 
@@ -1720,6 +1745,106 @@ export default function AdminPageView({ onBack, discordUser }) {
                       {isActive ? <Check size={13} /> : <Plus size={13} />}
                       {deckName}
                     </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Rule 3: Deck Metadata (Secret Toggle & Lock Tooltip Text) */}
+            <div style={{
+              background: '#1c1c1c',
+              borderRadius: '16px',
+              padding: '24px',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                  deste gizlilik (secret) & kilitli bilgi metinleri (mouse hover)
+                </span>
+                <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: '4px' }}>
+                  oyuncunun sahip olmadığı bir deste <b>gizli (secret)</b> ise lobide silik bile görünmez. Gizli değilse silik görünür ve mouse ile üzerine gelindiğinde belirlediğiniz açıklama metni çıkar.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {DEFAULT_CONFIG.allDecks.map(deckName => {
+                  const meta = appConfig.deckMetadata?.[deckName] || { isSecret: false, lockDescription: '' };
+
+                  return (
+                    <div
+                      key={deckName}
+                      style={{
+                        background: '#242424',
+                        border: meta.isSecret ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#ffffff' }}>
+                          {deckName}
+                        </span>
+
+                        {/* Secret Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            const newMeta = {
+                              ...(appConfig.deckMetadata || {}),
+                              [deckName]: {
+                                ...meta,
+                                isSecret: !meta.isSecret
+                              }
+                            };
+                            setAppConfig(prev => ({ ...prev, deckMetadata: newMeta }));
+                          }}
+                          style={{
+                            background: meta.isSecret ? '#d90429' : 'rgba(255, 255, 255, 0.08)',
+                            border: meta.isSecret ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#ffffff',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {meta.isSecret ? '🔒 gizli (secret) deste: aktif' : '🔓 genel deste (silik görünür)'}
+                        </button>
+                      </div>
+
+                      {/* Tooltip Description Input */}
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
+                          kilitliyken mouse üzerine gelince çıkacak yazı (ipucu):
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="örn: bu desteyi açmak için VIP üye olmanız gerekir."
+                          value={meta.lockDescription || ''}
+                          onChange={(e) => {
+                            const newDesc = e.target.value;
+                            const newMeta = {
+                              ...(appConfig.deckMetadata || {}),
+                              [deckName]: {
+                                ...meta,
+                                lockDescription: newDesc
+                              }
+                            };
+                            setAppConfig(prev => ({ ...prev, deckMetadata: newMeta }));
+                          }}
+                          className="form-input"
+                          style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                        />
+                      </div>
+                    </div>
                   );
                 })}
               </div>
