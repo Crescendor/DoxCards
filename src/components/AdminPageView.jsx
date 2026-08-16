@@ -109,9 +109,13 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [customCategoryInput, setCustomCategoryInput] = useState('');
   const [newText, setNewText] = useState('');
 
-  // Category Renaming State
+  // Category Renaming & Creation State
   const [renamingCategory, setRenamingCategory] = useState(null); // { type: 'Perks'|'Red Flags', oldName: '' }
   const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
+  const [newDeckNameInput, setNewDeckNameInput] = useState('');
+  const [newDeckTypeTarget, setNewDeckTypeTarget] = useState('both'); // 'both' | 'perk' | 'redflag'
+  const [newDeckIsSecret, setNewDeckIsSecret] = useState(false);
+  const [newDeckLockDesc, setNewDeckLockDesc] = useState('');
 
   // Users Section State
   const [usersList, setUsersList] = useState([]);
@@ -152,6 +156,10 @@ export default function AdminPageView({ onBack, discordUser }) {
   const perkCategories = Object.keys(deckState.raw.Perks || {});
   const redFlagCategories = Object.keys(deckState.raw['Red Flags'] || {});
   const allCategories = Array.from(new Set([...perkCategories, ...redFlagCategories]));
+  const combinedDeckList = Array.from(new Set([
+    ...(appConfig.allDecks || DEFAULT_CONFIG.allDecks),
+    ...allCategories
+  ]));
 
   // Filter cards
   const filteredCards = deckState.allCards.filter(c => {
@@ -350,6 +358,53 @@ export default function AdminPageView({ onBack, discordUser }) {
         setTimeout(() => setSaveSuccess(false), 2000);
       }
     }
+  };
+
+  // Create New Deck Handler
+  const handleCreateNewDeck = async (e) => {
+    if (e) e.preventDefault();
+    const name = newDeckNameInput.trim();
+    if (!name) return;
+
+    sounds.playClick();
+    const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+    if (!updatedRaw.Perks) updatedRaw.Perks = {};
+    if (!updatedRaw['Red Flags']) updatedRaw['Red Flags'] = {};
+
+    if (newDeckTypeTarget === 'both' || newDeckTypeTarget === 'perk') {
+      if (!updatedRaw.Perks[name]) updatedRaw.Perks[name] = [];
+    }
+    if (newDeckTypeTarget === 'both' || newDeckTypeTarget === 'redflag') {
+      if (!updatedRaw['Red Flags'][name]) updatedRaw['Red Flags'][name] = [];
+    }
+
+    saveActiveDeck(updatedRaw);
+    const parsed = parseRawDeck(updatedRaw);
+    setDeckState(parsed);
+
+    const updatedAllDecks = Array.from(new Set([...(appConfig.allDecks || DEFAULT_CONFIG.allDecks), name]));
+    const updatedMeta = {
+      ...(appConfig.deckMetadata || {}),
+      [name]: {
+        isSecret: newDeckIsSecret,
+        lockDescription: newDeckLockDesc.trim() || 'Bu desteyi açmak için yetki gereklidir.'
+      }
+    };
+
+    const updatedConfig = {
+      ...appConfig,
+      allDecks: updatedAllDecks,
+      deckMetadata: updatedMeta
+    };
+
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+
+    setNewDeckNameInput('');
+    setNewDeckLockDesc('');
+    setNewDeckIsSecret(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
   };
 
   // User Management Handlers
@@ -552,29 +607,6 @@ export default function AdminPageView({ onBack, discordUser }) {
             >
               <Users size={18} /> kullanıcılar ({usersList.length})
             </button>
-
-            <button
-              onClick={() => { sounds.playClick(); setMainNav('permissions'); }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 14px',
-                borderRadius: '12px',
-                background: mainNav === 'permissions' ? '#d90429' : 'transparent',
-                color: '#ffffff',
-                border: mainNav === 'permissions' ? '1px solid #ef4444' : '1px solid transparent',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: mainNav === 'permissions' ? '0 4px 14px rgba(217, 4, 41, 0.4)' : 'none',
-                textAlign: 'left'
-              }}
-            >
-              <Sliders size={18} /> deste izinleri
-            </button>
           </nav>
         </div>
 
@@ -766,7 +798,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                   transition: 'background 0.2s'
                 }}
               >
-                <FolderEdit size={18} /> desteleri düzenle ({allCategories.length})
+                <FolderEdit size={18} /> desteler ve izinler ({combinedDeckList.length})
               </button>
 
               <button
@@ -1042,123 +1074,445 @@ export default function AdminPageView({ onBack, discordUser }) {
               </div>
             )}
 
-            {/* TAB 2: DESTE DÜZENLEME */}
+            {/* TAB 2: DESTELER & İZİNLER */}
             {activeTab === 'categories' && (
               <div style={{
                 background: '#1c1c1c',
                 borderRadius: '16px',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                padding: '24px',
+                padding: '28px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '24px'
+                gap: '32px'
               }}>
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>
-                    deste yönetimi ve isim düzenleme
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '6px', color: '#ffffff' }}>
+                    deste yönetimi, yeni deste ekleme & izin kuralları
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
-                    oyundaki desteleri ve paketleri yeniden adlandırabilir veya tamamen silebilirsiniz.
+                  <p style={{ color: '#94a3b8', fontSize: '0.86rem' }}>
+                    oyuna yepyeni desteler ekleyebilir, mevcut desteleri yeniden adlandırabilir ve misafir/discord izinleri ile gizlilik (secret) kurallarını buradan tek noktadan yönetebilirsiniz.
                   </p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  {/* Perks Decks */}
-                  <div style={{ background: '#242424', padding: '20px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <h4 style={{ color: '#ffffff', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Layers size={16} /> beyaz kart desteleri ({perkCategories.length})
+                {/* 1. YENİ DESTE / PAKET OLUŞTURMA KARTI */}
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(217, 4, 41, 0.35)',
+                  borderRadius: '16px',
+                  padding: '22px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Plus size={18} color="#ef4444" />
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                      yeni deste / paket oluştur
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {perkCategories.map(cat => (
-                        <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '10px 14px', borderRadius: '10px' }}>
-                          <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{cat} ({deckState.raw.Perks[cat]?.length || 0} kart)</span>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={() => {
-                                setRenamingCategory({ section: 'Perks', oldName: cat });
-                                setNewCategoryNameInput(cat);
-                              }}
-                              className="btn-secondary"
-                              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                            >
-                              yeniden adlandır
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCategory('Perks', cat)}
-                              style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
-                  {/* Red Flags Decks */}
-                  <div style={{ background: '#242424', padding: '20px', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                    <h4 style={{ color: '#f87171', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Layers size={16} /> kırmızı kart desteleri ({redFlagCategories.length})
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {redFlagCategories.map(cat => (
-                        <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '10px 14px', borderRadius: '10px' }}>
-                          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fca5a5' }}>{cat} ({deckState.raw['Red Flags'][cat]?.length || 0} kart)</span>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={() => {
-                                setRenamingCategory({ section: 'Red Flags', oldName: cat });
-                                setNewCategoryNameInput(cat);
-                              }}
-                              className="btn-secondary"
-                              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                            >
-                              yeniden adlandır
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCategory('Red Flags', cat)}
-                              style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                  <form onSubmit={handleCreateNewDeck} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label className="form-label">yeni deste / paket adı</label>
+                        <input
+                          type="text"
+                          placeholder="örn: Anime Paketi, Gece Paketi..."
+                          value={newDeckNameInput}
+                          onChange={(e) => setNewDeckNameInput(e.target.value)}
+                          className="form-input"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="form-label">hangi kart tiplerini kapsasın?</label>
+                        <select
+                          value={newDeckTypeTarget}
+                          onChange={(e) => setNewDeckTypeTarget(e.target.value)}
+                          className="select-box"
+                          style={{ width: '100%', height: '48px' }}
+                        >
+                          <option value="both">hem beyaz (perk) hem kırmızı (red flag)</option>
+                          <option value="perk">yalnızca beyaz kartlar (perk)</option>
+                          <option value="redflag">yalnızca kırmızı kartlar (red flag)</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', alignItems: 'center' }}>
+                      <div>
+                        <label className="form-label">gizlilik (secret) durumu</label>
+                        <button
+                          type="button"
+                          onClick={() => { sounds.playClick(); setNewDeckIsSecret(prev => !prev); }}
+                          style={{
+                            width: '100%',
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            background: newDeckIsSecret ? '#d90429' : '#2d2d2d',
+                            color: '#ffffff',
+                            border: newDeckIsSecret ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)',
+                            fontWeight: 700,
+                            fontSize: '0.82rem',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          {newDeckIsSecret ? '🔒 gizli (secret) deste' : '🔓 genel (silik görünür)'}
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="form-label">kilitliyken mouse üzerine gelince çıkacak yazı (ipucu)</label>
+                        <input
+                          type="text"
+                          placeholder="örn: bu desteyi açmak için VIP üye olmanız gerekir."
+                          value={newDeckLockDesc}
+                          onChange={(e) => setNewDeckLockDesc(e.target.value)}
+                          className="form-input"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      style={{ padding: '12px 22px', alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <Plus size={16} /> desteyi oluştur ve kaydet
+                    </button>
+                  </form>
                 </div>
 
-                {/* Rename Modal */}
-                {renamingCategory && (
-                  <form onSubmit={handleRenameCategorySubmit} style={{
-                    background: '#2d2d2d',
-                    padding: '20px',
+                {/* 2. MEVCUT DESTELER & İSİM DÜZENLEME */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FolderEdit size={16} color="#fbbf24" />
+                    mevcut desteler ve kart sayıları ({combinedDeckList.length})
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Perks Decks */}
+                    <div style={{ background: '#242424', padding: '18px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <h5 style={{ color: '#ffffff', fontWeight: 800, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.92rem' }}>
+                        <Layers size={15} /> beyaz kart desteleri ({perkCategories.length})
+                      </h5>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {perkCategories.map(cat => (
+                          <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '9px 12px', borderRadius: '10px' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{cat} ({deckState.raw.Perks[cat]?.length || 0} kart)</span>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                onClick={() => {
+                                  setRenamingCategory({ section: 'Perks', oldName: cat });
+                                  setNewCategoryNameInput(cat);
+                                }}
+                                className="btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                              >
+                                yeniden adlandır
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory('Perks', cat)}
+                                style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Red Flags Decks */}
+                    <div style={{ background: '#242424', padding: '18px', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <h5 style={{ color: '#f87171', fontWeight: 800, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.92rem' }}>
+                        <Layers size={15} /> kırmızı kart desteleri ({redFlagCategories.length})
+                      </h5>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {redFlagCategories.map(cat => (
+                          <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '9px 12px', borderRadius: '10px' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fca5a5' }}>{cat} ({deckState.raw['Red Flags'][cat]?.length || 0} kart)</span>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                onClick={() => {
+                                  setRenamingCategory({ section: 'Red Flags', oldName: cat });
+                                  setNewCategoryNameInput(cat);
+                                }}
+                                className="btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                              >
+                                yeniden adlandır
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory('Red Flags', cat)}
+                                style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rename Modal */}
+                  {renamingCategory && (
+                    <form onSubmit={handleRenameCategorySubmit} style={{
+                      background: '#2d2d2d',
+                      padding: '18px',
+                      borderRadius: '14px',
+                      border: '1px solid #d90429',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px'
+                    }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                        "{renamingCategory.oldName}" destesinin yeni adını girin:
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                          type="text"
+                          value={newCategoryNameInput}
+                          onChange={(e) => setNewCategoryNameInput(e.target.value)}
+                          className="form-input"
+                          autoFocus
+                        />
+                        <button type="submit" className="btn-primary" style={{ padding: '10px 18px', whiteSpace: 'nowrap' }}>
+                          kaydet
+                        </button>
+                        <button type="button" onClick={() => setRenamingCategory(null)} className="btn-secondary">
+                          iptal
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+                {/* 3. GENEL DESTE İZİN KURALLARI & GİZLİLİK AYARLARI */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '20px',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                  paddingTop: '24px'
+                }}>
+                  <div>
+                    <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Sliders size={18} color="#38bdf8" />
+                      genel deste izin kuralları & gizlilik ayarları
+                    </h4>
+                    <p style={{ color: '#94a3b8', fontSize: '0.84rem', marginTop: '4px' }}>
+                      misafirlerin ve discord kullanıcılarının varsayılan destelerini ayarlayın; kilitli desteler için açıklama metinleri ve gizli (secret) deste kurallarını belirleyin.
+                    </p>
+                  </div>
+
+                  {/* Rule 1: Guest Users */}
+                  <div style={{
+                    background: '#242424',
                     borderRadius: '14px',
-                    border: '1px solid #d90429',
+                    padding: '20px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px'
                   }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                      "{renamingCategory.oldName}" destesinin yeni adını girin:
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        background: '#262626',
+                        color: '#94a3b8',
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        fontWeight: 800,
+                        fontSize: '0.78rem'
+                      }}>
+                        misafir (giriş yapmayan)
+                      </span>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff' }}>
+                        varsayılan açık desteler
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input
-                        type="text"
-                        value={newCategoryNameInput}
-                        onChange={(e) => setNewCategoryNameInput(e.target.value)}
-                        className="form-input"
-                        autoFocus
-                      />
-                      <button type="submit" className="btn-primary" style={{ padding: '10px 20px', whiteSpace: 'nowrap' }}>
-                        kaydet
-                      </button>
-                      <button type="button" onClick={() => setRenamingCategory(null)} className="btn-secondary">
-                        iptal
-                      </button>
+                    <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>
+                      discord ile giriş yapmadan doğrudan lobi açan oyuncuların seçebileceği desteler:
+                    </p>
+
+                    <div className="deck-tags-container">
+                      {combinedDeckList.map(deckName => {
+                        const isActive = (appConfig.guestDecks || []).includes(deckName);
+                        return (
+                          <button
+                            key={deckName}
+                            type="button"
+                            onClick={() => handleToggleDefaultGuestDeck(deckName)}
+                            className={`deck-tag-btn ${isActive ? 'active' : ''}`}
+                          >
+                            {isActive ? <Check size={13} /> : <Plus size={13} />}
+                            {deckName}
+                          </button>
+                        );
+                      })}
                     </div>
-                  </form>
-                )}
+                  </div>
+
+                  {/* Rule 2: Registered Discord Users */}
+                  <div style={{
+                    background: '#242424',
+                    borderRadius: '14px',
+                    padding: '20px',
+                    border: '1px solid rgba(88, 101, 242, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        background: '#5865F2',
+                        color: '#ffffff',
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        fontWeight: 800,
+                        fontSize: '0.78rem'
+                      }}>
+                        discord kullanıcıları
+                      </span>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff' }}>
+                        ilk girişte tanımlanan standart desteler
+                      </span>
+                    </div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>
+                      discord ile giriş yapan tüm standart kullanıcıların profillerine başlangıçta otomatik tanımlanacak desteler:
+                    </p>
+
+                    <div className="deck-tags-container">
+                      {combinedDeckList.map(deckName => {
+                        const isActive = (appConfig.discordDecks || []).includes(deckName);
+                        return (
+                          <button
+                            key={deckName}
+                            type="button"
+                            onClick={() => handleToggleDefaultDiscordDeck(deckName)}
+                            className={`deck-tag-btn ${isActive ? 'active' : ''}`}
+                          >
+                            {isActive ? <Check size={13} /> : <Plus size={13} />}
+                            {deckName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Rule 3: Deck Metadata (Secret Toggle & Lock Tooltip Text) */}
+                  <div style={{
+                    background: '#242424',
+                    borderRadius: '14px',
+                    padding: '20px',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px'
+                  }}>
+                    <div>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff' }}>
+                        deste gizlilik (secret) & kilitli bilgi metinleri (mouse hover)
+                      </span>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '4px', marginBottom: 0 }}>
+                        oyuncunun sahip olmadığı bir deste <b>gizli (secret)</b> ise lobide silik bile görünmez. Gizli değilse silik görünür ve mouse ile üzerine gelindiğinde belirlediğiniz açıklama metni çıkar.
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {combinedDeckList.map(deckName => {
+                        const meta = appConfig.deckMetadata?.[deckName] || { isSecret: false, lockDescription: '' };
+
+                        return (
+                          <div
+                            key={deckName}
+                            style={{
+                              background: '#1a1a1a',
+                              border: meta.isSecret ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: '12px',
+                              padding: '12px 16px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#ffffff' }}>
+                                {deckName}
+                              </span>
+
+                              {/* Secret Toggle */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  sounds.playClick();
+                                  const newMeta = {
+                                    ...(appConfig.deckMetadata || {}),
+                                    [deckName]: {
+                                      ...meta,
+                                      isSecret: !meta.isSecret
+                                    }
+                                  };
+                                  setAppConfig(prev => ({ ...prev, deckMetadata: newMeta }));
+                                }}
+                                style={{
+                                  background: meta.isSecret ? '#d90429' : 'rgba(255, 255, 255, 0.08)',
+                                  border: meta.isSecret ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.2)',
+                                  color: '#ffffff',
+                                  padding: '4px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {meta.isSecret ? '🔒 gizli (secret) deste: aktif' : '🔓 genel deste (silik görünür)'}
+                              </button>
+                            </div>
+
+                            {/* Tooltip Description Input */}
+                            <div>
+                              <label style={{ fontSize: '0.74rem', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
+                                kilitliyken mouse üzerine gelince çıkacak yazı (ipucu):
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="örn: bu desteyi açmak için VIP üye olmanız gerekir."
+                                value={meta.lockDescription || ''}
+                                onChange={(e) => {
+                                  const newDesc = e.target.value;
+                                  const newMeta = {
+                                    ...(appConfig.deckMetadata || {}),
+                                    [deckName]: {
+                                      ...meta,
+                                      lockDescription: newDesc
+                                    }
+                                  };
+                                  setAppConfig(prev => ({ ...prev, deckMetadata: newMeta }));
+                                }}
+                                className="form-input"
+                                style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSaveConfig}
+                    disabled={configSaving}
+                    className="btn-primary"
+                    style={{ padding: '12px 24px', alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Save size={18} /> {configSaving ? 'kaydediliyor...' : 'genel izinleri kaydet'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1640,225 +1994,6 @@ export default function AdminPageView({ onBack, discordUser }) {
                 })}
               </div>
             )}
-          </div>
-        )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* SECTION C: DESTE İZİNLERİ (GLOBAL DECK DEFAULTS & SECRET / LOCK INFO) */}
-        {/* ----------------------------------------------------------------------- */}
-        {mainNav === 'permissions' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '850px' }}>
-            <div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
-                genel deste izin kuralları & gizlilik ayarları
-              </h2>
-              <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
-                misafirlerin, standart discord kullanıcılarının varsayılan destelerini ayarlayın; kilitli desteler için açıklama metinleri ve gizli (secret) deste kurallarını belirleyin.
-              </p>
-            </div>
-
-            {/* Rule 1: Guest Users */}
-            <div style={{
-              background: '#1c1c1c',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{
-                  background: '#262626',
-                  color: '#94a3b8',
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  fontWeight: 800,
-                  fontSize: '0.8rem'
-                }}>
-                  misafir (giriş yapmayan)
-                </span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-                  varsayılan açık desteler
-                </span>
-              </div>
-              <p style={{ color: '#94a3b8', fontSize: '0.82rem' }}>
-                discord ile giriş yapmadan doğrudan lobi açan oyuncuların seçebileceği desteler:
-              </p>
-
-              <div className="deck-tags-container">
-                {DEFAULT_CONFIG.allDecks.map(deckName => {
-                  const isActive = (appConfig.guestDecks || []).includes(deckName);
-                  return (
-                    <button
-                      key={deckName}
-                      type="button"
-                      onClick={() => handleToggleDefaultGuestDeck(deckName)}
-                      className={`deck-tag-btn ${isActive ? 'active' : ''}`}
-                    >
-                      {isActive ? <Check size={13} /> : <Plus size={13} />}
-                      {deckName}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Rule 2: Registered Discord Users */}
-            <div style={{
-              background: '#1c1c1c',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid rgba(88, 101, 242, 0.3)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{
-                  background: '#5865F2',
-                  color: '#ffffff',
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  fontWeight: 800,
-                  fontSize: '0.8rem'
-                }}>
-                  discord kullanıcıları
-                </span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-                  ilk girişte tanımlanan standart desteler
-                </span>
-              </div>
-              <p style={{ color: '#94a3b8', fontSize: '0.82rem' }}>
-                discord ile giriş yapan tüm standart kullanıcıların profillerine başlangıçta otomatik tanımlanacak desteler:
-              </p>
-
-              <div className="deck-tags-container">
-                {DEFAULT_CONFIG.allDecks.map(deckName => {
-                  const isActive = (appConfig.discordDecks || []).includes(deckName);
-                  return (
-                    <button
-                      key={deckName}
-                      type="button"
-                      onClick={() => handleToggleDefaultDiscordDeck(deckName)}
-                      className={`deck-tag-btn ${isActive ? 'active' : ''}`}
-                    >
-                      {isActive ? <Check size={13} /> : <Plus size={13} />}
-                      {deckName}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Rule 3: Deck Metadata (Secret Toggle & Lock Tooltip Text) */}
-            <div style={{
-              background: '#1c1c1c',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px'
-            }}>
-              <div>
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
-                  deste gizlilik (secret) & kilitli bilgi metinleri (mouse hover)
-                </span>
-                <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: '4px' }}>
-                  oyuncunun sahip olmadığı bir deste <b>gizli (secret)</b> ise lobide silik bile görünmez. Gizli değilse silik görünür ve mouse ile üzerine gelindiğinde belirlediğiniz açıklama metni çıkar.
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {DEFAULT_CONFIG.allDecks.map(deckName => {
-                  const meta = appConfig.deckMetadata?.[deckName] || { isSecret: false, lockDescription: '' };
-
-                  return (
-                    <div
-                      key={deckName}
-                      style={{
-                        background: '#242424',
-                        border: meta.isSecret ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '12px',
-                        padding: '12px 16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#ffffff' }}>
-                          {deckName}
-                        </span>
-
-                        {/* Secret Toggle */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sounds.playClick();
-                            const newMeta = {
-                              ...(appConfig.deckMetadata || {}),
-                              [deckName]: {
-                                ...meta,
-                                isSecret: !meta.isSecret
-                              }
-                            };
-                            setAppConfig(prev => ({ ...prev, deckMetadata: newMeta }));
-                          }}
-                          style={{
-                            background: meta.isSecret ? '#d90429' : 'rgba(255, 255, 255, 0.08)',
-                            border: meta.isSecret ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#ffffff',
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '0.74rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {meta.isSecret ? '🔒 gizli (secret) deste: aktif' : '🔓 genel deste (silik görünür)'}
-                        </button>
-                      </div>
-
-                      {/* Tooltip Description Input */}
-                      <div>
-                        <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
-                          kilitliyken mouse üzerine gelince çıkacak yazı (ipucu):
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="örn: bu desteyi açmak için VIP üye olmanız gerekir."
-                          value={meta.lockDescription || ''}
-                          onChange={(e) => {
-                            const newDesc = e.target.value;
-                            const newMeta = {
-                              ...(appConfig.deckMetadata || {}),
-                              [deckName]: {
-                                ...meta,
-                                lockDescription: newDesc
-                              }
-                            };
-                            setAppConfig(prev => ({ ...prev, deckMetadata: newMeta }));
-                          }}
-                          className="form-input"
-                          style={{ padding: '6px 12px', fontSize: '0.82rem' }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              onClick={handleSaveConfig}
-              disabled={configSaving}
-              className="btn-primary"
-              style={{ padding: '14px 24px', alignSelf: 'flex-start' }}
-            >
-              <Save size={18} /> {configSaving ? 'kaydediliyor...' : 'genel izinleri kaydet'}
-            </button>
           </div>
         )}
       </main>
