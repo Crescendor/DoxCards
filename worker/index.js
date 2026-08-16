@@ -414,17 +414,7 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    if (url.pathname === '/health' || url.pathname === '/') {
-      return new Response(JSON.stringify({
-        status: 'ok',
-        service: 'doxcards-durable-game-server',
-        time: new Date().toISOString()
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // WebSocket Upgrade
+    // 1. WebSocket Upgrade (Must be checked before HTTP health check)
     const upgradeHeader = request.headers.get('Upgrade') || request.headers.get('upgrade');
     if (upgradeHeader?.toLowerCase() === 'websocket' || url.pathname.startsWith('/ws')) {
       const roomCode = (url.searchParams.get('room') || 'global').toLowerCase().trim();
@@ -449,6 +439,17 @@ export default {
       room.setupSocket(serverWs);
 
       return new Response(null, { status: 101, webSocket: clientWs });
+    }
+
+    // 2. HTTP Health check / Root info
+    if (url.pathname === '/health' || url.pathname === '/') {
+      return new Response(JSON.stringify({
+        status: 'ok',
+        service: 'doxcards-durable-game-server',
+        time: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     return new Response('Not Found', { status: 404, headers: corsHeaders });
