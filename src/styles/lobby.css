@@ -130,13 +130,15 @@
   background: #242424;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: relative;
-  transition: border-color 0.2s;
-  min-height: 60px;
+  transition: border-color 0.2s, background 0.2s;
+  height: 72px;
+  min-height: 72px;
+  box-sizing: border-box;
 }
 
 .player-slot-card.is-me {
@@ -147,9 +149,14 @@
 .player-slot-card.empty {
   border: 1px dashed rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
   justify-content: center;
   color: var(--text-subtle);
   font-size: 0.88rem;
+  height: 72px;
+  min-height: 72px;
+  box-sizing: border-box;
 }
 
 .player-info-wrap {

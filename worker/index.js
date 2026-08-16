@@ -191,7 +191,7 @@ export class GameRoomDO {
           }
 
           this.room.game = new GameEngine(this.room.code, this.room.settings);
-          this.room.game.startMatch(this.room.players);
+          this.room.game.startGame(this.room.players);
 
           this.broadcast('game_started', {});
           this.broadcastRoomUpdate();
@@ -323,7 +323,7 @@ export class GameRoomDO {
         else if (evt === 'play_again') {
           if (!this.room) return;
           this.room.game = new GameEngine(this.room.code, this.room.settings);
-          this.room.game.startMatch(this.room.players);
+          this.room.game.startGame(this.room.players);
 
           this.broadcast('game_started', {});
           this.broadcastRoomUpdate();

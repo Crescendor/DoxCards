@@ -15,6 +15,7 @@ export default function LobbyView({
   isLoading
 }) {
   const [copied, setCopied] = useState(false);
+  const [isReadyHovered, setIsReadyHovered] = useState(false);
   const isHost = room.hostId === player.id;
   const players = room.players || [];
 
@@ -219,10 +220,30 @@ export default function LobbyView({
                 sounds.playClick();
                 onToggleReady();
               }}
-              className={player.isReady ? "btn-secondary" : "btn-primary"}
-              style={{ padding: '11px 22px' }}
+              onMouseEnter={() => setIsReadyHovered(true)}
+              onMouseLeave={() => setIsReadyHovered(false)}
+              style={{
+                padding: '12px 26px',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: 700,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                background: player.isReady
+                  ? (isReadyHovered ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.15)')
+                  : (isReadyHovered ? '#d90429' : '#262626'),
+                color: player.isReady
+                  ? (isReadyHovered ? '#f87171' : '#34d399')
+                  : (isReadyHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.6)'),
+                border: player.isReady
+                  ? (isReadyHovered ? '1px solid #ef4444' : '1px solid #10b981')
+                  : (isReadyHovered ? '1px solid #ef233c' : '1px solid rgba(255, 255, 255, 0.12)'),
+                boxShadow: (!player.isReady && isReadyHovered) ? '0 4px 16px rgba(217, 4, 41, 0.4)' : 'none'
+              }}
             >
-              {player.isReady ? 'hazır değilim' : 'hazırım'}
+              {player.isReady
+                ? (isReadyHovered ? 'hazır değilim' : 'hazır')
+                : (isReadyHovered ? 'hazırım' : 'hazır değil')}
             </button>
           )}
 

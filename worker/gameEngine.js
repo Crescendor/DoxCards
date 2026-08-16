@@ -88,6 +88,10 @@ export class GameEngine {
     this.startRound(players);
   }
 
+  startMatch(players) {
+    return this.startGame(players);
+  }
+
   startRound(players) {
     this.currentRound++;
     this.candidates = {};
