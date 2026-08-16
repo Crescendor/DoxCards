@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "description": "DoxCards - Multiplayer Red Flags Türkçe Kart Oyunu (Cloudflare Pages & Workers Uyumlu)",
   "scripts": {
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "build:client": "npm --prefix client install && npm --prefix client run build",
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"red,cyan\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "dev:win": "concurrently -n \"SERVER,CLIENT\" -c \"red,cyan\" \"npm.cmd --prefix server run dev\" \"npm.cmd --prefix client run dev\"",
-    "dev:server": "npm --prefix server run dev",
-    "dev:client": "npm --prefix client run dev",
-    "start": "node server/index.js",
-    "build": "npm --prefix client run build",
-    "build:client": "npm --prefix client run build"
+    "start": "node server/index.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
