@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, LogOut, ShieldCheck, Sparkles, Plus, Layers } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
@@ -9,8 +9,9 @@ import {
   checkDiscordAuthCallback,
   logoutDiscord
 } from '../services/discordAuth';
+import AdminPanelModal, { ADMIN_DISCORD_ID } from './AdminPanelModal';
 
-// Discord SVG Logo Icon (from user snippet)
+// Discord SVG Logo Icon
 function DiscordIcon() {
   return (
     <svg
@@ -45,6 +46,7 @@ export default function LandingPage({
   const [targetScore, setTargetScore] = useState(3);
   const [discordUser, setDiscordUser] = useState(getDiscordUser());
   const [useDiscordName, setUseDiscordName] = useState(true);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Check Discord redirect callback on mount
   useEffect(() => {
@@ -107,6 +109,7 @@ export default function LandingPage({
   };
 
   const activeAvatar = player.avatar || discordUser?.avatarUrl || defaultAvatarImg;
+  const isAuthorizedAdmin = discordUser?.id === ADMIN_DISCORD_ID;
 
   return (
     <div className="landing-hero animate-pop">
@@ -165,16 +168,45 @@ export default function LandingPage({
             </div>
           </div>
 
-          {discordUser ? (
-            <button
-              onClick={handleDiscordLogout}
-              className="btn-icon"
-              style={{ width: '30px', height: '30px' }}
-              title="discord çıkışı yap"
-            >
-              <LogOut size={14} color="#fca5a5" />
-            </button>
-          ) : null}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Admin Panel Button (Authorized Discord User ID only) */}
+            {isAuthorizedAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setIsAdminOpen(true);
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid #ef4444',
+                  color: '#f87171',
+                  borderRadius: '8px',
+                  padding: '5px 9px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Admin Paneli"
+              >
+                <ShieldCheck size={14} /> admin
+              </button>
+            )}
+
+            {discordUser ? (
+              <button
+                onClick={handleDiscordLogout}
+                className="btn-icon"
+                style={{ width: '30px', height: '30px' }}
+                title="discord çıkışı yap"
+              >
+                <LogOut size={14} color="#fca5a5" />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {/* Initial Menu View */}
@@ -201,6 +233,28 @@ export default function LandingPage({
             >
               odaya katıl
             </button>
+
+            {/* Admin Panel Quick Link if Admin */}
+            {isAuthorizedAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setIsAdminOpen(true);
+                }}
+                className="btn-secondary"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '0.88rem',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171'
+                }}
+              >
+                <ShieldCheck size={16} /> admin paneli (kart & json yönetimi)
+              </button>
+            )}
 
             {/* Discord Login Button (If not logged in yet) */}
             {!discordUser && (
@@ -517,6 +571,13 @@ export default function LandingPage({
           </form>
         )}
       </div>
+
+      {/* Admin Panel Modal (Restricted to Discord ID: 269639754675519489) */}
+      <AdminPanelModal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        discordUser={discordUser}
+      />
     </div>
   );
 }
