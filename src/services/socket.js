@@ -5,6 +5,7 @@ export function getLocalPlayer() {
   const storedId = localStorage.getItem('doxcards_player_id');
   const storedName = localStorage.getItem('doxcards_player_name');
   const storedColor = localStorage.getItem('doxcards_player_color');
+  const storedAvatar = localStorage.getItem('doxcards_player_avatar');
 
   const id = storedId || 'p_' + Math.random().toString(36).substring(2, 9);
   if (!storedId) localStorage.setItem('doxcards_player_id', id);
@@ -15,13 +16,16 @@ export function getLocalPlayer() {
   return {
     id,
     name: storedName || `oyuncu_${id.substring(2, 6)}`,
-    color: storedColor || randomColor
+    color: storedColor || randomColor,
+    avatar: storedAvatar || null
   };
 }
 
 export function saveLocalPlayer(player) {
   if (player.name) localStorage.setItem('doxcards_player_name', player.name);
   if (player.color) localStorage.setItem('doxcards_player_color', player.color);
+  if (player.avatar) localStorage.setItem('doxcards_player_avatar', player.avatar);
+  else localStorage.removeItem('doxcards_player_avatar');
 }
 
 // Server URL (can be Cloudflare Worker URL or Socket.io server URL)

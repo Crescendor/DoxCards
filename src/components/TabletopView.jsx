@@ -4,6 +4,7 @@ import CardItem from './CardItem';
 import { sounds } from '../services/soundEffects';
 import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
+import defaultAvatarImg from '../assets/default_avatar.png';
 
 // Fanned Card Backs for Opponents
 function OpponentHandFanned({ count = 7 }) {
@@ -445,13 +446,24 @@ export default function TabletopView({
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '8px',
                 marginBottom: '10px',
                 fontSize: '0.88rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 textTransform: 'lowercase'
               }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e' }} />
+                <img
+                  src={singlePlayer.avatar || defaultAvatarImg}
+                  alt={singlePlayer.name}
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '1.5px solid #fbbf24',
+                    background: '#000'
+                  }}
+                />
                 <span>{singlePlayer.name}</span>
                 <span title="bekâr">👑</span>
               </div>
@@ -482,13 +494,24 @@ export default function TabletopView({
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '8px',
                   marginBottom: '10px',
                   fontSize: '0.88rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   textTransform: 'lowercase'
                 }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: opp.color || '#a855f7' }} />
+                  <img
+                    src={opp.avatar || defaultAvatarImg}
+                    alt={opp.name}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                      background: '#000'
+                    }}
+                  />
                   <span>{opp.name}</span>
                   {isOppTurn && (
                     <span style={{
@@ -497,7 +520,7 @@ export default function TabletopView({
                       fontSize: '0.68rem',
                       padding: '1px 6px',
                       borderRadius: '9999px',
-                      fontWeight: 800
+                      fontWeight: 700
                     }}>
                       sıra onda
                     </span>
@@ -509,7 +532,7 @@ export default function TabletopView({
                       fontSize: '0.68rem',
                       padding: '1px 6px',
                       borderRadius: '9999px',
-                      fontWeight: 700
+                      fontWeight: 600
                     }}>
                       sabotaj hedefin
                     </span>
@@ -549,11 +572,22 @@ export default function TabletopView({
                 gap: '8px',
                 marginBottom: '10px',
                 fontSize: '0.92rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: '#fbbf24',
                 textTransform: 'lowercase'
               }}>
-                <Crown size={18} />
+                <img
+                  src={player.avatar || defaultAvatarImg}
+                  alt={player.name}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '1.5px solid #fbbf24',
+                    background: '#000'
+                  }}
+                />
                 <span>bu tur bekârsın ({player.name})</span>
               </div>
               <SingleDeckStack />
@@ -575,10 +609,21 @@ export default function TabletopView({
                 gap: '8px',
                 marginBottom: '10px',
                 fontSize: '0.9rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 textTransform: 'lowercase'
               }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: player.color || '#38bdf8' }} />
+                <img
+                  src={player.avatar || defaultAvatarImg}
+                  alt={player.name}
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                    background: '#000'
+                  }}
+                />
                 <span>{player.name} (senin masan)</span>
                 {isMyTurn && (
                   <span style={{
@@ -587,7 +632,7 @@ export default function TabletopView({
                     fontSize: '0.7rem',
                     padding: '2px 8px',
                     borderRadius: '9999px',
-                    fontWeight: 800
+                    fontWeight: 700
                   }}>
                     senin sıran
                   </span>

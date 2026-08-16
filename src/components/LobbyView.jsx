@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX } from 'lucide-react';
+import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 
 const MAX_SLOTS = 6;
@@ -110,6 +111,18 @@ export default function LobbyView({
                   className={`player-slot-card ${isMe ? 'is-me' : ''}`}
                 >
                   <div className="player-info-wrap">
+                    <img
+                      src={slotPlayer.avatar || defaultAvatarImg}
+                      alt={slotPlayer.name}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1.5px solid rgba(255, 255, 255, 0.25)',
+                        background: '#000'
+                      }}
+                    />
                     <div>
                       <div className="player-name-text">
                         {slotPlayer.name} {isMe && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>(sen)</span>}

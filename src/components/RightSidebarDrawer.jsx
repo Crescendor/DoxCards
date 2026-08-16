@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, Check, Crown, UserX, ChevronLeft, ChevronRight, LogOut, RotateCcw } from 'lucide-react';
+import { Copy, Check, Crown, UserX, ChevronLeft, LogOut, RotateCcw } from 'lucide-react';
+import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 
 export default function RightSidebarDrawer({
@@ -77,8 +78,7 @@ export default function RightSidebarDrawer({
           display: 'flex',
           flexDirection: 'column',
           padding: '24px 20px',
-          fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-          letterSpacing: '-0.02em'
+          letterSpacing: '-0.015em'
         }}
       >
         {/* Top Header: Player info & Close */}
@@ -89,25 +89,30 @@ export default function RightSidebarDrawer({
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 8px #22c55e'
-            }} />
-            <span style={{ fontWeight: 800, fontSize: '0.95rem', textTransform: 'uppercase' }}>
+            <img
+              src={player.avatar || defaultAvatarImg}
+              alt="avatar"
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1.5px solid rgba(255, 255, 255, 0.4)',
+                background: '#000'
+              }}
+            />
+            <span style={{ fontWeight: 700, fontSize: '0.92rem', textTransform: 'lowercase' }}>
               {player.name}
             </span>
           </div>
 
           <span style={{
             background: 'rgba(0, 0, 0, 0.25)',
-            fontSize: '0.75rem',
-            fontWeight: 800,
+            fontSize: '0.72rem',
+            fontWeight: 700,
             padding: '3px 10px',
             borderRadius: '9999px',
-            textTransform: 'uppercase'
+            textTransform: 'lowercase'
           }}>
             türkçe
           </span>
@@ -119,7 +124,7 @@ export default function RightSidebarDrawer({
             fontSize: '0.78rem',
             color: 'rgba(255, 255, 255, 0.85)',
             marginBottom: '10px',
-            fontWeight: 600,
+            fontWeight: 500,
             lineHeight: 1.3
           }}>
             bu kodu arkadaşlarına vererek odaya katılmalarını sağla!
@@ -164,11 +169,11 @@ export default function RightSidebarDrawer({
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px' }}>
           <div style={{
             fontSize: '0.75rem',
-            fontWeight: 800,
+            fontWeight: 700,
             color: 'rgba(255, 255, 255, 0.7)',
             marginBottom: '8px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em'
+            textTransform: 'lowercase',
+            letterSpacing: '0.02em'
           }}>
             oyuncular ({players.length})
           </div>
@@ -193,13 +198,19 @@ export default function RightSidebarDrawer({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: p.color || '#22c55e'
-                    }} />
-                    <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>
+                    <img
+                      src={p.avatar || defaultAvatarImg}
+                      alt={p.name}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        background: '#000'
+                      }}
+                    />
+                    <span style={{ fontWeight: 600, fontSize: '0.86rem', textTransform: 'lowercase' }}>
                       {p.name} {isMe ? '(sen)' : ''}
                     </span>
                     {p.isHost && <Crown size={14} color="#fbbf24" title="Oda Kurucusu" />}
@@ -210,8 +221,8 @@ export default function RightSidebarDrawer({
                     <span style={{
                       background: '#ffffff',
                       color: '#c1121f',
-                      fontWeight: 900,
-                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      fontSize: '0.76rem',
                       padding: '1px 8px',
                       borderRadius: '9999px'
                     }}>
@@ -263,14 +274,14 @@ export default function RightSidebarDrawer({
                 background: '#ffffff',
                 color: '#c1121f',
                 border: 'none',
-                fontWeight: 900,
-                fontSize: '0.92rem',
+                fontWeight: 700,
+                fontSize: '0.9rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                textTransform: 'uppercase',
+                textTransform: 'lowercase',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
                 transition: 'transform 0.15s ease'
               }}
@@ -293,14 +304,14 @@ export default function RightSidebarDrawer({
               background: 'rgba(0, 0, 0, 0.35)',
               color: '#ffffff',
               border: '1px solid rgba(255, 255, 255, 0.2)',
-              fontWeight: 800,
-              fontSize: '0.9rem',
+              fontWeight: 600,
+              fontSize: '0.88rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              textTransform: 'uppercase',
+              textTransform: 'lowercase',
               transition: 'background 0.2s ease'
             }}
           >
