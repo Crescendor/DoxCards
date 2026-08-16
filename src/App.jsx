@@ -91,11 +91,20 @@ export default function App() {
   const handleCreateRoom = (settings) => {
     setError(null);
     setIsLoading(true);
-    socket.emit('create_room', { player, settings }, (res) => {
+
+    const timer = setTimeout(() => {
       setIsLoading(false);
-      if (res.error) {
+      setError('Sunucuya bağlanılamadı. Lütfen WebSocket sunucusunun aktif olduğunu kontrol edin.');
+    }, 6000);
+
+    socket.emit('create_room', { player, settings }, (res) => {
+      clearTimeout(timer);
+      setIsLoading(false);
+      if (!res) {
+        setError('Sunucudan yanıt alınamadı.');
+      } else if (res.error) {
         setError(res.error);
-      } else {
+      } else if (res.room) {
         setCurrentRoom(res.room);
         setGameState(null);
       }
@@ -106,11 +115,20 @@ export default function App() {
   const handleJoinRoom = (roomCode) => {
     setError(null);
     setIsLoading(true);
-    socket.emit('join_room', { roomCode, player }, (res) => {
+
+    const timer = setTimeout(() => {
       setIsLoading(false);
-      if (res.error) {
+      setError('Sunucuya bağlanılamadı. Lütfen oda kodunu ve internet bağlantınızı kontrol edin.');
+    }, 6000);
+
+    socket.emit('join_room', { roomCode, player }, (res) => {
+      clearTimeout(timer);
+      setIsLoading(false);
+      if (!res) {
+        setError('Sunucudan yanıt alınamadı.');
+      } else if (res.error) {
         setError(res.error);
-      } else {
+      } else if (res.room) {
         setCurrentRoom(res.room);
         setGameState(null);
       }
