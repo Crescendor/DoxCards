@@ -244,6 +244,13 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Live Card Drag Motion Synchronization
+  socket.on('card_drag_motion', (data) => {
+    if (socket.roomCode) {
+      socket.to(socket.roomCode).emit('player_card_drag_motion', data);
+    }
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     const res = roomManager.leaveRoom(socket.id);

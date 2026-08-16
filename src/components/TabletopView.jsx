@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Crown, Sparkles, Check, Flame, ShieldAlert, Clock, ArrowRight, UserCheck, Layers, ChevronUp, ChevronDown } from 'lucide-react';
 import CardItem from './CardItem';
 import FillBlankModal, { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
+import { socket } from '../services/socket';
 import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
@@ -37,7 +38,8 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
       margin: '4px auto 8px auto',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      userSelect: 'none'
     }}>
       {cards.map((type, i) => {
         const offset = i - centerIdx;
@@ -79,12 +81,14 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
 // 3 Large Dashed Table Drop Slots for matchmaker candidate
 function TableSlotsRow({
   candidate,
+  deskPlayerId,
   isMySlots,
   isTarget,
   phase,
   isMyTurn,
   canDropWhite,
   canDropRed,
+  activeDrag,
   onDropCard
 }) {
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -124,6 +128,12 @@ function TableSlotsRow({
     }
   };
 
+  const isSlotActiveHover = (index) => {
+    if (dragOverIndex === index) return true;
+    if (activeDrag?.targetSlot?.playerId === deskPlayerId && activeDrag?.targetSlot?.slotIndex === index) return true;
+    return false;
+  };
+
   const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
     width: 'clamp(96px, 8.5vw, 136px)',
     height: 'clamp(136px, 18.5vh, 190px)',
@@ -131,14 +141,14 @@ function TableSlotsRow({
     border: hasCard
       ? 'none'
       : (isHovered
-          ? '2px dashed #ffffff'
+          ? '2.5px dashed #ffffff'
           : (isActionable
               ? '2px dashed rgba(255, 255, 255, 0.85)'
               : '2px dashed rgba(255, 255, 255, 0.22)')),
     background: hasCard
       ? 'transparent'
       : (isHovered
-          ? 'rgba(255, 255, 255, 0.24)'
+          ? 'rgba(255, 255, 255, 0.32)'
           : (isActionable
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(255, 255, 255, 0.03)')),
@@ -149,8 +159,9 @@ function TableSlotsRow({
     overflow: 'hidden',
     flexShrink: 0,
     position: 'relative',
-    transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 20px rgba(255, 255, 255, 0.5)' : 'none'
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+    boxShadow: isHovered ? '0 0 28px rgba(255, 255, 255, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.3)' : 'none'
   });
 
   const redSlotStyle = (hasCard, isHovered, isActionable) => ({
@@ -160,14 +171,14 @@ function TableSlotsRow({
     border: hasCard
       ? 'none'
       : (isHovered
-          ? '2px dashed #FF0000'
+          ? '2.5px dashed #FF0000'
           : (isActionable
               ? '2px dashed #FF0000'
               : '2px dashed rgba(255, 0, 0, 0.35)')),
     background: hasCard
       ? 'transparent'
       : (isHovered
-          ? 'rgba(255, 0, 0, 0.32)'
+          ? 'rgba(255, 0, 0, 0.42)'
           : (isActionable
               ? 'rgba(255, 0, 0, 0.12)'
               : 'rgba(255, 0, 0, 0.05)')),
@@ -178,8 +189,9 @@ function TableSlotsRow({
     overflow: 'hidden',
     flexShrink: 0,
     position: 'relative',
-    transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 20px rgba(255, 0, 0, 0.55)' : 'none'
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+    boxShadow: isHovered ? '0 0 32px rgba(255, 0, 0, 0.85), inset 0 0 15px rgba(255, 0, 0, 0.4)' : 'none'
   });
 
   return (
@@ -204,10 +216,14 @@ function TableSlotsRow({
     >
       {/* Slot 1: White Perk 1 */}
       <div
+        data-table-slot="true"
+        data-slot-player-id={deskPlayerId}
+        data-slot-index="0"
+        data-slot-type="white"
         onDragOver={(e) => handleDragOver(e, 0)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 0)}
-        style={whiteSlotStyle(!!white1, dragOverIndex === 0, isMySlots && canDropWhite && isMyTurn)}
+        style={whiteSlotStyle(!!white1, isSlotActiveHover(0), isMySlots && canDropWhite && isMyTurn)}
       >
         {white1 ? (
           <CardItem card={white1} type="perk" isSmall={true} />
@@ -220,10 +236,14 @@ function TableSlotsRow({
 
       {/* Slot 2: White Perk 2 */}
       <div
+        data-table-slot="true"
+        data-slot-player-id={deskPlayerId}
+        data-slot-index="1"
+        data-slot-type="white"
         onDragOver={(e) => handleDragOver(e, 1)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 1)}
-        style={whiteSlotStyle(!!white2, dragOverIndex === 1, isMySlots && canDropWhite && isMyTurn)}
+        style={whiteSlotStyle(!!white2, isSlotActiveHover(1), isMySlots && canDropWhite && isMyTurn)}
       >
         {white2 ? (
           <CardItem card={white2} type="perk" isSmall={true} />
@@ -236,10 +256,14 @@ function TableSlotsRow({
 
       {/* Slot 3: Red Flag Sabotage */}
       <div
+        data-table-slot="true"
+        data-slot-player-id={deskPlayerId}
+        data-slot-index="2"
+        data-slot-type="red"
         onDragOver={(e) => handleDragOver(e, 2)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 2)}
-        style={redSlotStyle(!!redFlag, dragOverIndex === 2, isTarget && canDropRed && isMyTurn)}
+        style={redSlotStyle(!!redFlag, isSlotActiveHover(2), isTarget && canDropRed && isMyTurn)}
       >
         {redFlag ? (
           <CardItem card={redFlag} type="redflag" isSmall={true} />
@@ -284,33 +308,70 @@ export default function TabletopView({
 
   // Fill blank modal state
   const [fillModalState, setFillModalState] = useState({ isOpen: false, card: null, onConfirm: null });
-  const [draggedCard, setDraggedCard] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
   const [isHandDrawerOpen, setIsHandDrawerOpen] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
-  // Drag start
-  const handleCardDragStart = (e, card, type) => {
-    if (!isMyTurn) {
-      e.preventDefault();
-      return;
-    }
-    setIsDragging(true);
-    e.dataTransfer.setData('cardId', card.id);
-    e.dataTransfer.setData('cardType', type);
-    e.dataTransfer.effectAllowed = 'move';
-    if (e.currentTarget) {
-      try {
-        e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.offsetWidth / 2, e.currentTarget.offsetHeight / 2);
-      } catch (err) {}
-    }
-    setDraggedCard({ card, type });
-  };
+  // Active Local Pointer Drag State
+  const [activeDrag, setActiveDrag] = useState(null);
+  const dragRef = useRef(null);
+  const lastEmitTimeRef = useRef(0);
+  const lastPosRef = useRef({ x: 0, y: 0 });
 
-  const handleCardDragEnd = () => {
-    setIsDragging(false);
-    setDraggedCard(null);
-  };
+  // Realtime Remote Other Players Drag State
+  const [remoteDrags, setRemoteDrags] = useState({});
+
+  const availableWhiteCards = hand.whiteCards || [];
+  const availableRedCards = hand.redCards || [];
+  const myRenderCandidate = myCandidate || {};
+  const canDropWhite = phase === 'PERKS' && !isSingle && !myCandidate?.whiteCardsSubmitted;
+  const canDropRed = phase === 'SABOTAGE' && !isSingle && !mySabotageTarget?.targetCandidate?.hasRedFlag;
+
+  // Listen for realtime card drag motion from other players in room
+  useEffect(() => {
+    const handleRemoteDrag = (data) => {
+      if (!data || !data.playerId || data.playerId === player.id) return;
+
+      setRemoteDrags(prev => {
+        if (!data.isDragging) {
+          const next = { ...prev };
+          delete next[data.playerId];
+          return next;
+        }
+        return {
+          ...prev,
+          [data.playerId]: {
+            ...data,
+            lastUpdate: Date.now()
+          }
+        };
+      });
+    };
+
+    socket.on('player_card_drag_motion', handleRemoteDrag);
+    return () => {
+      socket.off('player_card_drag_motion', handleRemoteDrag);
+    };
+  }, [player.id]);
+
+  // Clean stale remote drags (> 3.5s)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setRemoteDrags(prev => {
+        let changed = false;
+        const next = {};
+        Object.entries(prev).forEach(([pId, info]) => {
+          if (now - info.lastUpdate < 3500 && info.isDragging) {
+            next[pId] = info;
+          } else {
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Drop card into table slot
   const handleDropCard = (type, cardId, slotIndex) => {
@@ -387,11 +448,128 @@ export default function TabletopView({
     }
   };
 
-  const availableWhiteCards = hand.whiteCards || [];
-  const availableRedCards = hand.redCards || [];
-  const myRenderCandidate = myCandidate || {};
-  const canDropWhite = phase === 'PERKS' && !isSingle && !myCandidate?.whiteCardsSubmitted;
-  const canDropRed = phase === 'SABOTAGE' && !isSingle && !mySabotageTarget?.targetCandidate?.hasRedFlag;
+  // Start Card Pointer Drag
+  const startCardDrag = (e, card, type) => {
+    if (!isMyTurn) return;
+    if (type === 'perk' && (phase !== 'PERKS' || myCandidate?.whiteCardsSubmitted)) return;
+    if (type === 'redflag' && (phase !== 'SABOTAGE' || !mySabotageTarget || mySabotageTarget.targetCandidate?.hasRedFlag)) return;
+
+    const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
+    const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY) ?? 0;
+
+    lastPosRef.current = { x: clientX, y: clientY };
+
+    const initialDrag = {
+      card,
+      type,
+      x: clientX,
+      y: clientY,
+      tilt: 0,
+      targetSlot: null
+    };
+
+    dragRef.current = initialDrag;
+    setActiveDrag(initialDrag);
+    sounds.playCardDeal();
+
+    socket.emit('card_drag_motion', {
+      playerId: player.id,
+      playerName: player.name,
+      playerAvatar: player.avatar || null,
+      cardType: type,
+      cardText: card.text,
+      normX: clientX / (window.innerWidth || 1),
+      normY: clientY / (window.innerHeight || 1),
+      tilt: 0,
+      isDragging: true
+    });
+  };
+
+  // Global Pointer tracking for local drag
+  useEffect(() => {
+    if (!activeDrag) return;
+
+    const handlePointerMove = (e) => {
+      const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
+      const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY) ?? 0;
+
+      const deltaX = clientX - lastPosRef.current.x;
+      lastPosRef.current = { x: clientX, y: clientY };
+
+      const targetTilt = Math.max(-28, Math.min(28, deltaX * 2.2));
+
+      // Hit-test target drop slots
+      const elem = document.elementFromPoint(clientX, clientY);
+      const slotElem = elem ? elem.closest('[data-table-slot="true"]') : null;
+
+      let targetSlot = null;
+      if (slotElem) {
+        const slotPlayerId = slotElem.getAttribute('data-slot-player-id');
+        const slotIndex = Number(slotElem.getAttribute('data-slot-index'));
+        const slotType = slotElem.getAttribute('data-slot-type');
+
+        if (activeDrag.type === 'perk' && slotType === 'white' && slotPlayerId === player.id && canDropWhite) {
+          targetSlot = { playerId: slotPlayerId, slotIndex, type: 'white' };
+        } else if (activeDrag.type === 'redflag' && slotType === 'red' && slotPlayerId === mySabotageTarget?.targetPlayerId && canDropRed) {
+          targetSlot = { playerId: slotPlayerId, slotIndex: 2, type: 'red' };
+        }
+      }
+
+      const updated = {
+        ...dragRef.current,
+        x: clientX,
+        y: clientY,
+        tilt: targetTilt,
+        targetSlot
+      };
+      dragRef.current = updated;
+      setActiveDrag(updated);
+
+      // Throttled emit ~35ms
+      const now = Date.now();
+      if (now - lastEmitTimeRef.current > 35) {
+        lastEmitTimeRef.current = now;
+        socket.emit('card_drag_motion', {
+          playerId: player.id,
+          playerName: player.name,
+          playerAvatar: player.avatar || null,
+          cardType: activeDrag.type,
+          cardText: activeDrag.card.text,
+          normX: clientX / (window.innerWidth || 1),
+          normY: clientY / (window.innerHeight || 1),
+          tilt: targetTilt,
+          isDragging: true
+        });
+      }
+    };
+
+    const handlePointerUp = () => {
+      const current = dragRef.current;
+      if (!current) return;
+
+      if (current.targetSlot) {
+        handleDropCard(current.targetSlot.type, current.card.id, current.targetSlot.slotIndex);
+      }
+
+      dragRef.current = null;
+      setActiveDrag(null);
+
+      socket.emit('card_drag_motion', {
+        playerId: player.id,
+        isDragging: false
+      });
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [activeDrag, player.id, player.name, player.avatar, canDropWhite, canDropRed, mySabotageTarget]);
 
   // DETERMINISTIC 3 TOP + 3 BOTTOM SEATING (Identical arrangement for all players in room!)
   const allRoomPlayers = players && players.length > 0 ? players : [player];
@@ -690,12 +868,14 @@ export default function TabletopView({
             {/* 3 Table Slots */}
             <TableSlotsRow
               candidate={candidateObj}
+              deskPlayerId={deskPlayer.id}
               isMySlots={isMe}
               isTarget={isTarget}
               phase={phase}
               isMyTurn={isMyTurn}
               canDropWhite={isMe && canDropWhite}
               canDropRed={isTarget && canDropRed}
+              activeDrag={activeDrag}
               onDropCard={handleDropCard}
             />
           </>
@@ -802,7 +982,7 @@ export default function TabletopView({
             bottom: 0,
             left: '50%',
             transform: `translateX(-50%) translateY(${
-              (isHandDrawerOpen || isDragging) ? '0%' : 'calc(100% - 46px)'
+              (isHandDrawerOpen || activeDrag) ? '0%' : 'calc(100% - 46px)'
             })`,
             transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
             zIndex: 85,
@@ -817,7 +997,7 @@ export default function TabletopView({
             borderTopRightRadius: '22px',
             border: '1px solid rgba(255, 255, 255, 0.16)',
             borderBottom: 'none',
-            boxShadow: (isHandDrawerOpen || isDragging)
+            boxShadow: (isHandDrawerOpen || activeDrag)
               ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 0, 0, 0.3)'
               : '0 -4px 18px rgba(0, 0, 0, 0.7)',
             boxSizing: 'border-box',
@@ -836,9 +1016,9 @@ export default function TabletopView({
               justifyContent: 'space-between',
               padding: '0 28px',
               cursor: 'pointer',
-              borderBottom: (isHandDrawerOpen || isDragging) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+              borderBottom: (isHandDrawerOpen || activeDrag) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
               userSelect: 'none',
-              background: (isHandDrawerOpen || isDragging) ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+              background: (isHandDrawerOpen || activeDrag) ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
               borderTopLeftRadius: '22px',
               borderTopRightRadius: '22px'
             }}
@@ -904,12 +1084,12 @@ export default function TabletopView({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              color: (isHandDrawerOpen || isDragging) ? '#94a3b8' : '#ffffff',
+              color: (isHandDrawerOpen || activeDrag) ? '#94a3b8' : '#ffffff',
               fontSize: '0.8rem',
               fontWeight: 700,
               lineHeight: 1
             }}>
-              {(isHandDrawerOpen || isDragging) ? (
+              {(isHandDrawerOpen || activeDrag) ? (
                 <>
                   <ChevronDown size={15} />
                   <span>desteyi gizle</span>
@@ -917,7 +1097,7 @@ export default function TabletopView({
               ) : (
                 <>
                   <ChevronUp size={15} />
-                  <span>kartlarını görmek için üzerine gel</span>
+                  <span>kartlarını görmek veya sürüklemek için üzerine gel</span>
                 </>
               )}
             </div>
@@ -944,16 +1124,15 @@ export default function TabletopView({
               const rot = offset * 2.8;
               const translateY = Math.abs(offset) * 3;
               const isHovered = hoveredCardId === card.id;
+              const isBeingDragged = activeDrag?.card?.id === card.id;
 
               return (
                 <div
                   key={card.id}
-                  draggable={isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted}
-                  onDragStart={(e) => handleCardDragStart(e, card, 'perk')}
-                  onDragEnd={handleCardDragEnd}
+                  onPointerDown={(e) => startCardDrag(e, card, 'perk')}
                   onMouseEnter={() => setHoveredCardId(card.id)}
                   onMouseLeave={() => setHoveredCardId(null)}
-                  onClick={() => handleCardClick(card, 'perk')}
+                  onClick={() => !activeDrag && handleCardClick(card, 'perk')}
                   style={{
                     position: 'absolute',
                     left: `calc(50% + ${offset * 72}px - 90px)`,
@@ -964,7 +1143,9 @@ export default function TabletopView({
                       : `translateY(${translateY}px) rotate(${rot}deg)`,
                     transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     cursor: (isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted) ? 'grab' : 'default',
-                    opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : 1
+                    opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
+                    touchAction: 'none',
+                    userSelect: 'none'
                   }}
                 >
                   <CardItem
@@ -985,16 +1166,15 @@ export default function TabletopView({
               const rot = offset * 2.8;
               const translateY = Math.abs(offset) * 3;
               const isHovered = hoveredCardId === card.id;
+              const isBeingDragged = activeDrag?.card?.id === card.id;
 
               return (
                 <div
                   key={card.id}
-                  draggable={isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag}
-                  onDragStart={(e) => handleCardDragStart(e, card, 'redflag')}
-                  onDragEnd={handleCardDragEnd}
+                  onPointerDown={(e) => startCardDrag(e, card, 'redflag')}
                   onMouseEnter={() => setHoveredCardId(card.id)}
                   onMouseLeave={() => setHoveredCardId(null)}
-                  onClick={() => handleCardClick(card, 'redflag')}
+                  onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
                   style={{
                     position: 'absolute',
                     left: `calc(50% + ${offset * 72}px - 90px)`,
@@ -1005,7 +1185,9 @@ export default function TabletopView({
                       : `translateY(${translateY}px) rotate(${rot}deg)`,
                     transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     cursor: (isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag) ? 'grab' : 'default',
-                    opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : 1
+                    opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
+                    touchAction: 'none',
+                    userSelect: 'none'
                   }}
                 >
                   <CardItem
@@ -1019,6 +1201,101 @@ export default function TabletopView({
           </div>
         </div>
       )}
+
+      {/* REALTIME FLOATING DRAG CARD FOR LOCAL PLAYER */}
+      {activeDrag && (
+        <div
+          style={{
+            position: 'fixed',
+            left: `${activeDrag.x}px`,
+            top: `${activeDrag.y}px`,
+            transform: `translate(-50%, -50%) rotate(${activeDrag.tilt}deg) scale(1.08)`,
+            zIndex: 10000,
+            pointerEvents: 'none',
+            filter: activeDrag.targetSlot
+              ? 'drop-shadow(0 0 28px rgba(255, 255, 255, 0.95))'
+              : 'drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85))',
+            transition: 'transform 0.04s ease-out',
+            width: '154px',
+            userSelect: 'none'
+          }}
+        >
+          <CardItem
+            card={activeDrag.card}
+            type={activeDrag.type}
+            isSelected={true}
+          />
+        </div>
+      )}
+
+      {/* REALTIME FLOATING DRAGGING CARDS FOR OTHER PLAYERS IN ROOM */}
+      {Object.entries(remoteDrags).map(([rPlayerId, info]) => {
+        if (!info || !info.isDragging) return null;
+
+        const isWhite = info.cardType === 'perk';
+
+        return (
+          <div
+            key={rPlayerId}
+            style={{
+              position: 'fixed',
+              left: `${(info.normX || 0.5) * 100}vw`,
+              top: `${(info.normY || 0.5) * 100}vh`,
+              transform: `translate(-50%, -50%) rotate(${info.tilt || 0}deg) scale(0.92)`,
+              zIndex: 9990,
+              pointerEvents: 'none',
+              transition: 'left 0.08s ease-out, top 0.08s ease-out, transform 0.08s ease-out',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '6px',
+              userSelect: 'none'
+            }}
+          >
+            {/* Player Name Badge Floating Above Remote Card */}
+            <div style={{
+              background: 'rgba(15, 15, 15, 0.92)',
+              border: isWhite ? '1.5px solid #ffffff' : '1.5px solid #FF0000',
+              color: '#ffffff',
+              padding: '4px 12px',
+              borderRadius: '9999px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+              boxShadow: isWhite ? '0 4px 16px rgba(255, 255, 255, 0.35)' : '0 4px 16px rgba(255, 0, 0, 0.45)',
+              textTransform: 'lowercase'
+            }}>
+              {info.playerAvatar ? (
+                <img src={info.playerAvatar} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+              ) : (
+                <span>🎴</span>
+              )}
+              <span>{info.playerName} kart sürüklüyor...</span>
+            </div>
+
+            {/* Floating Card Representation */}
+            <div style={{
+              width: 'clamp(90px, 7.5vw, 120px)',
+              aspectRatio: '5 / 7',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: isWhite
+                ? '0 16px 36px rgba(0, 0, 0, 0.75), 0 0 20px rgba(255, 255, 255, 0.45)'
+                : '0 16px 36px rgba(0, 0, 0, 0.75), 0 0 20px rgba(255, 0, 0, 0.55)',
+              border: '1.5px solid rgba(0,0,0,0.35)'
+            }}>
+              <img
+                src={isWhite ? whiteCardBackImg : redCardBackImg}
+                alt="remote card"
+                style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+              />
+            </div>
+          </div>
+        );
+      })}
 
       {/* Fill Blank Modal for interactive wildcard cards */}
       <FillBlankModal

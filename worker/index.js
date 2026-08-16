@@ -927,6 +927,18 @@ export class GameRoomDO {
           this.broadcastGameState();
           sendAck({ success: true });
         }
+
+        // 12. Live Card Drag Motion Synchronization
+        else if (evt === 'card_drag_motion') {
+          const payload = JSON.stringify({ event: 'player_card_drag_motion', data });
+          this.sessions.forEach((pId, ws) => {
+            if (pId !== data?.playerId && ws.readyState === 1) {
+              try {
+                ws.send(payload);
+              } catch (e) {}
+            }
+          });
+        }
       } catch (err) {
         console.error('DO message error:', err);
       }
