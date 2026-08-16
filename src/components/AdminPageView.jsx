@@ -848,7 +848,7 @@ export default function AdminPageView({ onBack, discordUser }) {
           {/* Navigation Links */}
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
-              onClick={() => { sounds.playClick(); setMainNav('cards'); if (activeTab === 'suggestions') setActiveTab('list'); }}
+              onClick={() => { sounds.playClick(); setMainNav('cards'); }}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -856,14 +856,14 @@ export default function AdminPageView({ onBack, discordUser }) {
                 gap: '12px',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                background: (mainNav === 'cards' && activeTab !== 'suggestions') ? '#FF0000' : 'transparent',
+                background: mainNav === 'cards' ? '#FF0000' : 'transparent',
                 color: '#ffffff',
-                border: (mainNav === 'cards' && activeTab !== 'suggestions') ? '1px solid #ff3333' : '1px solid transparent',
+                border: mainNav === 'cards' ? '1px solid #ff3333' : '1px solid transparent',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: (mainNav === 'cards' && activeTab !== 'suggestions') ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                boxShadow: mainNav === 'cards' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
                 textAlign: 'left'
               }}
             >
@@ -914,29 +914,6 @@ export default function AdminPageView({ onBack, discordUser }) {
               }}
             >
               <Volume2 size={18} /> ses ayarları ({(appConfig.customSounds || []).length})
-            </button>
-
-            <button
-              onClick={() => { sounds.playClick(); setMainNav('cards'); setActiveTab('suggestions'); loadSuggestions(); }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 14px',
-                borderRadius: '12px',
-                background: (mainNav === 'cards' && activeTab === 'suggestions') ? '#FF0000' : 'transparent',
-                color: '#ffffff',
-                border: (mainNav === 'cards' && activeTab === 'suggestions') ? '1px solid #ff3333' : '1px solid transparent',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: (mainNav === 'cards' && activeTab === 'suggestions') ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
-                textAlign: 'left'
-              }}
-            >
-              <Lightbulb size={18} /> öneriler ({suggestionsList.length})
             </button>
           </nav>
         </div>
