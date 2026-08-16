@@ -76,12 +76,17 @@ export default function Navbar({
             <img
               src={userProfile.avatar || defaultAvatarImg}
               alt={userProfile.displayName || userProfile.username}
+              draggable={false}
+              onDragStart={(e) => e.preventDefault()}
               style={{
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)'
+                border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserDrag: 'none'
               }}
             />
 
@@ -146,7 +151,9 @@ export default function Navbar({
                 <img
                   src={userProfile.avatar || defaultAvatarImg}
                   alt={userProfile.displayName}
-                  style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
                 />
                 <div>
                   <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff', textTransform: 'lowercase' }}>

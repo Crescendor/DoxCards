@@ -21,6 +21,7 @@ export default function CardItem({
     return (
       <div
         onClick={disabled ? undefined : onClick}
+        onDragStart={(e) => e.preventDefault()}
         style={{
           position: 'relative',
           width: '100%',
@@ -33,17 +34,24 @@ export default function CardItem({
           background: isWhite ? '#ffffff' : '#ff0000',
           border: '1px solid rgba(0,0,0,0.15)',
           transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
-          margin: '0 auto'
+          margin: '0 auto',
+          userSelect: 'none',
+          WebkitUserDrag: 'none'
         }}
       >
         <img
           src={isWhite ? whiteCardBackImg : redCardBackImg}
           alt="doxcards back"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'fill',
-            display: 'block'
+            display: 'block',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            WebkitUserDrag: 'none'
           }}
         />
       </div>
@@ -70,6 +78,7 @@ export default function CardItem({
               ? '0 6px 18px rgba(0, 0, 0, 0.4)'
               : '0 6px 20px rgba(217, 4, 41, 0.45)'),
         userSelect: 'none',
+        WebkitUserDrag: 'none',
         flexShrink: 0,
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
         transform: isSelected ? 'translateY(-12px)' : 'none',
@@ -87,6 +96,8 @@ export default function CardItem({
       <img
         src={isWhite ? whiteCardFrontImg : redCardFrontImg}
         alt={isWhite ? 'white card' : 'red card'}
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
         style={{
           position: 'absolute',
           inset: 0,
@@ -94,7 +105,9 @@ export default function CardItem({
           height: '100%',
           objectFit: 'fill',
           pointerEvents: 'none',
-          zIndex: 1
+          zIndex: 1,
+          userSelect: 'none',
+          WebkitUserDrag: 'none'
         }}
       />
 

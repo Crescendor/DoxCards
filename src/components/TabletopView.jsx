@@ -65,7 +65,9 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
             <img
               src={isWhiteBack ? whiteCardBackImg : redCardBackImg}
               alt="card back"
-              style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+              draggable={false}
+              onDragStart={(e) => e.preventDefault()}
+              style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
             />
           </div>
         );
@@ -289,10 +291,19 @@ export default function TabletopView({
 
   // Drag start
   const handleCardDragStart = (e, card, type) => {
-    if (!isMyTurn) return;
+    if (!isMyTurn) {
+      e.preventDefault();
+      return;
+    }
     setIsDragging(true);
     e.dataTransfer.setData('cardId', card.id);
     e.dataTransfer.setData('cardType', type);
+    e.dataTransfer.effectAllowed = 'move';
+    if (e.currentTarget) {
+      try {
+        e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.offsetWidth / 2, e.currentTarget.offsetHeight / 2);
+      } catch (err) {}
+    }
     setDraggedCard({ card, type });
   };
 
@@ -493,6 +504,8 @@ export default function TabletopView({
           <img
             src={deskPlayer.avatar || defaultAvatarImg}
             alt={deskPlayer.name}
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
             style={{
               width: '28px',
               height: '28px',
@@ -500,7 +513,10 @@ export default function TabletopView({
               objectFit: 'cover',
               border: isPlayerSingle ? '2px solid #fbbf24' : '1.5px solid rgba(255, 255, 255, 0.35)',
               background: '#000',
-              flexShrink: 0
+              flexShrink: 0,
+              pointerEvents: 'none',
+              userSelect: 'none',
+              WebkitUserDrag: 'none'
             }}
           />
 
@@ -632,7 +648,9 @@ export default function TabletopView({
                 <img
                   src={redCardBackImg}
                   alt="bekar destesi"
-                  style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
                 />
               </div>
             </div>
@@ -743,11 +761,16 @@ export default function TabletopView({
           <img
             src={doxcardsLogoImg}
             alt="DoxCards"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
             style={{
               height: '100%',
               objectFit: 'contain',
               opacity: 0.85,
-              filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))'
+              filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              WebkitUserDrag: 'none'
             }}
           />
         </div>
