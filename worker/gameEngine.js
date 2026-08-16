@@ -1,4 +1,4 @@
-// Game Engine for Red Flags (DoxCards) - Turn-Based Sequential Tabletop Engine with Persistent Hands & Unique Cards
+// Game Engine for Red Flags (DoxCards) - Turn-Based Tabletop Engine with Instant Card Visibility & No Time Limit
 import { getDeck } from './cards.js';
 
 export const PHASES = {
@@ -15,7 +15,6 @@ export class GameEngine {
   constructor(roomCode, settings = {}) {
     this.roomCode = roomCode;
     this.targetScore = settings.targetScore || 3;
-    this.roundTimerDuration = settings.roundTimerDuration || 45; // seconds (0 for no limit)
     this.deckType = settings.deckType || 'all';
 
     this.phase = PHASES.LOBBY;
@@ -43,7 +42,6 @@ export class GameEngine {
     this.roundWinner = null;
     this.winningCandidate = null;
     this.timer = null;
-    this.timeLeft = 0;
     this.onStateChange = null;
   }
 
@@ -126,7 +124,7 @@ export class GameEngine {
       };
     });
 
-    // Persistent hands: Only replenish the discarded/used cards with fresh unique cards!
+    // Persistent hands: Replenish discarded cards with fresh unique cards
     activePlayers.forEach(p => {
       if (!this.hands[p.id]) {
         this.hands[p.id] = { whiteCards: [], redCards: [] };
@@ -149,9 +147,7 @@ export class GameEngine {
     });
 
     this.phase = PHASES.PERKS;
-    this.startTimer(this.roundTimerDuration, () => {
-      this.autoSubmitPerks(matchmakers);
-    });
+    if (this.onStateChange) this.onStateChange();
   }
 
   submitPerks(playerId, cardIds) {
@@ -174,36 +170,15 @@ export class GameEngine {
     this.turnIndex++;
     if (this.turnIndex < this.turnOrder.length) {
       this.turnPlayerId = this.turnOrder[this.turnIndex];
-      this.startTimer(this.roundTimerDuration, () => {
-        this.autoSubmitCurrentPerks();
-      });
     } else {
       // All matchmakers placed perks -> Advance to SABOTAGE phase
-      this.clearTimer();
       this.phase = PHASES.SABOTAGE;
       this.turnIndex = 0;
       this.turnPlayerId = this.turnOrder[0] || null;
-      this.startTimer(this.roundTimerDuration, () => {
-        this.autoSubmitCurrentSabotage();
-      });
     }
 
     if (this.onStateChange) this.onStateChange();
     return true;
-  }
-
-  autoSubmitCurrentPerks() {
-    const pId = this.turnPlayerId;
-    if (pId && this.candidates[pId] && this.candidates[pId].whiteCards.length < 2) {
-      const hand = this.hands[pId];
-      if (hand && hand.whiteCards.length >= 2) {
-        this.submitPerks(pId, hand.whiteCards.slice(0, 2).map(c => c.id));
-      }
-    }
-  }
-
-  autoSubmitPerks(matchmakers) {
-    this.autoSubmitCurrentPerks();
   }
 
   submitSabotage(playerId, cardId, players) {
@@ -235,34 +210,14 @@ export class GameEngine {
     this.turnIndex++;
     if (this.turnIndex < this.turnOrder.length) {
       this.turnPlayerId = this.turnOrder[this.turnIndex];
-      this.startTimer(this.roundTimerDuration, () => {
-        this.autoSubmitCurrentSabotage();
-      });
     } else {
       // All sabotages placed -> Advance to VOTING
-      this.clearTimer();
       this.phase = PHASES.VOTING;
       this.turnPlayerId = this.singlePlayerId; // Turn passes to the Bekâr!
-      this.startTimer(this.roundTimerDuration || 60, () => {
-        this.autoSelectWinner(this.turnOrder);
-      });
     }
 
     if (this.onStateChange) this.onStateChange();
     return true;
-  }
-
-  autoSubmitCurrentSabotage() {
-    const pId = this.turnPlayerId;
-    if (pId) {
-      const targetId = this.sabotageAssignments[pId];
-      if (this.candidates[targetId] && !this.candidates[targetId].redFlag) {
-        const hand = this.hands[pId];
-        if (hand && hand.redCards.length > 0) {
-          this.submitSabotage(pId, hand.redCards[0].id, []);
-        }
-      }
-    }
   }
 
   bekarSelectWinner(singlePlayerId, winningMatchmakerId, players) {
@@ -270,7 +225,6 @@ export class GameEngine {
     if (singlePlayerId !== this.singlePlayerId) return false;
     if (!this.candidates[winningMatchmakerId]) return false;
 
-    this.clearTimer();
     this.roundWinner = winningMatchmakerId;
     this.winningCandidate = this.candidates[winningMatchmakerId];
 
@@ -284,42 +238,20 @@ export class GameEngine {
       this.phase = PHASES.GAME_OVER;
     } else {
       this.phase = PHASES.ROUND_SUMMARY;
-      this.startTimer(6, () => {
+      setTimeout(() => {
         this.singleIndex++;
         this.startRound(players);
         if (this.onStateChange) this.onStateChange();
-      });
+      }, 5000);
     }
 
     if (this.onStateChange) this.onStateChange();
     return true;
   }
 
-  autoSelectWinner(matchmakerIds) {
-    if (matchmakerIds.length > 0) {
-      const randomWinner = matchmakerIds[Math.floor(Math.random() * matchmakerIds.length)];
-      this.bekarSelectWinner(this.singlePlayerId, randomWinner, []);
-    }
-  }
-
-  startTimer(seconds, onExpire) {
-    this.clearTimer();
-    if (!seconds || seconds <= 0) return;
-    this.timeLeft = seconds;
-
-    this.timer = setInterval(() => {
-      this.timeLeft--;
-      if (this.timeLeft <= 0) {
-        this.clearTimer();
-        if (onExpire) onExpire();
-      }
-      if (this.onStateChange) this.onStateChange();
-    }, 1000);
-  }
-
   clearTimer() {
     if (this.timer) {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = null;
     }
   }
@@ -352,7 +284,6 @@ export class GameEngine {
       phase: this.phase,
       currentRound: this.currentRound,
       targetScore: this.targetScore,
-      timeLeft: this.timeLeft,
       singlePlayerId: this.singlePlayerId,
       singlePlayerName: singlePlayer ? singlePlayer.name : '',
       isSingle: forPlayerId === this.singlePlayerId,

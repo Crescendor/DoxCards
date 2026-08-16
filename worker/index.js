@@ -252,8 +252,8 @@ export class GameRoomDO {
           this.broadcastRoomUpdate();
         }
 
-        // 9. Play Again
-        else if (evt === 'play_again') {
+        // 9. Play Again / Reset to Lobby
+        else if (evt === 'play_again' || evt === 'stop_game') {
           if (!this.room) return;
           if (this.room.game) {
             this.room.game.clearTimer();
@@ -262,6 +262,49 @@ export class GameRoomDO {
           this.room.players.forEach(p => { p.isReady = false; });
           this.broadcast('game_reset_to_lobby', {});
           this.broadcastRoomUpdate();
+          sendAck({ success: true });
+        }
+
+        // 10. Kick Player (Host only)
+        else if (evt === 'kick_player') {
+          const { hostId, targetPlayerId } = data;
+          if (!this.room || this.room.hostId !== hostId) {
+            sendAck({ error: 'Sadece oda kurucusu oyuncu atabilir.' });
+            return;
+          }
+
+          if (hostId === targetPlayerId) {
+            sendAck({ error: 'Kendinizi odadan atamazsınız.' });
+            return;
+          }
+
+          // Remove target from player list
+          this.room.players = this.room.players.filter(p => p.id !== targetPlayerId);
+
+          // Notify the kicked socket
+          this.sessions.forEach((pId, ws) => {
+            if (pId === targetPlayerId && ws.readyState === 1) {
+              try {
+                ws.send(JSON.stringify({ event: 'kicked_from_room', data: { reason: 'Oda kurucusu tarafından odadan çıkarıldınız.' } }));
+              } catch (e) {}
+            }
+          });
+
+          if (this.room.game) {
+            if (this.room.game.candidates[targetPlayerId]) {
+              delete this.room.game.candidates[targetPlayerId];
+            }
+            if (this.room.players.length < 2) {
+              this.room.game.clearTimer();
+              this.room.game = null;
+              this.broadcast('game_reset_to_lobby', {});
+            } else {
+              this.broadcastGameState();
+            }
+          }
+
+          this.broadcastRoomUpdate();
+          sendAck({ success: true });
         }
 
         // 10. Send Chat Message

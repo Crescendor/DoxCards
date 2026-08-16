@@ -1,36 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { socket, getLocalPlayer, saveLocalPlayer } from './services/socket';
 import { sounds } from './services/soundEffects';
-import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import LobbyView from './components/LobbyView';
 import GameView from './components/GameView';
-import ChatDrawer from './components/ChatDrawer';
+import Navbar from './components/Navbar';
 import HowToPlayModal from './components/HowToPlayModal';
-
-import './styles/index.css';
-import './styles/lobby.css';
-import './styles/game.css';
+import RightSidebarDrawer from './components/RightSidebarDrawer';
 
 export default function App() {
   const [player, setPlayer] = useState(getLocalPlayer());
   const [currentRoom, setCurrentRoom] = useState(null);
   const [gameState, setGameState] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [floatingReactions, setFloatingReactions] = useState([]);
   const [soundMuted, setSoundMuted] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Auto-check URL for ?room=CODE
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const roomFromUrl = params.get('room');
-    if (roomFromUrl && !currentRoom) {
-      // Prompt join or auto fill
-    }
-  }, []);
 
   // Update persistent player
   const handleUpdatePlayer = (updated) => {
@@ -63,18 +48,10 @@ export default function App() {
       setGameState(null);
     });
 
-    socket.on('new_message', (msg) => {
-      setMessages(prev => [...prev, msg]);
-    });
-
-    socket.on('reaction_received', ({ reaction, senderName, id }) => {
-      sounds.playReaction();
-      const x = Math.random() * 60 + 20; // 20% to 80% of screen width
-      setFloatingReactions(prev => [...prev, { id, emoji: reaction, x }]);
-
-      setTimeout(() => {
-        setFloatingReactions(prev => prev.filter(r => r.id !== id));
-      }, 2000);
+    socket.on('kicked_from_room', ({ reason }) => {
+      alert(reason || 'Oda kurucusu tarafından odadan çıkarıldınız.');
+      window.history.pushState({}, '', window.location.pathname);
+      window.location.reload();
     });
 
     return () => {
@@ -82,8 +59,7 @@ export default function App() {
       socket.off('game_started');
       socket.off('game_state_update');
       socket.off('game_reset_to_lobby');
-      socket.off('new_message');
-      socket.off('reaction_received');
+      socket.off('kicked_from_room');
     };
   }, []);
 
@@ -155,6 +131,22 @@ export default function App() {
     });
   };
 
+  // Stop Game / Reset to Lobby (Host)
+  const handleStopGame = () => {
+    if (!currentRoom) return;
+    socket.emit('stop_game', { roomCode: currentRoom.code, hostId: player.id });
+  };
+
+  // Kick Player (Host)
+  const handleKickPlayer = (targetPlayerId) => {
+    if (!currentRoom) return;
+    socket.emit('kick_player', {
+      roomCode: currentRoom.code,
+      hostId: player.id,
+      targetPlayerId
+    });
+  };
+
   // Toggle Ready
   const handleToggleReady = () => {
     if (!currentRoom) return;
@@ -203,44 +195,18 @@ export default function App() {
     socket.emit('play_again', { roomCode: currentRoom.code });
   };
 
-  // Send Chat Message
-  const handleSendMessage = (message) => {
-    if (!currentRoom) return;
-    socket.emit('send_message', { roomCode: currentRoom.code, message });
-  };
-
-  // Send Reaction
-  const handleSendReaction = (reaction) => {
-    if (!currentRoom) return;
-    socket.emit('send_reaction', {
-      roomCode: currentRoom.code,
-      reaction,
-      senderName: player.name
-    });
-  };
-
   const isGameActive = gameState && gameState.phase && gameState.phase !== 'LOBBY';
+  const isHost = currentRoom?.hostId === player.id;
 
   return (
     <div className={`app-container ${isGameActive ? 'in-game-mode' : ''}`}>
-      {/* Ambient background glows (shown in game mode) */}
+      {/* Ambient background glows */}
       {isGameActive && (
         <>
           <div className="ambient-glow ambient-glow-1" />
           <div className="ambient-glow ambient-glow-2" />
         </>
       )}
-
-      {/* Floating Reactions on Screen */}
-      {floatingReactions.map((r) => (
-        <div
-          key={r.id}
-          className="floating-reaction"
-          style={{ left: `${r.x}%`, bottom: '150px' }}
-        >
-          {r.emoji}
-        </div>
-      ))}
 
       {/* Top Navbar */}
       <Navbar
@@ -270,9 +236,7 @@ export default function App() {
             onStartGame={handleStartGame}
             onToggleReady={handleToggleReady}
             onUpdateSettings={handleUpdateSettings}
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            onSendReaction={handleSendReaction}
+            onKickPlayer={handleKickPlayer}
             isLoading={isLoading}
           />
         ) : (
@@ -289,13 +253,17 @@ export default function App() {
         )}
       </main>
 
-      {/* In-Game Live Chat & Reactions Drawer */}
-      {currentRoom && isGameActive && (
-        <ChatDrawer
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onSendReaction={handleSendReaction}
+      {/* Slide-out Right Sidebar Menu (Available in Lobby and In-Game) */}
+      {currentRoom && (
+        <RightSidebarDrawer
+          room={currentRoom}
           player={player}
+          isHost={isHost}
+          scores={gameState?.scores || {}}
+          singlePlayerId={gameState?.singlePlayerId}
+          onKickPlayer={handleKickPlayer}
+          onStopGame={handleStopGame}
+          onLeaveRoom={handleLeaveRoom}
         />
       )}
 

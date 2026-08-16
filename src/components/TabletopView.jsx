@@ -417,26 +417,6 @@ export default function TabletopView({
             )}
           </span>
         </div>
-
-        {/* Timer Pill */}
-        {timeLeft > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(0, 0, 0, 0.6)',
-            border: timeLeft <= 10 ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)',
-            color: timeLeft <= 10 ? '#ef4444' : '#fff',
-            padding: '4px 12px',
-            borderRadius: '6px',
-            fontFamily: 'monospace',
-            fontWeight: 800,
-            fontSize: '0.95rem'
-          }}>
-            <Clock size={14} />
-            <span>00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}</span>
-          </div>
-        )}
       </div>
 
       {/* Virtual Table Area */}
