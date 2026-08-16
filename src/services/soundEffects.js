@@ -5,6 +5,10 @@ class SoundEngine {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.customMuted = false;
+    try {
+      this.customMuted = localStorage.getItem('doxcards_custom_sounds_muted') === 'true';
+    } catch (e) {}
   }
 
   init() {
@@ -22,6 +26,14 @@ class SoundEngine {
   toggleMute() {
     this.muted = !this.muted;
     return this.muted;
+  }
+
+  toggleCustomMute() {
+    this.customMuted = !this.customMuted;
+    try {
+      localStorage.setItem('doxcards_custom_sounds_muted', String(this.customMuted));
+    } catch (e) {}
+    return this.customMuted;
   }
 
   // Play button click / card select
@@ -197,7 +209,7 @@ class SoundEngine {
 
   // Play YouTube Clip Audio with Start / End seconds
   playYouTubeAudio(ytId, startSec = 0, endSec = 0) {
-    if (this.muted || !ytId) return;
+    if (this.muted || this.customMuted || !ytId) return;
 
     try {
       let ytContainer = document.getElementById('doxcards-yt-audio-container');
@@ -239,7 +251,7 @@ class SoundEngine {
 
   // Play Custom Sound Item (Local DataURL / Web URL / YouTube)
   playCustomAudio(soundItem) {
-    if (this.muted || !soundItem) return;
+    if (this.muted || this.customMuted || !soundItem) return;
 
     if (soundItem.type === 'youtube' && soundItem.ytId) {
       this.playYouTubeAudio(soundItem.ytId, soundItem.startSec, soundItem.endSec);

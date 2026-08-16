@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Copy, Check, Crown, UserX, ChevronLeft, LogOut, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Copy, Check, Crown, UserX, ChevronLeft, LogOut, RotateCcw, ShieldCheck, Volume2, VolumeX, Plus } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 import { ADMIN_DISCORD_ID } from './AdminPageView';
 import { getDiscordUser } from '../services/discordAuth';
+import { getLocalUserProfile } from '../services/userService';
 
 export default function RightSidebarDrawer({
   room,
@@ -12,12 +13,16 @@ export default function RightSidebarDrawer({
   scores = {},
   singlePlayerId,
   onKickPlayer,
+  onAddBot,
+  onRemoveBot,
   onStopGame,
   onLeaveRoom
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [customSoundsMuted, setCustomSoundsMuted] = useState(sounds.customMuted);
   const discordUser = getDiscordUser();
+  const userProfile = getLocalUserProfile();
 
   const roomCode = room?.code || '';
   const players = room?.players || [];
@@ -170,21 +175,46 @@ export default function RightSidebarDrawer({
 
         {/* Players List Section */}
         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px' }}>
-          <div style={{
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            color: 'rgba(255, 255, 255, 0.7)',
-            marginBottom: '8px',
-            textTransform: 'lowercase',
-            letterSpacing: '0.02em'
-          }}>
-            oyuncular ({players.length})
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: 'rgba(255, 255, 255, 0.7)',
+              textTransform: 'lowercase',
+              letterSpacing: '0.02em'
+            }}>
+              oyuncular ({players.length}/6)
+            </span>
+
+            {isHost && (discordUser?.id === ADMIN_DISCORD_ID || userProfile?.tags?.includes('admin')) && players.length < 6 && (
+              <button
+                type="button"
+                onClick={() => { sounds.playClick(); if (onAddBot) onAddBot(); }}
+                style={{
+                  background: 'rgba(254, 240, 138, 0.2)',
+                  border: '1px solid rgba(254, 240, 138, 0.4)',
+                  color: '#fef08a',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="bot oyuncu ekle"
+              >
+                <Plus size={12} /> bot ekle
+              </button>
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {players.map((p) => {
               const isMe = p.id === player.id;
               const isSingle = p.id === singlePlayerId;
+              const isBot = p.isBot;
               const pScore = scores[p.id] || 0;
 
               return (
@@ -200,7 +230,7 @@ export default function RightSidebarDrawer({
                     border: isMe ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(0, 0, 0, 0.15)'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', marginRight: '6px' }}>
                     <img
                       src={p.avatar || defaultAvatarImg}
                       alt={p.name}
@@ -210,13 +240,34 @@ export default function RightSidebarDrawer({
                         borderRadius: '50%',
                         objectFit: 'cover',
                         border: '1px solid rgba(255, 255, 255, 0.3)',
-                        background: '#000'
+                        background: '#000',
+                        flexShrink: 0
                       }}
                     />
-                    <span style={{ fontWeight: 600, fontSize: '0.86rem', textTransform: 'lowercase' }}>
+                    <span style={{
+                      fontWeight: 600,
+                      fontSize: '0.86rem',
+                      textTransform: 'lowercase',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
                       {p.name} {isMe ? '(sen)' : ''}
                     </span>
-                    {(p.discordId === ADMIN_DISCORD_ID || p.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && (
+                    {isBot && (
+                      <span style={{
+                        background: 'rgba(254, 240, 138, 0.2)',
+                        color: '#fef08a',
+                        fontSize: '0.62rem',
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        flexShrink: 0
+                      }}>
+                        bot
+                      </span>
+                    )}
+                    {(p.discordId === ADMIN_DISCORD_ID || p.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && !isBot && (
                       <span style={{
                         background: 'rgba(239, 68, 68, 0.2)',
                         border: '1px solid rgba(239, 68, 68, 0.5)',
@@ -227,16 +278,17 @@ export default function RightSidebarDrawer({
                         borderRadius: '4px',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '2px'
+                        gap: '2px',
+                        flexShrink: 0
                       }}>
                         <ShieldCheck size={9} /> admin
                       </span>
                     )}
-                    {p.isHost && <Crown size={14} color="#fbbf24" title="Oda Kurucusu" />}
-                    {isSingle && !p.isHost && <Crown size={13} color="#f59e0b" title="Bekâr" />}
+                    {p.isHost && <Crown size={14} color="#fbbf24" title="Oda Kurucusu" style={{ flexShrink: 0 }} />}
+                    {isSingle && !p.isHost && <Crown size={13} color="#f59e0b" title="Bekâr" style={{ flexShrink: 0 }} />}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <span style={{
                       background: '#ffffff',
                       color: '#c1121f',
@@ -248,10 +300,17 @@ export default function RightSidebarDrawer({
                       {pScore}p
                     </span>
 
-                    {/* Kick Button (Host only, cannot kick self) */}
+                    {/* Kick / Remove Bot Button (Host only) */}
                     {isHost && !isMe && (
                       <button
-                        onClick={() => handleKick(p.id, p.name)}
+                        onClick={() => {
+                          if (isBot && onRemoveBot) {
+                            sounds.playClick();
+                            onRemoveBot(p.id);
+                          } else {
+                            handleKick(p.id, p.name);
+                          }
+                        }}
                         style={{
                           background: 'rgba(0, 0, 0, 0.4)',
                           border: 'none',
@@ -264,7 +323,7 @@ export default function RightSidebarDrawer({
                           justifyContent: 'center',
                           transition: 'background 0.2s ease'
                         }}
-                        title={`${p.name} adlı oyuncuyu oyundan at`}
+                        title={isBot ? 'botu kaldır' : `${p.name} adlı oyuncuyu oyundan at`}
                       >
                         <UserX size={15} color="#fca5a5" />
                       </button>
@@ -278,6 +337,36 @@ export default function RightSidebarDrawer({
 
         {/* Bottom Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Custom Sounds Mute Toggle Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const isMuted = sounds.toggleCustomMute();
+              setCustomSoundsMuted(isMuted);
+            }}
+            style={{
+              width: '100%',
+              padding: '11px 14px',
+              borderRadius: '10px',
+              background: customSoundsMuted ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.15)',
+              color: customSoundsMuted ? '#fca5a5' : '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              textTransform: 'lowercase',
+              transition: 'background 0.2s ease'
+            }}
+            title="Özel sesleri sessize al / aç"
+          >
+            {customSoundsMuted ? <VolumeX size={16} color="#fca5a5" /> : <Volume2 size={16} />}
+            <span>{customSoundsMuted ? 'özel sesler sessizde (aç)' : 'özel sesleri kapat'}</span>
+          </button>
+
           {isHost && (
             <button
               onClick={() => {

@@ -354,7 +354,7 @@ export default function LandingPage({
                     value={player.name}
                     onChange={handleNameChange}
                     placeholder="özel oyuncu adı yaz..."
-                    maxLength={18}
+                    maxLength={50}
                     className="form-input"
                     required
                   />
@@ -368,7 +368,7 @@ export default function LandingPage({
                   value={player.name}
                   onChange={handleNameChange}
                   placeholder="bir isim yaz..."
-                  maxLength={18}
+                  maxLength={50}
                   className="form-input"
                   autoFocus
                   required
@@ -497,7 +497,7 @@ export default function LandingPage({
                     value={player.name}
                     onChange={handleNameChange}
                     placeholder="özel oyuncu adı yaz..."
-                    maxLength={18}
+                    maxLength={50}
                     className="form-input"
                     required
                   />
@@ -511,7 +511,7 @@ export default function LandingPage({
                   value={player.name}
                   onChange={handleNameChange}
                   placeholder="bir isim yaz..."
-                  maxLength={18}
+                  maxLength={50}
                   className="form-input"
                   autoFocus
                   required

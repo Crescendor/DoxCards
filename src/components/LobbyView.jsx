@@ -15,6 +15,8 @@ export default function LobbyView({
   onToggleReady,
   onUpdateSettings,
   onKickPlayer,
+  onAddBot,
+  onRemoveBot,
   isLoading
 }) {
   const [copied, setCopied] = useState(false);
@@ -121,6 +123,18 @@ export default function LobbyView({
             </div>
 
             <div style={{ display: 'flex', gap: '6px' }}>
+              {isHost && (isMainAdmin || userProfile?.tags?.includes('admin')) && players.length < MAX_SLOTS && (
+                <button
+                  type="button"
+                  onClick={() => { sounds.playClick(); if (onAddBot) onAddBot(); }}
+                  className="btn-secondary"
+                  style={{ padding: '7px 12px', fontSize: '0.82rem', borderColor: 'rgba(234, 179, 8, 0.4)', color: '#fde047', background: 'rgba(234, 179, 8, 0.08)' }}
+                  title="bot oyuncu ekle"
+                >
+                  <Plus size={14} /> bot ekle
+                </button>
+              )}
+
               <button
                 onClick={handleCopyCode}
                 className="btn-secondary"
@@ -148,6 +162,7 @@ export default function LobbyView({
           {slots.map((slotPlayer, index) => {
             if (slotPlayer) {
               const isMe = slotPlayer.id === player.id;
+              const isBot = slotPlayer.isBot;
               return (
                 <div
                   key={slotPlayer.id}
@@ -172,14 +187,30 @@ export default function LobbyView({
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        {/* Admin Badge */}
-                        {(slotPlayer.discordId === ADMIN_DISCORD_ID || slotPlayer.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && (
+                        {isBot ? (
+                          <span style={{
+                            background: 'rgba(234, 179, 8, 0.15)',
+                            border: '1px solid rgba(234, 179, 8, 0.45)',
+                            color: '#fde047',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            height: '22px',
+                            padding: '0 8px',
+                            borderRadius: '9999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxSizing: 'border-box'
+                          }}>
+                            🤖 bot
+                          </span>
+                        ) : (slotPlayer.discordId === ADMIN_DISCORD_ID || slotPlayer.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) ? (
                           <span style={{
                             background: 'rgba(239, 68, 68, 0.15)',
                             border: '1px solid rgba(239, 68, 68, 0.45)',
                             color: '#f87171',
                             fontSize: '0.72rem',
-                            fontWeight: 700,
+                            fontWeight: 800,
                             height: '22px',
                             padding: '0 8px',
                             borderRadius: '9999px',
@@ -190,7 +221,7 @@ export default function LobbyView({
                           }}>
                             <ShieldCheck size={11} /> admin
                           </span>
-                        )}
+                        ) : null}
 
                         {slotPlayer.isHost ? (
                           <span style={{
@@ -209,7 +240,7 @@ export default function LobbyView({
                           }}>
                             <Crown size={11} /> oda kurucusu
                           </span>
-                        ) : (
+                        ) : !isBot ? (
                           <span style={{
                             background: 'rgba(255, 255, 255, 0.05)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -225,7 +256,7 @@ export default function LobbyView({
                           }}>
                             çöpçatan
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -266,10 +297,17 @@ export default function LobbyView({
                       </span>
                     )}
 
-                    {/* Kick Button (Host only, cannot kick self) */}
+                    {/* Kick / Remove Bot Button (Host only) */}
                     {isHost && !isMe && (
                       <button
-                        onClick={() => handleKick(slotPlayer.id, slotPlayer.name)}
+                        onClick={() => {
+                          if (isBot && onRemoveBot) {
+                            sounds.playClick();
+                            onRemoveBot(slotPlayer.id);
+                          } else {
+                            handleKick(slotPlayer.id, slotPlayer.name);
+                          }
+                        }}
                         style={{
                           background: 'rgba(239, 68, 68, 0.12)',
                           border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -283,20 +321,32 @@ export default function LobbyView({
                           fontSize: '0.72rem',
                           fontWeight: 700
                         }}
-                        title={`${slotPlayer.name} adlı oyuncuyu at`}
+                        title={isBot ? 'botu kaldır' : `${slotPlayer.name} adlı oyuncuyu at`}
                       >
-                        <UserX size={12} /> at
+                        <UserX size={12} /> {isBot ? 'kaldır' : 'at'}
                       </button>
                     )}
                   </div>
                 </div>
               );
             } else {
+              const canAddBotToSlot = isHost && (isMainAdmin || userProfile?.tags?.includes('admin')) && onAddBot;
               return (
-                <div key={index} className="player-slot-card empty">
+                <div
+                  key={index}
+                  className="player-slot-card empty"
+                  onClick={canAddBotToSlot ? () => { sounds.playClick(); onAddBot(); } : undefined}
+                  style={canAddBotToSlot ? { cursor: 'pointer', borderStyle: 'dashed', borderColor: 'rgba(234, 179, 8, 0.35)' } : {}}
+                  title={canAddBotToSlot ? 'tıkla ve bot ekle' : ''}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Users size={14} opacity={0.35} />
                     <span>#{index + 1} boş yuva</span>
+                    {canAddBotToSlot && (
+                      <span style={{ fontSize: '0.75rem', color: '#fde047', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+                        <Plus size={13} /> bot ekle
+                      </span>
+                    )}
                   </div>
                 </div>
               );

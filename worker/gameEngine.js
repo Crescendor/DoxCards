@@ -399,6 +399,17 @@ export class GameEngine {
       };
     });
 
+    // Dynamic hand card counts for all active players
+    const handCardCounts = {};
+    players.forEach(p => {
+      const h = this.hands[p.id] || { whiteCards: [], redCards: [] };
+      handCardCounts[p.id] = {
+        white: h.whiteCards?.length || 0,
+        red: h.redCards?.length || 0,
+        total: (h.whiteCards?.length || 0) + (h.redCards?.length || 0)
+      };
+    });
+
     return {
       phase: this.phase,
       currentRound: this.currentRound,
@@ -412,6 +423,7 @@ export class GameEngine {
       scores: this.scores,
       stats: this.stats,
       hand: myHand,
+      handCardCounts,
       candidates: publicCandidates,
       mySabotageTarget: myTargetId ? {
         targetPlayerId: myTargetId,
@@ -425,5 +437,44 @@ export class GameEngine {
       roundWinnerName: this.roundWinner && this.candidates[this.roundWinner] ? this.candidates[this.roundWinner].matchmakerName : null,
       winningCandidate: this.winningCandidate
     };
+  }
+
+  // Automated bot move generator
+  getBotMove(botId) {
+    if (this.phase === PHASES.PERKS && this.turnPlayerId === botId) {
+      const hand = this.hands[botId];
+      if (hand && hand.whiteCards && hand.whiteCards.length > 0) {
+        const candidate = this.candidates[botId];
+        const placedCount = candidate?.whiteCards?.length || 0;
+        if (placedCount < 2) {
+          const randomCard = hand.whiteCards[0];
+          return {
+            type: 'place_white_card',
+            cardId: randomCard.id,
+            customText: randomCard.text.includes('_') ? 'efsanevi' : null
+          };
+        }
+      }
+    } else if (this.phase === PHASES.SABOTAGE && this.turnPlayerId === botId) {
+      const hand = this.hands[botId];
+      if (hand && hand.redCards && hand.redCards.length > 0) {
+        const randomCard = hand.redCards[0];
+        return {
+          type: 'submit_sabotage',
+          cardId: randomCard.id,
+          customText: randomCard.text.includes('_') ? 'rezil' : null
+        };
+      }
+    } else if (this.phase === PHASES.VOTING && this.singlePlayerId === botId) {
+      const candidateIds = Object.keys(this.candidates);
+      if (candidateIds.length > 0) {
+        const randomTarget = candidateIds[Math.floor(Math.random() * candidateIds.length)];
+        return {
+          type: 'select_winner',
+          winningMatchmakerId: randomTarget
+        };
+      }
+    }
+    return null;
   }
 }

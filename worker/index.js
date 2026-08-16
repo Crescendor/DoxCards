@@ -406,7 +406,70 @@ export class GameRoomDO {
           this.broadcast('game_started', {});
           this.broadcastRoomUpdate();
           this.broadcastGameState();
+          this.checkAndTriggerBotTurn();
           sendAck({ success: true });
+        }
+
+        // Add Bot Player (Admin / Host)
+        else if (evt === 'add_bot_player') {
+          const { hostId } = data;
+          if (!this.room) return;
+
+          if (this.room.hostId !== hostId) {
+            sendAck({ error: 'sadece oda kurucusu bot ekleyebilir.' });
+            return;
+          }
+
+          if (this.room.players.length >= 6) {
+            sendAck({ error: 'oda maksimum 6 kişilik kapasiteye ulaştı.' });
+            return;
+          }
+
+          const botNames = ['ahmet', 'ayşe', 'can', 'elif', 'mert', 'zeynep', 'deniz', 'burak', 'selin', 'bora', 'efe', 'melis'];
+          const existingNames = new Set(this.room.players.map(p => (p.name || '').toLowerCase()));
+          const availableNames = botNames.filter(n => !existingNames.has(n));
+          const chosenName = availableNames[Math.floor(Math.random() * availableNames.length)] || `bot_${this.room.players.length + 1}`;
+
+          const botPlayer = {
+            id: 'bot_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            name: chosenName,
+            avatar: null,
+            isBot: true,
+            isReady: true,
+            connected: true
+          };
+
+          this.room.players.push(botPlayer);
+          this.broadcastRoomUpdate();
+          sendAck({ success: true, bot: botPlayer });
+        }
+
+        // Remove Bot Player (Admin / Host)
+        else if (evt === 'remove_bot_player') {
+          const { hostId, botId } = data;
+          if (!this.room) return;
+
+          if (this.room.hostId !== hostId) {
+            sendAck({ error: 'sadece oda kurucusu bot çıkarabilir.' });
+            return;
+          }
+
+          const botIdx = this.room.players.findIndex(p => p.id === botId && p.isBot);
+          if (botIdx !== -1) {
+            this.room.players.splice(botIdx, 1);
+            if (this.room.game) {
+              this.room.game.removePlayer(botId, this.room.players);
+              if (this.room.players.length < 2) {
+                this.room.game.clearTimer();
+                this.room.game = null;
+                this.broadcast('game_reset_to_lobby', {});
+              } else {
+                this.broadcastGameState();
+              }
+            }
+            this.broadcastRoomUpdate();
+            sendAck({ success: true });
+          }
         }
 
         // 6. Place Single White Card (Immediate visibility on table for all players)
@@ -420,7 +483,16 @@ export class GameRoomDO {
             return;
           }
 
+          const actingPlayer = this.room.players.find(p => p.id === pId);
+          this.broadcast('play_sound_event', {
+            type: 'white_card',
+            playerId: pId,
+            playerName: actingPlayer?.name || 'oyuncu',
+            customSounds: actingPlayer?.customSounds || null
+          });
+
           this.broadcastGameState();
+          this.checkAndTriggerBotTurn();
           sendAck({ success: true });
         }
 
@@ -435,7 +507,16 @@ export class GameRoomDO {
             return;
           }
 
+          const actingPlayer = this.room.players.find(p => p.id === pId);
+          this.broadcast('play_sound_event', {
+            type: 'white_card',
+            playerId: pId,
+            playerName: actingPlayer?.name || 'oyuncu',
+            customSounds: actingPlayer?.customSounds || null
+          });
+
           this.broadcastGameState();
+          this.checkAndTriggerBotTurn();
           sendAck({ success: true });
         }
 
@@ -450,7 +531,16 @@ export class GameRoomDO {
             return;
           }
 
+          const actingPlayer = this.room.players.find(p => p.id === pId);
+          this.broadcast('play_sound_event', {
+            type: 'red_card',
+            playerId: pId,
+            playerName: actingPlayer?.name || 'oyuncu',
+            customSounds: actingPlayer?.customSounds || null
+          });
+
           this.broadcastGameState();
+          this.checkAndTriggerBotTurn();
           sendAck({ success: true });
         }
 
@@ -465,6 +555,14 @@ export class GameRoomDO {
             sendAck({ error: res.error });
             return;
           }
+
+          const winnerPlayer = this.room.players.find(p => p.id === winningMatchmakerId);
+          this.broadcast('play_sound_event', {
+            type: 'game_win',
+            playerId: winningMatchmakerId,
+            playerName: winnerPlayer?.name || 'kazanan',
+            customSounds: winnerPlayer?.customSounds || null
+          });
 
           this.broadcastGameState();
 
@@ -490,6 +588,7 @@ export class GameRoomDO {
               if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
                 this.room.game.nextRound(this.room.players);
                 this.broadcastGameState();
+                this.checkAndTriggerBotTurn();
               }
             }, 5500);
           }
@@ -684,6 +783,65 @@ export class GameRoomDO {
         } catch (e) {}
       }
     });
+  }
+
+  checkAndTriggerBotTurn() {
+    if (!this.room || !this.room.game) return;
+    const game = this.room.game;
+    const phase = game.phase;
+
+    if (phase === PHASES.GAME_OVER || phase === PHASES.LOBBY) return;
+
+    let activeBotId = null;
+    if (phase === PHASES.PERKS || phase === PHASES.SABOTAGE) {
+      const currentTurnPlayer = this.room.players.find(p => p.id === game.turnPlayerId);
+      if (currentTurnPlayer && currentTurnPlayer.isBot) {
+        activeBotId = currentTurnPlayer.id;
+      }
+    } else if (phase === PHASES.VOTING || phase === PHASES.REVEAL) {
+      const singlePlayer = this.room.players.find(p => p.id === game.singlePlayerId);
+      if (singlePlayer && singlePlayer.isBot) {
+        activeBotId = singlePlayer.id;
+      }
+    }
+
+    if (!activeBotId) return;
+
+    // Schedule bot action with realistic human-like delay (1.2s - 1.5s)
+    setTimeout(() => {
+      if (!this.room || !this.room.game) return;
+      const move = this.room.game.getBotMove(activeBotId);
+      if (!move) return;
+
+      if (move.type === 'place_white_card') {
+        this.room.game.placeSingleWhiteCard(activeBotId, move.cardId, move.customText);
+        const botObj = this.room.players.find(p => p.id === activeBotId);
+        this.broadcast('play_sound_event', { type: 'white_card', playerId: activeBotId, playerName: botObj?.name || 'bot' });
+        this.broadcastGameState();
+        this.checkAndTriggerBotTurn();
+      } else if (move.type === 'submit_sabotage') {
+        this.room.game.submitSabotage(activeBotId, move.cardId, this.room.players, move.customText);
+        const botObj = this.room.players.find(p => p.id === activeBotId);
+        this.broadcast('play_sound_event', { type: 'red_card', playerId: activeBotId, playerName: botObj?.name || 'bot' });
+        this.broadcastGameState();
+        this.checkAndTriggerBotTurn();
+      } else if (move.type === 'select_winner') {
+        this.room.game.selectWinner(activeBotId, move.winningMatchmakerId, this.room.players);
+        const winner = this.room.players.find(p => p.id === move.winningMatchmakerId);
+        this.broadcast('play_sound_event', { type: 'game_win', playerId: move.winningMatchmakerId, playerName: winner?.name || 'kazanan' });
+        this.broadcastGameState();
+
+        if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
+          setTimeout(() => {
+            if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
+              this.room.game.nextRound(this.room.players);
+              this.broadcastGameState();
+              this.checkAndTriggerBotTurn();
+            }
+          }, 5500);
+        }
+      }
+    }, 1350);
   }
 }
 

@@ -7,29 +7,42 @@ import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
 
-// Fanned Card Backs for Opponents
-function OpponentHandFanned({ count = 7 }) {
-  const cards = Array.from({ length: Math.min(count, 8) });
-  const mid = (cards.length - 1) / 2;
-  const cardWidth = 92;
-  const step = 28;
+// Dynamic Fanned Card Backs for any player desk
+function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
+  const safeRed = Math.max(0, Number(redCount) || 0);
+  const safeWhite = Math.max(0, Number(whiteCount) || 0);
+  const total = safeRed + safeWhite;
+
+  if (total === 0) {
+    return <div style={{ height: '70px', minHeight: '70px' }} />;
+  }
+
+  // Create card array with red cards first, then white cards
+  const cards = [];
+  for (let r = 0; r < safeRed; r++) cards.push('red');
+  for (let w = 0; w < safeWhite; w++) cards.push('white');
+
+  const cardWidth = 56;
+  const step = Math.min(22, Math.max(12, 170 / Math.max(1, cards.length)));
   const totalWidth = (cards.length - 1) * step + cardWidth;
+  const centerIdx = (cards.length - 1) / 2;
 
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '132px',
       position: 'relative',
       width: `${totalWidth}px`,
-      margin: '6px auto 14px auto'
+      height: '74px',
+      minHeight: '74px',
+      margin: '2px auto 6px auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }}>
-      {cards.map((_, i) => {
-        const offset = i - mid;
-        const rot = offset * 3.8;
-        const translateY = Math.abs(offset) * 3.5;
-        const isWhiteBack = i >= 4;
+      {cards.map((type, i) => {
+        const offset = i - centerIdx;
+        const rot = offset * 4.2;
+        const translateY = Math.abs(offset) * 2.8;
+        const isWhiteBack = type === 'white';
 
         return (
           <div
@@ -39,12 +52,13 @@ function OpponentHandFanned({ count = 7 }) {
               left: `${i * step}px`,
               width: `${cardWidth}px`,
               aspectRatio: '5 / 7',
-              borderRadius: '12px',
+              borderRadius: '10px',
               overflow: 'hidden',
-              boxShadow: '0 6px 16px rgba(0, 0, 0, 0.65)',
+              boxShadow: '0 6px 16px rgba(0, 0, 0, 0.75)',
               transform: `rotate(${rot}deg) translateY(${translateY}px)`,
               zIndex: i,
-              border: '1px solid rgba(0, 0, 0, 0.2)'
+              border: '1px solid rgba(0, 0, 0, 0.25)',
+              transition: 'all 0.25s ease'
             }}
           >
             <img
@@ -55,54 +69,6 @@ function OpponentHandFanned({ count = 7 }) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-// Single Player 3D Deck Stack on Table
-function SingleDeckStack() {
-  return (
-    <div style={{
-      position: 'relative',
-      width: '120px',
-      height: '168px',
-      aspectRatio: '5 / 7',
-      margin: '0 auto'
-    }}>
-      {/* 3D stacked shadow card layers */}
-      <div style={{
-        position: 'absolute',
-        inset: '8px -8px -8px 8px',
-        background: '#ffffff',
-        borderRadius: '14px',
-        border: '1px solid #cbd5e1',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.4)'
-      }} />
-      <div style={{
-        position: 'absolute',
-        inset: '4px -4px -4px 4px',
-        background: '#ffffff',
-        borderRadius: '14px',
-        border: '1px solid #cbd5e1',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.4)'
-      }} />
-      {/* Top Deck Card */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        borderRadius: '14px',
-        overflow: 'hidden',
-        boxShadow: '0 6px 20px rgba(0,0,0,0.65)',
-        border: '1px solid rgba(0,0,0,0.2)',
-        zIndex: 3
-      }}>
-        <img
-          src={redCardBackImg}
-          alt="deck"
-          style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
-        />
-      </div>
     </div>
   );
 }
@@ -161,13 +127,13 @@ function TableSlotsRow({
   const isVoting = (phase === 'VOTING' || phase === 'REVEAL') && isSingle;
 
   const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '154px',
-    minWidth: '154px',
-    maxWidth: '154px',
-    height: '216px',
-    minHeight: '216px',
-    maxHeight: '216px',
-    borderRadius: '16px',
+    width: '130px',
+    minWidth: '130px',
+    maxWidth: '130px',
+    height: '184px',
+    minHeight: '184px',
+    maxHeight: '184px',
+    borderRadius: '14px',
     border: hasCard
       ? 'none'
       : (isHovered
@@ -190,31 +156,31 @@ function TableSlotsRow({
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 18px rgba(255, 255, 255, 0.4)' : 'none'
+    boxShadow: isHovered ? '0 0 16px rgba(255, 255, 255, 0.4)' : 'none'
   });
 
   const redSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '154px',
-    minWidth: '154px',
-    maxWidth: '154px',
-    height: '216px',
-    minHeight: '216px',
-    maxHeight: '216px',
-    borderRadius: '16px',
+    width: '130px',
+    minWidth: '130px',
+    maxWidth: '130px',
+    height: '184px',
+    minHeight: '184px',
+    maxHeight: '184px',
+    borderRadius: '14px',
     border: hasCard
       ? 'none'
       : (isHovered
-          ? '2px dashed #ef4444'
+          ? '2px dashed #FF0000'
           : (isActionable
-              ? '2px dashed #ef4444'
-              : '2px dashed rgba(217, 4, 41, 0.35)')),
+              ? '2px dashed #FF0000'
+              : '2px dashed rgba(255, 0, 0, 0.35)')),
     background: hasCard
       ? 'transparent'
       : (isHovered
-          ? 'rgba(217, 4, 41, 0.3)'
+          ? 'rgba(255, 0, 0, 0.3)'
           : (isActionable
-              ? 'rgba(217, 4, 41, 0.12)'
-              : 'rgba(217, 4, 41, 0.05)')),
+              ? 'rgba(255, 0, 0, 0.12)'
+              : 'rgba(255, 0, 0, 0.05)')),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -223,7 +189,7 @@ function TableSlotsRow({
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 18px rgba(217, 4, 41, 0.45)' : 'none'
+    boxShadow: isHovered ? '0 0 16px rgba(255, 0, 0, 0.45)' : 'none'
   });
 
   return (
@@ -233,28 +199,27 @@ function TableSlotsRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '12px',
-        width: '512px',
-        minWidth: '512px',
-        maxWidth: '512px',
-        height: '238px',
-        minHeight: '238px',
-        maxHeight: '238px',
+        gap: '8px',
+        width: '100%',
+        maxWidth: '430px',
+        height: '204px',
+        minHeight: '204px',
+        maxHeight: '204px',
         margin: '0 auto',
-        padding: '10px',
+        padding: '8px',
         boxSizing: 'border-box',
-        borderRadius: '20px',
+        borderRadius: '16px',
         background: isWinner
           ? 'rgba(16, 185, 129, 0.15)'
-          : (isTarget && canDropRed && isMyTurn ? 'rgba(217, 4, 41, 0.2)' : 'rgba(20, 20, 20, 0.85)'),
+          : (isTarget && canDropRed && isMyTurn ? 'rgba(255, 0, 0, 0.2)' : 'rgba(20, 20, 20, 0.85)'),
         border: isWinner
           ? '2px solid #10b981'
-          : (isVoting ? '2px dashed #f59e0b' : (isTarget && canDropRed && isMyTurn ? '2px dashed #ef4444' : '1px solid rgba(217, 4, 41, 0.3)')),
+          : (isVoting ? '2px dashed #f59e0b' : (isTarget && canDropRed && isMyTurn ? '2px dashed #FF0000' : '1px solid rgba(255, 0, 0, 0.3)')),
         cursor: isVoting ? 'pointer' : 'default',
         transition: 'all 0.25s ease',
         boxShadow: isWinner
           ? '0 0 25px rgba(16, 185, 129, 0.45)'
-          : (isTarget && canDropRed && isMyTurn ? '0 0 24px rgba(217, 4, 41, 0.4)' : '0 6px 20px rgba(0,0,0,0.6)')
+          : (isTarget && canDropRed && isMyTurn ? '0 0 24px rgba(255, 0, 0, 0.4)' : '0 6px 20px rgba(0,0,0,0.6)')
       }}
     >
       {/* Slot 1: White Perk 1 */}
@@ -267,7 +232,7 @@ function TableSlotsRow({
         {white1 ? (
           <CardItem card={white1} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.8rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '1. beyaz' : ''}
           </span>
         )}
@@ -283,7 +248,7 @@ function TableSlotsRow({
         {white2 ? (
           <CardItem card={white2} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.8rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '2. beyaz' : ''}
           </span>
         )}
@@ -299,7 +264,7 @@ function TableSlotsRow({
         {redFlag ? (
           <CardItem card={redFlag} type="redflag" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.84rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(248, 113, 113, 0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.8rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(248, 113, 113, 0.4)', fontWeight: 700 }}>
             {isTarget && canDropRed ? (isMyTurn ? 'kırmızı koy' : 'sabotaj') : ''}
           </span>
         )}
@@ -326,6 +291,7 @@ export default function TabletopView({
     turnPlayerName,
     isMyTurn,
     candidates = {},
+    handCardCounts = {},
     mySabotageTarget,
     hand = { whiteCards: [], redCards: [] },
     roundWinner,
@@ -435,14 +401,187 @@ export default function TabletopView({
   const availableWhiteCards = hand.whiteCards || [];
   const availableRedCards = hand.redCards || [];
 
-  const singlePlayer = players.find(p => p.id === singlePlayerId);
-  const opponentMatchmakers = players.filter(p => p.id !== singlePlayerId && p.id !== player.id);
-
-  // Placed cards on table are 100% visible to everyone in real-time from server state!
   const myRenderCandidate = myCandidate || {};
-
   const canDropWhite = phase === 'PERKS' && !isSingle && !myCandidate?.whiteCardsSubmitted;
   const canDropRed = phase === 'SABOTAGE' && !isSingle && !mySabotageTarget?.targetCandidate?.hasRedFlag;
+
+  // Calculate 3 Top + 3 Bottom player desks symmetrically
+  const allRoomPlayers = players && players.length > 0 ? players : [player];
+  const otherPlayers = allRoomPlayers.filter(p => p.id !== player.id);
+
+  let topPlayers = [];
+  let bottomPlayers = [];
+
+  if (allRoomPlayers.length <= 3) {
+    topPlayers = otherPlayers;
+    bottomPlayers = [player];
+  } else if (allRoomPlayers.length === 4) {
+    topPlayers = [otherPlayers[0], otherPlayers[1]];
+    bottomPlayers = [otherPlayers[2], player];
+  } else if (allRoomPlayers.length === 5) {
+    topPlayers = [otherPlayers[0], otherPlayers[1], otherPlayers[2]];
+    bottomPlayers = [otherPlayers[3], player];
+  } else {
+    // 6 Players: Exactly 3 on top, 3 on bottom
+    topPlayers = [otherPlayers[0], otherPlayers[1], otherPlayers[2]];
+    bottomPlayers = [otherPlayers[3], player, otherPlayers[4]];
+  }
+
+  // Render a Single Standard Player Desk (Equal uniform size for ALL desks)
+  const renderDesk = (deskPlayer) => {
+    if (!deskPlayer) return null;
+
+    const isMe = deskPlayer.id === player.id;
+    const isPlayerSingle = deskPlayer.id === singlePlayerId;
+    const isPlayerTurn = turnPlayerId === deskPlayer.id;
+    const isTarget = mySabotageTarget?.targetPlayerId === deskPlayer.id;
+    const isWinner = roundWinner === deskPlayer.id;
+    const candidateObj = candidates[deskPlayer.id] || (isMe ? myRenderCandidate : null);
+
+    // Get dynamic hand counts from server state
+    const pCounts = handCardCounts?.[deskPlayer.id] || (isMe ? {
+      white: availableWhiteCards.length,
+      red: availableRedCards.length
+    } : {
+      white: 4,
+      red: 3
+    });
+
+    return (
+      <div
+        key={deskPlayer.id}
+        style={{
+          width: '456px',
+          minWidth: '420px',
+          maxWidth: '456px',
+          padding: '12px',
+          boxSizing: 'border-box',
+          borderRadius: '22px',
+          background: isPlayerTurn
+            ? 'rgba(255, 0, 0, 0.18)'
+            : (isPlayerSingle ? 'rgba(245, 158, 11, 0.08)' : 'rgba(20, 20, 20, 0.75)'),
+          border: isPlayerTurn
+            ? '1.5px solid #FF0000'
+            : (isPlayerSingle ? '1.5px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'),
+          boxShadow: isPlayerTurn
+            ? '0 0 28px rgba(255, 0, 0, 0.45)'
+            : (isPlayerSingle ? '0 0 24px rgba(245, 158, 11, 0.2)' : '0 6px 20px rgba(0, 0, 0, 0.5)'),
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '6px'
+        }}
+      >
+        {/* Desk Header Info */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '2px',
+          fontSize: '0.92rem',
+          fontWeight: 600,
+          textTransform: 'lowercase',
+          width: '100%',
+          justifyContent: 'center'
+        }}>
+          <img
+            src={deskPlayer.avatar || defaultAvatarImg}
+            alt={deskPlayer.name}
+            style={{
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: isPlayerSingle ? '1.5px solid #fbbf24' : '1.5px solid rgba(255, 255, 255, 0.3)',
+              background: '#000',
+              flexShrink: 0
+            }}
+          />
+
+          <span style={{
+            maxWidth: '170px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: isPlayerSingle ? '#fbbf24' : '#ffffff'
+          }}>
+            {deskPlayer.name} {isMe ? '(senin masan)' : ''}
+          </span>
+
+          {isPlayerSingle && (
+            <span style={{
+              background: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              color: '#fbbf24',
+              fontSize: '0.72rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              flexShrink: 0
+            }}>
+              <Crown size={12} color="#fbbf24" /> bekâr
+            </span>
+          )}
+
+          {isPlayerTurn && !isPlayerSingle && (
+            <span style={{
+              background: '#FF0000',
+              color: '#ffffff',
+              fontSize: '0.72rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              flexShrink: 0
+            }}>
+              {isMe ? 'senin sıran' : 'sıra onda'}
+            </span>
+          )}
+
+          {isTarget && (
+            <span style={{
+              background: 'rgba(239, 68, 68, 0.2)',
+              color: '#f87171',
+              fontSize: '0.72rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontWeight: 600,
+              flexShrink: 0
+            }}>
+              sabotaj hedefin
+            </span>
+          )}
+
+          {isWinner && <Crown size={15} color="#10b981" style={{ flexShrink: 0 }} />}
+        </div>
+
+        {/* Fanned Hand Backs (Showing exact dynamic card counts!) */}
+        <DynamicHandFanned
+          redCount={isPlayerSingle ? 0 : pCounts.red}
+          whiteCount={isPlayerSingle ? 1 : pCounts.white}
+        />
+
+        {/* 3 Table Slots */}
+        <TableSlotsRow
+          candidate={candidateObj}
+          isMySlots={isMe}
+          isTarget={isTarget}
+          phase={phase}
+          isMyTurn={isMyTurn}
+          canDropWhite={isMe && canDropWhite}
+          canDropRed={isTarget && canDropRed}
+          onDropCard={handleDropCard}
+          onSelectWinner={onSelectWinner}
+          isSingle={isSingle}
+          isWinner={isWinner}
+        />
+      </div>
+    );
+  };
 
   return (
     <div style={{
@@ -456,280 +595,47 @@ export default function TabletopView({
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Virtual Table Area */}
+      {/* Virtual Table Area: 3 Top Desks + 3 Bottom Desks */}
       <div style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
-        padding: '20px 20px 85px 20px',
+        padding: '16px 16px 85px 16px',
         width: '100%',
         maxWidth: '100%',
         minHeight: 'calc(100vh - 50px)',
         overflowY: 'auto',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        gap: '20px'
       }}>
-
-        {/* TOP / CENTER ROW: Opponents & Bekâr Seated Around Table */}
+        {/* TOP ROW: Up to 3 player desks side-by-side */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
-          gap: '24px',
-          flexWrap: 'wrap',
+          alignItems: 'stretch',
+          gap: '16px',
+          flexWrap: 'nowrap',
           width: '100%',
-          maxWidth: '1800px',
-          margin: '0 auto',
-          paddingTop: '6px'
+          maxWidth: '1480px',
+          margin: '0 auto'
         }}>
-          {/* Bekâr Player Zone */}
-          {!isSingle && singlePlayer && (
-            <div style={{ textAlign: 'center', minWidth: '190px', margin: '6px 12px' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '10px',
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                textTransform: 'lowercase',
-                color: '#fbbf24',
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                padding: '4px 14px',
-                borderRadius: '9999px'
-              }}>
-                <img
-                  src={singlePlayer.avatar || defaultAvatarImg}
-                  alt={singlePlayer.name}
-                  style={{
-                    width: '26px',
-                    height: '26px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '1.5px solid #fbbf24',
-                    background: '#000'
-                  }}
-                />
-                <span>{singlePlayer.name}</span>
-                <Crown size={15} color="#fbbf24" title="bekâr" />
-              </div>
-              <SingleDeckStack />
-            </div>
-          )}
-
-          {/* Opponent Matchmakers */}
-          {opponentMatchmakers.map((opp) => {
-            const oppCandidate = candidates[opp.id];
-            const isTarget = mySabotageTarget?.targetPlayerId === opp.id;
-            const isWinner = roundWinner === opp.id;
-            const isOppTurn = turnPlayerId === opp.id;
-
-            return (
-              <div
-                key={opp.id}
-                style={{
-                  textAlign: 'center',
-                  width: '536px',
-                  minWidth: '500px',
-                  maxWidth: '536px',
-                  padding: '14px',
-                  boxSizing: 'border-box',
-                  borderRadius: '24px',
-                  background: isOppTurn ? 'rgba(255, 0, 0, 0.16)' : 'rgba(20, 20, 20, 0.65)',
-                  border: isOppTurn ? '1.5px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: isOppTurn ? '0 0 28px rgba(255, 0, 0, 0.45)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '4px',
-                  fontSize: '0.94rem',
-                  fontWeight: 600,
-                  textTransform: 'lowercase'
-                }}>
-                  <img
-                    src={opp.avatar || defaultAvatarImg}
-                    alt={opp.name}
-                    style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                      background: '#000'
-                    }}
-                  />
-                  <span>{opp.name}</span>
-                  {isOppTurn && (
-                    <span style={{
-                      background: '#FF0000',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                      fontWeight: 800
-                    }}>
-                      sıra onda
-                    </span>
-                  )}
-                  {isTarget && (
-                    <span style={{
-                      background: 'rgba(239, 68, 68, 0.2)',
-                      color: '#f87171',
-                      fontSize: '0.72rem',
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                      fontWeight: 600
-                    }}>
-                      sabotaj hedefin
-                    </span>
-                  )}
-                  {isWinner && <Crown size={15} color="#10b981" />}
-                </div>
-
-                {/* Opponent's Fanned Hand Backs */}
-                <OpponentHandFanned count={7} />
-
-                {/* Opponent's 3 Table Slots (Cards are visibly displayed!) */}
-                <TableSlotsRow
-                  candidate={oppCandidate}
-                  isMySlots={false}
-                  isTarget={isTarget}
-                  phase={phase}
-                  isMyTurn={isMyTurn}
-                  canDropWhite={false}
-                  canDropRed={canDropRed}
-                  onDropCard={handleDropCard}
-                  onSelectWinner={onSelectWinner}
-                  isSingle={isSingle}
-                  isWinner={isWinner}
-                />
-              </div>
-            );
-          })}
+          {topPlayers.map(p => renderDesk(p))}
         </div>
 
-        {/* BOTTOM ROW: Local Player's Zone & Slots */}
+        {/* BOTTOM ROW: Up to 3 player desks side-by-side (including local player) */}
         <div style={{
-          marginTop: 'auto',
-          marginBottom: '20px',
-          textAlign: 'center',
-          width: '100%',
-          maxWidth: '1800px',
           display: 'flex',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          alignItems: 'stretch',
+          gap: '16px',
+          flexWrap: 'nowrap',
+          width: '100%',
+          maxWidth: '1480px',
+          margin: '0 auto'
         }}>
-          {isSingle ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '10px',
-                fontSize: '0.94rem',
-                fontWeight: 700,
-                color: '#fbbf24',
-                background: 'rgba(245, 158, 11, 0.12)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                padding: '4px 16px',
-                borderRadius: '9999px',
-                textTransform: 'lowercase'
-              }}>
-                <img
-                  src={player.avatar || defaultAvatarImg}
-                  alt={player.name}
-                  style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '1.5px solid #fbbf24',
-                    background: '#000'
-                  }}
-                />
-                <span>bu tur bekârsın ({player.name})</span>
-                <Crown size={15} color="#fbbf24" />
-              </div>
-              <SingleDeckStack />
-            </div>
-          ) : (
-            <div
-              style={{
-                textAlign: 'center',
-                width: '536px',
-                minWidth: '500px',
-                maxWidth: '536px',
-                margin: '0 auto',
-                padding: '14px',
-                borderRadius: '24px',
-                background: isMyTurn ? 'rgba(255, 0, 0, 0.18)' : 'rgba(20, 20, 20, 0.65)',
-                border: isMyTurn ? '1.5px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: isMyTurn ? '0 0 30px rgba(255, 0, 0, 0.5)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '10px',
-                fontSize: '0.94rem',
-                fontWeight: 600,
-                textTransform: 'lowercase'
-              }}>
-                <img
-                  src={player.avatar || defaultAvatarImg}
-                  alt={player.name}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                    background: '#000'
-                  }}
-                />
-                <span>{player.name} (senin masan)</span>
-                {isMyTurn && (
-                  <span style={{
-                    background: '#FF0000',
-                    color: '#ffffff',
-                    fontSize: '0.72rem',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    fontWeight: 800
-                  }}>
-                    senin sıran
-                  </span>
-                )}
-                {roundWinner === player.id && <Crown size={15} color="#10b981" />}
-              </div>
-
-              <TableSlotsRow
-                candidate={myRenderCandidate}
-                isMySlots={true}
-                isTarget={false}
-                phase={phase}
-                isMyTurn={isMyTurn}
-                canDropWhite={canDropWhite}
-                canDropRed={false}
-                onDropCard={handleDropCard}
-                onSelectWinner={onSelectWinner}
-                isSingle={isSingle}
-                isWinner={roundWinner === player.id}
-              />
-            </div>
-          )}
+          {bottomPlayers.map(p => renderDesk(p))}
         </div>
       </div>
 
@@ -766,7 +672,7 @@ export default function TabletopView({
             paddingBottom: '16px'
           }}
         >
-          {/* Pull Tab Bar */}
+          {/* Pull Tab Bar with Perfectly Aligned Badges */}
           <div
             onClick={() => setIsHandDrawerOpen(prev => !prev)}
             style={{
@@ -785,15 +691,24 @@ export default function TabletopView({
               borderTopRightRadius: '22px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%' }}>
+              <span style={{
+                fontSize: '0.88rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                lineHeight: 1
+              }}>
                 <Layers size={16} color="#FF0000" />
                 <span>destem</span>
               </span>
+
               <span style={{
-                width: '88px',
-                minWidth: '88px',
-                maxWidth: '88px',
+                width: '84px',
+                minWidth: '84px',
+                maxWidth: '84px',
                 height: '24px',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -802,7 +717,7 @@ export default function TabletopView({
                 color: '#1e1e1e',
                 fontWeight: 800,
                 fontSize: '0.74rem',
-                lineHeight: '1',
+                lineHeight: 1,
                 borderRadius: '9999px',
                 boxSizing: 'border-box',
                 textAlign: 'center',
@@ -810,10 +725,11 @@ export default function TabletopView({
               }}>
                 {availableWhiteCards.length} beyaz
               </span>
+
               <span style={{
-                width: '88px',
-                minWidth: '88px',
-                maxWidth: '88px',
+                width: '84px',
+                minWidth: '84px',
+                maxWidth: '84px',
                 height: '24px',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -822,7 +738,7 @@ export default function TabletopView({
                 color: '#ffffff',
                 fontWeight: 800,
                 fontSize: '0.74rem',
-                lineHeight: '1',
+                lineHeight: 1,
                 borderRadius: '9999px',
                 boxSizing: 'border-box',
                 textAlign: 'center',
@@ -833,12 +749,13 @@ export default function TabletopView({
             </div>
 
             <div style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
               color: (isHandDrawerOpen || isDragging) ? '#94a3b8' : '#ffffff',
               fontSize: '0.78rem',
-              fontWeight: 700
+              fontWeight: 700,
+              lineHeight: 1
             }}>
               {(isHandDrawerOpen || isDragging) ? (
                 <>
@@ -859,53 +776,91 @@ export default function TabletopView({
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
+            height: '270px',
             position: 'relative',
-            height: '260px',
             width: '100%',
-            paddingTop: '12px'
+            maxWidth: '1200px',
+            margin: '0 auto',
+            paddingTop: '20px'
           }}>
-            {[
-              ...availableWhiteCards.map(c => ({ card: c, type: 'perk' })),
-              ...availableRedCards.map(c => ({ card: c, type: 'redflag' }))
-            ].map((item, idx, arr) => {
-              const mid = (arr.length - 1) / 2;
-              const offset = idx - mid;
-              const rot = offset * 3.2;
-              const translateY = Math.abs(offset) * 4.5;
-              const isHovered = hoveredCardId === item.card.id;
-              const isPerk = item.type === 'perk';
-              const canInteract = isMyTurn && (
-                (phase === 'PERKS' && isPerk) ||
-                (phase === 'SABOTAGE' && !isPerk)
-              );
+            {/* White Perks */}
+            {availableWhiteCards.map((card, index) => {
+              const total = availableWhiteCards.length + availableRedCards.length;
+              const globalIndex = index;
+              const mid = (total - 1) / 2;
+              const offset = globalIndex - mid;
+              const rot = offset * 2.8;
+              const translateY = Math.abs(offset) * 3;
+              const isHovered = hoveredCardId === card.id;
 
               return (
                 <div
-                  key={item.card.id}
-                  draggable={canInteract}
-                  onDragStart={(e) => handleCardDragStart(e, item.card, item.type)}
+                  key={card.id}
+                  draggable={isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted}
+                  onDragStart={(e) => handleCardDragStart(e, card, 'perk')}
                   onDragEnd={handleCardDragEnd}
-                  onClick={() => canInteract && handleCardClick(item.card, item.type)}
-                  onMouseEnter={() => setHoveredCardId(item.card.id)}
+                  onMouseEnter={() => setHoveredCardId(card.id)}
                   onMouseLeave={() => setHoveredCardId(null)}
+                  onClick={() => handleCardClick(card, 'perk')}
                   style={{
-                    position: 'relative',
-                    width: '180px',
-                    marginRight: '-40px',
-                    cursor: canInteract ? 'grab' : 'not-allowed',
-                    opacity: canInteract ? 1 : 0.7,
-                    transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, z-index 0.2s ease',
+                    position: 'absolute',
+                    left: `calc(50% + ${offset * 68}px - 85px)`,
+                    bottom: 0,
+                    zIndex: isHovered ? 50 : 10 + index,
                     transform: isHovered
-                      ? `translateY(-65px) scale(1.15) rotate(0deg)`
+                      ? `translateY(-48px) scale(1.12) rotate(0deg)`
                       : `translateY(${translateY}px) rotate(${rot}deg)`,
-                    zIndex: isHovered ? 50 : idx + 1,
-                    filter: isHovered && canInteract
-                      ? (isPerk ? 'drop-shadow(0 0 24px rgba(255, 255, 255, 0.95))' : 'drop-shadow(0 0 26px rgba(217, 4, 41, 0.95))')
-                      : 'drop-shadow(0 6px 12px rgba(0,0,0,0.65))'
+                    transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    cursor: (isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted) ? 'grab' : 'default',
+                    opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : 1
                   }}
-                  title={canInteract ? 'masaya sürükle veya tıkla' : (isMyTurn ? 'bu aşamada kullanılamaz' : 'sıranı bekle')}
                 >
-                  <CardItem card={item.card} type={item.type} isSmall={false} />
+                  <CardItem
+                    card={card}
+                    type="perk"
+                    isSelected={isHovered}
+                  />
+                </div>
+              );
+            })}
+
+            {/* Red Flag Sabotages */}
+            {availableRedCards.map((card, index) => {
+              const total = availableWhiteCards.length + availableRedCards.length;
+              const globalIndex = availableWhiteCards.length + index;
+              const mid = (total - 1) / 2;
+              const offset = globalIndex - mid;
+              const rot = offset * 2.8;
+              const translateY = Math.abs(offset) * 3;
+              const isHovered = hoveredCardId === card.id;
+
+              return (
+                <div
+                  key={card.id}
+                  draggable={isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag}
+                  onDragStart={(e) => handleCardDragStart(e, card, 'redflag')}
+                  onDragEnd={handleCardDragEnd}
+                  onMouseEnter={() => setHoveredCardId(card.id)}
+                  onMouseLeave={() => setHoveredCardId(null)}
+                  onClick={() => handleCardClick(card, 'redflag')}
+                  style={{
+                    position: 'absolute',
+                    left: `calc(50% + ${offset * 68}px - 85px)`,
+                    bottom: 0,
+                    zIndex: isHovered ? 50 : 25 + index,
+                    transform: isHovered
+                      ? `translateY(-48px) scale(1.12) rotate(0deg)`
+                      : `translateY(${translateY}px) rotate(${rot}deg)`,
+                    transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    cursor: (isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag) ? 'grab' : 'default',
+                    opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : 1
+                  }}
+                >
+                  <CardItem
+                    card={card}
+                    type="redflag"
+                    isSelected={isHovered}
+                  />
                 </div>
               );
             })}
@@ -913,7 +868,7 @@ export default function TabletopView({
         </div>
       )}
 
-      {/* Fill-in-the-Blank Modal */}
+      {/* Fill Blank Modal for interactive wildcard cards */}
       <FillBlankModal
         isOpen={fillModalState.isOpen}
         card={fillModalState.card}

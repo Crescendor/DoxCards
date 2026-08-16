@@ -75,6 +75,17 @@ export default function App() {
       setGameState(gameState);
     });
 
+    socket.on('play_sound_event', (soundEvt) => {
+      if (!soundEvt) return;
+      const { type, playerId, customSounds: playerCustomSounds } = soundEvt;
+      const actorPlayer = currentRoom?.players?.find(p => p.id === playerId);
+      const playerWithSounds = {
+        ...(actorPlayer || {}),
+        customSounds: playerCustomSounds || actorPlayer?.customSounds || null
+      };
+      sounds.playTriggerSound(type, playerWithSounds, appConfig?.customSounds || []);
+    });
+
     socket.on('game_reset_to_lobby', () => {
       setGameState(null);
     });
@@ -89,10 +100,11 @@ export default function App() {
       socket.off('room_updated');
       socket.off('game_started');
       socket.off('game_state_update');
+      socket.off('play_sound_event');
       socket.off('game_reset_to_lobby');
       socket.off('kicked_from_room');
     };
-  }, []);
+  }, [currentRoom, appConfig]);
 
   // Create Room
   const handleCreateRoom = (settings) => {
@@ -178,6 +190,27 @@ export default function App() {
       roomCode: currentRoom.code,
       hostId: player.id,
       targetPlayerId
+    });
+  };
+
+  // Add Bot Player (Admin Host)
+  const handleAddBot = () => {
+    if (!currentRoom) return;
+    socket.emit('add_bot_player', {
+      roomCode: currentRoom.code,
+      hostId: player.id
+    }, (res) => {
+      if (res?.error) alert(res.error);
+    });
+  };
+
+  // Remove Bot Player (Admin Host)
+  const handleRemoveBot = (botId) => {
+    if (!currentRoom) return;
+    socket.emit('remove_bot_player', {
+      roomCode: currentRoom.code,
+      hostId: player.id,
+      botId
     });
   };
 
@@ -318,6 +351,8 @@ export default function App() {
             onToggleReady={handleToggleReady}
             onUpdateSettings={handleUpdateSettings}
             onKickPlayer={handleKickPlayer}
+            onAddBot={handleAddBot}
+            onRemoveBot={handleRemoveBot}
             isLoading={isLoading}
           />
         ) : (
@@ -344,6 +379,8 @@ export default function App() {
           scores={gameState?.scores || {}}
           singlePlayerId={gameState?.singlePlayerId}
           onKickPlayer={handleKickPlayer}
+          onAddBot={handleAddBot}
+          onRemoveBot={handleRemoveBot}
           onStopGame={handleStopGame}
           onLeaveRoom={handleLeaveRoom}
         />
