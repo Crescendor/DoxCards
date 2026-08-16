@@ -157,23 +157,23 @@ function TableSlotsRow({
   const isVoting = (phase === 'VOTING' || phase === 'REVEAL') && isSingle;
 
   const slotBoxStyle = (hasCard, isHovered, isActionable, borderColor) => ({
-    width: '108px',
-    minWidth: '108px',
-    maxWidth: '108px',
-    height: '151px',
-    minHeight: '151px',
-    maxHeight: '151px',
-    borderRadius: '12px',
+    width: '132px',
+    minWidth: '132px',
+    maxWidth: '132px',
+    height: '185px',
+    minHeight: '185px',
+    maxHeight: '185px',
+    borderRadius: '14px',
     border: hasCard
       ? 'none'
       : (isHovered
           ? `2px dashed ${borderColor}`
           : (isActionable
               ? `2px dashed ${borderColor}`
-              : '2px dashed rgba(255,255,255,0.18)')),
+              : '2px dashed rgba(255,255,255,0.2)')),
     background: isHovered
       ? (borderColor === '#ef4444' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(56, 189, 248, 0.18)')
-      : (hasCard ? 'transparent' : 'rgba(0, 0, 0, 0.22)'),
+      : (hasCard ? 'transparent' : 'rgba(0, 0, 0, 0.25)'),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -191,17 +191,17 @@ function TableSlotsRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '10px',
-        width: '364px',
-        minWidth: '364px',
-        maxWidth: '364px',
-        height: '167px',
-        minHeight: '167px',
-        maxHeight: '167px',
+        gap: '12px',
+        width: '446px',
+        minWidth: '446px',
+        maxWidth: '446px',
+        height: '209px',
+        minHeight: '209px',
+        maxHeight: '209px',
         margin: '0 auto',
-        padding: '8px',
+        padding: '12px',
         boxSizing: 'border-box',
-        borderRadius: '18px',
+        borderRadius: '20px',
         background: isWinner
           ? 'rgba(16, 185, 129, 0.15)'
           : (isTarget && canDropRed && isMyTurn ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.3)'),
@@ -225,7 +225,7 @@ function TableSlotsRow({
         {white1 ? (
           <CardItem card={white1} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.72rem', color: isMySlots && canDropWhite && isMyTurn ? '#38bdf8' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#38bdf8' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
             {isMySlots ? '1. beyaz' : ''}
           </span>
         )}
@@ -241,7 +241,7 @@ function TableSlotsRow({
         {white2 ? (
           <CardItem card={white2} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.72rem', color: isMySlots && canDropWhite && isMyTurn ? '#38bdf8' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#38bdf8' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
             {isMySlots ? '2. beyaz' : ''}
           </span>
         )}
@@ -257,7 +257,7 @@ function TableSlotsRow({
         {redFlag ? (
           <CardItem card={redFlag} type="redflag" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.72rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
             {isTarget && canDropRed ? (isMyTurn ? 'kırmızı koy' : 'sabotaj') : ''}
           </span>
         )}
@@ -462,8 +462,8 @@ export default function TabletopView({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '24px 20px 250px 20px',
-        maxWidth: '1350px',
+        padding: '24px 20px 330px 20px',
+        maxWidth: '1440px',
         margin: '0 auto',
         width: '100%'
       }}>
@@ -471,9 +471,9 @@ export default function TabletopView({
         {/* TOP ROW: Opponents & Bekâr Seated Around Table */}
         <div style={{
           display: 'flex',
-          justifyContent: 'space-around',
+          justifyContent: 'center',
           alignItems: 'flex-start',
-          gap: '24px',
+          gap: '28px',
           flexWrap: 'wrap'
         }}>
           {/* Bekâr Player Zone */}
@@ -519,14 +519,14 @@ export default function TabletopView({
                 key={opp.id}
                 style={{
                   textAlign: 'center',
-                  width: '388px',
-                  minWidth: '388px',
-                  maxWidth: '388px',
-                  minHeight: '340px',
-                  maxHeight: '340px',
-                  padding: '12px',
+                  width: '470px',
+                  minWidth: '470px',
+                  maxWidth: '470px',
+                  minHeight: '390px',
+                  maxHeight: '390px',
+                  padding: '14px',
                   boxSizing: 'border-box',
-                  borderRadius: '20px',
+                  borderRadius: '24px',
                   background: isOppTurn ? 'rgba(56, 189, 248, 0.08)' : 'transparent',
                   border: isOppTurn ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
                   transition: 'all 0.3s ease',
@@ -541,7 +541,7 @@ export default function TabletopView({
                   alignItems: 'center',
                   gap: '8px',
                   marginBottom: '6px',
-                  fontSize: '0.88rem',
+                  fontSize: '0.92rem',
                   fontWeight: 600,
                   textTransform: 'lowercase'
                 }}>
@@ -549,8 +549,8 @@ export default function TabletopView({
                     src={opp.avatar || defaultAvatarImg}
                     alt={opp.name}
                     style={{
-                      width: '24px',
-                      height: '24px',
+                      width: '26px',
+                      height: '26px',
                       borderRadius: '50%',
                       objectFit: 'cover',
                       border: '1.5px solid rgba(255, 255, 255, 0.3)',
@@ -562,8 +562,8 @@ export default function TabletopView({
                     <span style={{
                       background: '#38bdf8',
                       color: '#000000',
-                      fontSize: '0.68rem',
-                      padding: '1px 6px',
+                      fontSize: '0.72rem',
+                      padding: '2px 8px',
                       borderRadius: '9999px',
                       fontWeight: 700
                     }}>
@@ -574,15 +574,15 @@ export default function TabletopView({
                     <span style={{
                       background: 'rgba(239, 68, 68, 0.2)',
                       color: '#f87171',
-                      fontSize: '0.68rem',
-                      padding: '1px 6px',
+                      fontSize: '0.72rem',
+                      padding: '2px 8px',
                       borderRadius: '9999px',
                       fontWeight: 600
                     }}>
                       sabotaj hedefin
                     </span>
                   )}
-                  {isWinner && <Crown size={14} color="#10b981" />}
+                  {isWinner && <Crown size={15} color="#10b981" />}
                 </div>
 
                 {/* Opponent's Fanned Hand Backs */}
@@ -616,7 +616,7 @@ export default function TabletopView({
                 alignItems: 'center',
                 gap: '8px',
                 marginBottom: '10px',
-                fontSize: '0.92rem',
+                fontSize: '0.94rem',
                 fontWeight: 600,
                 color: '#fbbf24',
                 textTransform: 'lowercase'
@@ -625,8 +625,8 @@ export default function TabletopView({
                   src={player.avatar || defaultAvatarImg}
                   alt={player.name}
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '30px',
+                    height: '30px',
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '1.5px solid #fbbf24',
@@ -641,12 +641,12 @@ export default function TabletopView({
             <div
               style={{
                 textAlign: 'center',
-                width: '388px',
-                minWidth: '388px',
-                maxWidth: '388px',
+                width: '470px',
+                minWidth: '470px',
+                maxWidth: '470px',
                 margin: '0 auto',
-                padding: '12px',
-                borderRadius: '20px',
+                padding: '14px',
+                borderRadius: '24px',
                 background: isMyTurn ? 'rgba(56, 189, 248, 0.08)' : 'transparent',
                 border: isMyTurn ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
                 transition: 'all 0.3s ease'
@@ -657,7 +657,7 @@ export default function TabletopView({
                 alignItems: 'center',
                 gap: '8px',
                 marginBottom: '10px',
-                fontSize: '0.9rem',
+                fontSize: '0.94rem',
                 fontWeight: 600,
                 textTransform: 'lowercase'
               }}>
@@ -665,8 +665,8 @@ export default function TabletopView({
                   src={player.avatar || defaultAvatarImg}
                   alt={player.name}
                   style={{
-                    width: '26px',
-                    height: '26px',
+                    width: '28px',
+                    height: '28px',
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '1.5px solid rgba(255, 255, 255, 0.3)',
@@ -678,7 +678,7 @@ export default function TabletopView({
                   <span style={{
                     background: '#38bdf8',
                     color: '#000000',
-                    fontSize: '0.7rem',
+                    fontSize: '0.72rem',
                     padding: '2px 8px',
                     borderRadius: '9999px',
                     fontWeight: 700
@@ -714,11 +714,11 @@ export default function TabletopView({
           bottom: 0,
           left: 0,
           right: 0,
-          height: '235px',
+          height: '290px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'flex-end',
-          paddingBottom: '14px',
+          paddingBottom: '16px',
           pointerEvents: 'none',
           zIndex: 80
         }}>
@@ -729,18 +729,18 @@ export default function TabletopView({
             position: 'relative',
             pointerEvents: 'auto',
             height: '100%',
-            maxWidth: '960px',
+            maxWidth: '1200px',
             width: '100%'
           }}>
-            {/* All Hand Cards in Fanned Arc */}
+            {/* All Hand Cards in Fanned Arc (Full Large Size) */}
             {[
               ...availableWhiteCards.map(c => ({ card: c, type: 'perk' })),
               ...availableRedCards.map(c => ({ card: c, type: 'redflag' }))
             ].map((item, idx, arr) => {
               const mid = (arr.length - 1) / 2;
               const offset = idx - mid;
-              const rot = offset * 3.5;
-              const translateY = Math.abs(offset) * 4;
+              const rot = offset * 3.2;
+              const translateY = Math.abs(offset) * 4.5;
               const isHovered = hoveredCardId === item.card.id;
               const isPerk = item.type === 'perk';
               const canInteract = isMyTurn && (
@@ -759,22 +759,22 @@ export default function TabletopView({
                   onMouseLeave={() => setHoveredCardId(null)}
                   style={{
                     position: 'relative',
-                    width: '145px',
-                    marginRight: '-36px',
+                    width: '168px',
+                    marginRight: '-44px',
                     cursor: canInteract ? 'grab' : 'not-allowed',
-                    opacity: canInteract ? 1 : 0.65,
-                    transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, z-index 0.2s ease',
+                    opacity: canInteract ? 1 : 0.7,
+                    transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, z-index 0.2s ease',
                     transform: isHovered
-                      ? `translateY(-36px) scale(1.15) rotate(0deg)`
+                      ? `translateY(-65px) scale(1.15) rotate(0deg)`
                       : `translateY(${translateY}px) rotate(${rot}deg)`,
                     zIndex: isHovered ? 50 : idx + 1,
                     filter: isHovered && canInteract
-                      ? (isPerk ? 'drop-shadow(0 0 16px #38bdf8)' : 'drop-shadow(0 0 18px #ef4444)')
-                      : 'drop-shadow(0 4px 10px rgba(0,0,0,0.6))'
+                      ? (isPerk ? 'drop-shadow(0 0 20px #38bdf8)' : 'drop-shadow(0 0 22px #ef4444)')
+                      : 'drop-shadow(0 6px 12px rgba(0,0,0,0.65))'
                   }}
                   title={canInteract ? 'masaya sürükle veya tıkla' : (isMyTurn ? 'bu aşamada kullanılamaz' : 'sıranı bekle')}
                 >
-                  <CardItem card={item.card} type={item.type} isSmall={true} />
+                  <CardItem card={item.card} type={item.type} isSmall={false} />
                 </div>
               );
             })}

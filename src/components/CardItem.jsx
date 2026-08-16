@@ -55,22 +55,22 @@ export default function CardItem({
       onClick={disabled ? undefined : onClick}
       style={{
         position: 'relative',
-        width: isSmall ? '108px' : '100%',
-        maxWidth: isSmall ? '108px' : '170px',
-        height: isSmall ? '151px' : 'auto',
-        minHeight: isSmall ? '151px' : 'auto',
+        width: isSmall ? '132px' : '168px',
+        maxWidth: isSmall ? '132px' : '168px',
+        height: isSmall ? '185px' : '235px',
+        minHeight: isSmall ? '185px' : '235px',
         aspectRatio: '5 / 7',
-        borderRadius: isSmall ? '12px' : '16px',
+        borderRadius: isSmall ? '14px' : '16px',
         overflow: 'hidden',
         boxSizing: 'border-box',
         cursor: onClick && !disabled ? 'pointer' : 'default',
         boxShadow: isWhite
-          ? '0 4px 14px rgba(0, 0, 0, 0.35)'
-          : '0 4px 16px rgba(255, 0, 0, 0.45)',
+          ? '0 6px 18px rgba(0, 0, 0, 0.4)'
+          : '0 6px 20px rgba(255, 0, 0, 0.5)',
         userSelect: 'none',
         flexShrink: 0,
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
-        transform: isSelected ? 'translateY(-10px)' : 'none',
+        transform: isSelected ? 'translateY(-12px)' : 'none',
         outline: isSelected
           ? (isWhite ? '3px solid #38bdf8' : '3px solid #f59e0b')
           : 'none',
@@ -99,12 +99,12 @@ export default function CardItem({
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: isSmall ? '13px 11px' : '16px 14px',
+          padding: isSmall ? '15px 13px' : '18px 15px',
           paddingRight: isSmall ? '18px' : '22px',
           fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
           fontWeight: 700,
-          fontSize: isSmall ? '0.84rem' : '0.96rem',
-          lineHeight: 1.28,
+          fontSize: isSmall ? '0.94rem' : '1.04rem',
+          lineHeight: 1.25,
           textAlign: 'left',
           textTransform: 'lowercase',
           color: isWhite ? '#ff0000' : '#ffffff',
