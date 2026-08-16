@@ -1,11 +1,11 @@
-// Game Engine for Red Flags (DoxCards)
+// Game Engine for Red Flags (DoxCards) - Turn-Based Sequential Tabletop Engine
 import { getDeck } from './cards.js';
 
 export const PHASES = {
   LOBBY: 'LOBBY',
-  PERKS: 'PERKS',                 // Çöpçatanlar 2 Beyaz Kart seçiyor
-  SABOTAGE: 'SABOTAGE',           // Çöpçatanlar rakip adaya 1 Kırmızı Kart koyuyor
-  REVEAL: 'REVEAL',               // Masada tüm adaylar açılıyor & tartışma
+  PERKS: 'PERKS',                 // Çöpçatanlar sırayla 2 Beyaz Kart koyuyor (Masada anında görünür)
+  SABOTAGE: 'SABOTAGE',           // Çöpçatanlar sırayla rakip masaya 1 Kırmızı Kart koyuyor
+  REVEAL: 'REVEAL',               // Masada tüm adaylar açıldı & tartışma
   VOTING: 'VOTING',               // Bekâr karar veriyor
   ROUND_SUMMARY: 'ROUND_SUMMARY', // Tur kazananı ve puanlar
   GAME_OVER: 'GAME_OVER'          // Oyun bitti, podyum
@@ -26,27 +26,17 @@ export class GameEngine {
     this.deck = { white: [], red: [] };
     this.discardPile = { white: [], red: [] };
 
-    // Player hands: { [playerId]: { whiteCards: [], redCards: [] } }
     this.hands = {};
-    // Player scores: { [playerId]: number }
     this.scores = {};
-    // Sabotages made & received stats
     this.stats = {};
 
-    // Candidates in current round:
-    // { [matchmakerId]: {
-    //     matchmakerId,
-    //     matchmakerName,
-    //     whiteCards: [card1, card2],
-    //     redFlag: card | null,
-    //     sabotagedBy: playerId | null,
-    //     sabotagedByName: string | null
-    //   }
-    // }
     this.candidates = {};
-
-    // Sabotage assignments: { [saboteurId]: targetMatchmakerId }
     this.sabotageAssignments = {};
+
+    // Turn order state
+    this.turnOrder = [];
+    this.turnIndex = 0;
+    this.turnPlayerId = null;
 
     this.roundWinner = null;
     this.winningCandidate = null;
@@ -64,7 +54,6 @@ export class GameEngine {
     const cards = [];
     for (let i = 0; i < count; i++) {
       if (this.deck[type].length === 0) {
-        // Reshuffle discard pile if empty
         if (this.discardPile[type].length > 0) {
           this.deck[type] = [...this.discardPile[type]].sort(() => Math.random() - 0.5);
           this.discardPile[type] = [];
@@ -108,7 +97,6 @@ export class GameEngine {
     this.roundWinner = null;
     this.winningCandidate = null;
 
-    // Determine Bekâr (Single)
     const activePlayers = players.filter(p => p.connected !== false);
     if (this.singleIndex >= activePlayers.length) {
       this.singleIndex = 0;
@@ -116,12 +104,15 @@ export class GameEngine {
     const single = activePlayers[this.singleIndex];
     this.singlePlayerId = single.id;
 
-    // Get matchmakers (all active players except single)
+    // Matchmakers (all players except single)
     const matchmakers = activePlayers.filter(p => p.id !== this.singlePlayerId);
 
-    // If 2 players, single + 1 matchmaker, matchmaker sabotages their own candidate or system red card
-    // For 3+ players, circular sabotage assignment:
-    // matchmaker[i] sabotages matchmaker[(i + 1) % matchmakers.length]
+    // Set turn order for matchmakers
+    this.turnOrder = matchmakers.map(m => m.id);
+    this.turnIndex = 0;
+    this.turnPlayerId = this.turnOrder[0] || null;
+
+    // Circular sabotage assignments
     matchmakers.forEach((m, idx) => {
       const target = matchmakers[(idx + 1) % matchmakers.length];
       this.sabotageAssignments[m.id] = target.id;
@@ -135,7 +126,7 @@ export class GameEngine {
       };
     });
 
-    // Make sure all matchmakers have full hands (4 white, 3 red)
+    // Replenish hands to 4 white, 3 red
     matchmakers.forEach(m => {
       const hand = this.hands[m.id];
       if (hand) {
@@ -160,54 +151,60 @@ export class GameEngine {
 
   submitPerks(playerId, cardIds) {
     if (this.phase !== PHASES.PERKS) return false;
-    if (playerId === this.singlePlayerId) return false;
+    if (playerId !== this.turnPlayerId) return false; // Strictly enforce turn order!
     if (!this.candidates[playerId]) return false;
     if (!Array.isArray(cardIds) || cardIds.length !== 2) return false;
 
     const hand = this.hands[playerId];
     if (!hand) return false;
 
-    // Find cards in hand
     const selectedCards = hand.whiteCards.filter(c => cardIds.includes(c.id));
     if (selectedCards.length !== 2) return false;
 
-    // Remove from hand
+    // Remove from hand and save to candidate
     hand.whiteCards = hand.whiteCards.filter(c => !cardIds.includes(c.id));
     this.discardPile.white.push(...selectedCards);
-
-    // Assign to candidate
     this.candidates[playerId].whiteCards = selectedCards;
 
-    // Check if all matchmakers submitted
-    const matchmakerIds = Object.keys(this.candidates);
-    const allSubmitted = matchmakerIds.every(id => this.candidates[id].whiteCards.length === 2);
-
-    if (allSubmitted) {
+    // Advance turn to next matchmaker in sequence
+    this.turnIndex++;
+    if (this.turnIndex < this.turnOrder.length) {
+      this.turnPlayerId = this.turnOrder[this.turnIndex];
+      this.startTimer(this.roundTimerDuration, () => {
+        this.autoSubmitCurrentPerks();
+      });
+    } else {
+      // All matchmakers placed perks -> Advance to SABOTAGE phase
       this.clearTimer();
       this.phase = PHASES.SABOTAGE;
+      this.turnIndex = 0;
+      this.turnPlayerId = this.turnOrder[0] || null;
       this.startTimer(this.roundTimerDuration, () => {
-        this.autoSubmitSabotage(matchmakerIds);
+        this.autoSubmitCurrentSabotage();
       });
     }
 
+    if (this.onStateChange) this.onStateChange();
     return true;
   }
 
-  autoSubmitPerks(matchmakers) {
-    matchmakers.forEach(m => {
-      if (this.candidates[m.id] && this.candidates[m.id].whiteCards.length < 2) {
-        const hand = this.hands[m.id];
-        if (hand && hand.whiteCards.length >= 2) {
-          const chosen = hand.whiteCards.slice(0, 2);
-          this.submitPerks(m.id, chosen.map(c => c.id));
-        }
+  autoSubmitCurrentPerks() {
+    const pId = this.turnPlayerId;
+    if (pId && this.candidates[pId] && this.candidates[pId].whiteCards.length < 2) {
+      const hand = this.hands[pId];
+      if (hand && hand.whiteCards.length >= 2) {
+        this.submitPerks(pId, hand.whiteCards.slice(0, 2).map(c => c.id));
       }
-    });
+    }
+  }
+
+  autoSubmitPerks(matchmakers) {
+    this.autoSubmitCurrentPerks();
   }
 
   submitSabotage(playerId, cardId, players) {
     if (this.phase !== PHASES.SABOTAGE) return false;
-    if (playerId === this.singlePlayerId) return false;
+    if (playerId !== this.turnPlayerId) return false; // Strictly enforce turn order!
 
     const targetId = this.sabotageAssignments[playerId];
     if (!targetId || !this.candidates[targetId]) return false;
@@ -224,43 +221,44 @@ export class GameEngine {
     const player = players.find(p => p.id === playerId);
     this.candidates[targetId].redFlag = redCard;
     this.candidates[targetId].sabotagedBy = playerId;
-    this.candidates[targetId].sabotagedByName = player ? player.name : 'Bilinmeyen';
+    this.candidates[targetId].sabotagedByName = player ? player.name : (this.candidates[playerId]?.matchmakerName || 'Rakip');
 
     if (this.stats[playerId]) {
       this.stats[playerId].sabotagesGiven++;
     }
 
-    // Check if all candidates received a red flag
-    const matchmakerIds = Object.keys(this.candidates);
-    const allSabotaged = matchmakerIds.every(id => this.candidates[id].redFlag !== null);
-
-    if (allSabotaged) {
+    // Advance turn to next saboteur
+    this.turnIndex++;
+    if (this.turnIndex < this.turnOrder.length) {
+      this.turnPlayerId = this.turnOrder[this.turnIndex];
+      this.startTimer(this.roundTimerDuration, () => {
+        this.autoSubmitCurrentSabotage();
+      });
+    } else {
+      // All sabotages placed -> Advance to VOTING
       this.clearTimer();
-      this.phase = PHASES.REVEAL;
-      // Reveal & pitch phase: give 10 seconds or allow Bekâr to move to voting
-      this.startTimer(15, () => {
-        this.phase = PHASES.VOTING;
-        this.startTimer(this.roundTimerDuration, () => {
-          this.autoSelectWinner(matchmakerIds);
-        });
-        if (this.onStateChange) this.onStateChange();
+      this.phase = PHASES.VOTING;
+      this.turnPlayerId = this.singlePlayerId; // Turn passes to the Bekâr!
+      this.startTimer(this.roundTimerDuration || 60, () => {
+        this.autoSelectWinner(this.turnOrder);
       });
     }
 
+    if (this.onStateChange) this.onStateChange();
     return true;
   }
 
-  autoSubmitSabotage(matchmakerIds) {
-    matchmakerIds.forEach(mId => {
-      const targetId = this.sabotageAssignments[mId];
+  autoSubmitCurrentSabotage() {
+    const pId = this.turnPlayerId;
+    if (pId) {
+      const targetId = this.sabotageAssignments[pId];
       if (this.candidates[targetId] && !this.candidates[targetId].redFlag) {
-        const hand = this.hands[mId];
+        const hand = this.hands[pId];
         if (hand && hand.redCards.length > 0) {
-          const card = hand.redCards[0];
-          this.submitSabotage(mId, card.id, []);
+          this.submitSabotage(pId, hand.redCards[0].id, []);
         }
       }
-    });
+    }
   }
 
   bekarSelectWinner(singlePlayerId, winningMatchmakerId, players) {
@@ -272,19 +270,16 @@ export class GameEngine {
     this.roundWinner = winningMatchmakerId;
     this.winningCandidate = this.candidates[winningMatchmakerId];
 
-    // Award point
     this.scores[winningMatchmakerId] = (this.scores[winningMatchmakerId] || 0) + 1;
     if (this.stats[winningMatchmakerId]) {
       this.stats[winningMatchmakerId].wins++;
     }
 
-    // Check if game over
     const wonGame = this.scores[winningMatchmakerId] >= this.targetScore;
     if (wonGame) {
       this.phase = PHASES.GAME_OVER;
     } else {
       this.phase = PHASES.ROUND_SUMMARY;
-      // Auto start next round after 7 seconds
       this.startTimer(7, () => {
         this.singleIndex++;
         this.startRound(players);
@@ -292,6 +287,7 @@ export class GameEngine {
       });
     }
 
+    if (this.onStateChange) this.onStateChange();
     return true;
   }
 
@@ -324,30 +320,27 @@ export class GameEngine {
     }
   }
 
-  // Get sanitized state for client
+  // Get sanitized state for client with PUBLIC cards on table
   getGameState(forPlayerId, players) {
     const singlePlayer = players.find(p => p.id === this.singlePlayerId);
+    const turnPlayer = players.find(p => p.id === this.turnPlayerId);
     const myHand = this.hands[forPlayerId] || { whiteCards: [], redCards: [] };
     const myTargetId = this.sabotageAssignments[forPlayerId] || null;
     const myTargetCandidate = myTargetId ? this.candidates[myTargetId] : null;
 
-    // Filter candidates depending on phase to keep white cards secret until Reveal (or show for maker)
+    // All placed cards on table are 100% PUBLIC to everyone in real-time!
     const publicCandidates = {};
     Object.keys(this.candidates).forEach(mId => {
       const c = this.candidates[mId];
-      const isMe = (mId === forPlayerId);
-      const isRevealed = (this.phase === PHASES.REVEAL || this.phase === PHASES.VOTING || this.phase === PHASES.ROUND_SUMMARY || this.phase === PHASES.GAME_OVER);
-
       publicCandidates[mId] = {
         matchmakerId: c.matchmakerId,
         matchmakerName: c.matchmakerName,
-        // In PERKS or SABOTAGE phase, hide cards unless it's the owner or revealed
-        whiteCards: (isRevealed || isMe) ? c.whiteCards : c.whiteCards.map(() => ({ id: 'hidden', text: 'Gizli Beyaz Kart', hidden: true })),
-        whiteCardsSubmitted: c.whiteCards.length === 2,
-        redFlag: isRevealed ? c.redFlag : (c.redFlag ? { id: 'hidden', text: 'Kırmızı Bayrak Eklendi!', hidden: true } : null),
+        whiteCards: c.whiteCards || [],
+        whiteCardsSubmitted: (c.whiteCards || []).length === 2,
+        redFlag: c.redFlag || null,
         redFlagSubmitted: c.redFlag !== null,
-        sabotagedBy: isRevealed ? c.sabotagedBy : null,
-        sabotagedByName: isRevealed ? c.sabotagedByName : null
+        sabotagedBy: c.sabotagedBy,
+        sabotagedByName: c.sabotagedByName
       };
     });
 
@@ -359,6 +352,9 @@ export class GameEngine {
       singlePlayerId: this.singlePlayerId,
       singlePlayerName: singlePlayer ? singlePlayer.name : '',
       isSingle: forPlayerId === this.singlePlayerId,
+      turnPlayerId: this.turnPlayerId,
+      turnPlayerName: turnPlayer ? turnPlayer.name : '',
+      isMyTurn: forPlayerId === this.turnPlayerId,
       scores: this.scores,
       stats: this.stats,
       hand: myHand,

@@ -16,7 +16,7 @@ export default function CardItem({
 
   const isWhite = type === 'perk' || card.type === 'perk';
 
-  // Face-down Hidden Card State
+  // Face-down Hidden Card
   if (card.hidden) {
     return (
       <div
@@ -24,13 +24,13 @@ export default function CardItem({
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: isSmall ? '150px' : '180px',
+          maxWidth: isSmall ? '135px' : '170px',
           aspectRatio: '5 / 7',
           borderRadius: isSmall ? '12px' : '16px',
           overflow: 'hidden',
           cursor: onClick && !disabled ? 'pointer' : 'default',
-          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.35)',
-          background: isWhite ? '#ffffff' : '#e11d48',
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+          background: isWhite ? '#ffffff' : '#ff0000',
           border: '1px solid rgba(0,0,0,0.15)',
           transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
           margin: '0 auto'
@@ -56,14 +56,14 @@ export default function CardItem({
       style={{
         position: 'relative',
         width: '100%',
-        maxWidth: isSmall ? '150px' : '180px',
+        maxWidth: isSmall ? '135px' : '170px',
         aspectRatio: '5 / 7',
         borderRadius: isSmall ? '12px' : '16px',
         overflow: 'hidden',
         cursor: onClick && !disabled ? 'pointer' : 'default',
         boxShadow: isWhite
-          ? '0 6px 18px rgba(0, 0, 0, 0.3)'
-          : '0 6px 20px rgba(225, 29, 72, 0.45)',
+          ? '0 6px 18px rgba(0, 0, 0, 0.35)'
+          : '0 6px 20px rgba(255, 0, 0, 0.45)',
         userSelect: 'none',
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
         transform: isSelected ? 'translateY(-10px)' : 'none',
@@ -95,11 +95,11 @@ export default function CardItem({
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: isSmall ? '12px 10px' : '16px 14px',
-          paddingRight: isSmall ? '16px' : '20px',
+          padding: isSmall ? '13px 11px' : '16px 14px',
+          paddingRight: isSmall ? '18px' : '22px',
           fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
           fontWeight: 700,
-          fontSize: isSmall ? '0.78rem' : '0.92rem',
+          fontSize: isSmall ? '0.84rem' : '0.96rem',
           lineHeight: 1.28,
           textAlign: 'left',
           textTransform: 'lowercase',
