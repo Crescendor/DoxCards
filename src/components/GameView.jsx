@@ -57,11 +57,15 @@ export default function GameView({
     <div style={{
       height: '100vh',
       maxHeight: '100vh',
+      width: '100vw',
+      maxWidth: '100vw',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       background: '#141414',
-      position: 'relative'
+      position: 'fixed',
+      inset: 0,
+      zIndex: 50
     }}>
       {/* Single Unified Sleek Dark Grey Top Header Bar */}
       <div style={{

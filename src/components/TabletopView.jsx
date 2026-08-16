@@ -123,13 +123,9 @@ function TableSlotsRow({
   };
 
   const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '148px',
-    minWidth: '148px',
-    maxWidth: '148px',
-    height: '208px',
-    minHeight: '208px',
-    maxHeight: '208px',
-    borderRadius: '16px',
+    width: 'clamp(96px, 8.5vw, 136px)',
+    height: 'clamp(136px, 18.5vh, 190px)',
+    borderRadius: '14px',
     border: hasCard
       ? 'none'
       : (isHovered
@@ -156,13 +152,9 @@ function TableSlotsRow({
   });
 
   const redSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '148px',
-    minWidth: '148px',
-    maxWidth: '148px',
-    height: '208px',
-    minHeight: '208px',
-    maxHeight: '208px',
-    borderRadius: '16px',
+    width: 'clamp(96px, 8.5vw, 136px)',
+    height: 'clamp(136px, 18.5vh, 190px)',
+    borderRadius: '14px',
     border: hasCard
       ? 'none'
       : (isHovered
@@ -194,16 +186,14 @@ function TableSlotsRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '10px',
+        gap: '8px',
         width: '100%',
-        maxWidth: '490px',
-        height: '224px',
-        minHeight: '224px',
-        maxHeight: '224px',
+        maxWidth: '460px',
+        height: 'clamp(148px, 20vh, 202px)',
         margin: '0 auto',
-        padding: '8px',
+        padding: '6px',
         boxSizing: 'border-box',
-        borderRadius: '18px',
+        borderRadius: '16px',
         background: isTarget && canDropRed && isMyTurn ? 'rgba(255, 0, 0, 0.18)' : 'rgba(15, 15, 15, 0.85)',
         border: isTarget && canDropRed && isMyTurn ? '2px dashed #FF0000' : '1px solid rgba(255, 0, 0, 0.25)',
         transition: 'all 0.25s ease',
@@ -432,11 +422,11 @@ export default function TabletopView({
         style={{
           flex: '1 1 0',
           width: '100%',
-          minWidth: '380px',
-          maxWidth: '560px',
-          padding: '14px 16px',
+          minWidth: '280px',
+          maxWidth: '540px',
+          padding: '8px 12px',
           boxSizing: 'border-box',
-          borderRadius: '22px',
+          borderRadius: '18px',
           background: isWinner
             ? 'rgba(16, 185, 129, 0.18)'
             : (isPlayerTurn
@@ -462,8 +452,9 @@ export default function TabletopView({
           flexDirection: 'column',
           justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '8px',
-          position: 'relative'
+          gap: '6px',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         title={canBekarSelectThisDesk ? `${deskPlayer.name} adlı adayı kazanan seçmek için tıkla!` : ''}
       >
@@ -597,14 +588,14 @@ export default function TabletopView({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px 0 10px 0',
-            gap: '12px'
+            padding: '8px 0 6px 0',
+            gap: '8px'
           }}>
             {/* Large 3D Layered Deck */}
             <div style={{
               position: 'relative',
-              width: '144px',
-              height: '202px',
+              width: 'clamp(88px, 7.8vw, 126px)',
+              height: 'clamp(124px, 17vh, 178px)',
               aspectRatio: '5 / 7',
               margin: '0 auto'
             }}>
@@ -707,35 +698,37 @@ export default function TabletopView({
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Virtual Table Area: 3 Top Desks + 3 Bottom Desks (Large & Screen Filling) */}
+      {/* Virtual Table Area: 3 Top Desks + 3 Bottom Desks (Strictly Fits Screen, Zero Overflow) */}
       <div style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '16px 20px 85px 20px',
+        padding: '6px 16px 52px 16px',
         width: '100%',
         maxWidth: '100%',
-        minHeight: 'calc(100vh - 50px)',
-        overflowY: 'auto',
+        height: 'calc(100vh - 50px)',
+        maxHeight: 'calc(100vh - 50px)',
+        overflow: 'hidden',
         boxSizing: 'border-box',
-        gap: '16px'
+        gap: '6px'
       }}>
         {/* DoxCards Logo in Table Header Gap */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '2px 0',
+          padding: '0',
           userSelect: 'none',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          flexShrink: 0
         }}>
           <img
             src={doxcardsLogoImg}
             alt="DoxCards"
             style={{
-              height: '36px',
+              height: 'clamp(20px, 3vh, 30px)',
               objectFit: 'contain',
               opacity: 0.9,
               filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))'
@@ -748,10 +741,13 @@ export default function TabletopView({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'stretch',
-          gap: '20px',
+          gap: '14px',
           width: '100%',
           maxWidth: '1780px',
-          margin: '0 auto'
+          flex: 1,
+          maxHeight: '44vh',
+          margin: '0 auto',
+          overflow: 'hidden'
         }}>
           {topPlayers.map(p => renderDesk(p))}
         </div>
@@ -761,10 +757,13 @@ export default function TabletopView({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'stretch',
-          gap: '20px',
+          gap: '14px',
           width: '100%',
           maxWidth: '1780px',
-          margin: '0 auto'
+          flex: 1,
+          maxHeight: '44vh',
+          margin: '0 auto',
+          overflow: 'hidden'
         }}>
           {bottomPlayers.map(p => renderDesk(p))}
         </div>
