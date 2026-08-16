@@ -13,8 +13,10 @@ import {
   Layers,
   FileCode,
   Check,
+  FolderEdit,
+  PenTool,
   Sparkles,
-  RefreshCw
+  Tag
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import {
@@ -24,6 +26,7 @@ import {
   parseRawDeck,
   DEFAULT_RAW_CARDS
 } from '../data/cardsData';
+import { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
@@ -64,7 +67,7 @@ export default function AdminPageView({ onBack, discordUser }) {
     );
   }
 
-  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'add' | 'json'
+  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'add' | 'categories' | 'json'
   const [deckState, setDeckState] = useState(getActiveDeck());
   const [jsonText, setJsonText] = useState(JSON.stringify(deckState.raw, null, 2));
   const [jsonError, setJsonError] = useState(null);
@@ -84,6 +87,10 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [newCategory, setNewCategory] = useState('Core Deck');
   const [customCategoryInput, setCustomCategoryInput] = useState('');
   const [newText, setNewText] = useState('');
+
+  // Category Renaming State
+  const [renamingCategory, setRenamingCategory] = useState(null); // { type: 'Perks'|'Red Flags', oldName: '' }
+  const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
 
   // Update JSON text when deckState changes
   useEffect(() => {
@@ -232,6 +239,55 @@ export default function AdminPageView({ onBack, discordUser }) {
     setCustomCategoryInput('');
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  // Insert Blank Placeholder (______) into New Card Text
+  const handleInsertBlankPlaceholder = () => {
+    sounds.playClick();
+    setNewText(prev => prev + ' ______ ');
+  };
+
+  // Rename Category
+  const handleRenameCategorySubmit = (e) => {
+    e.preventDefault();
+    if (!renamingCategory || !newCategoryNameInput.trim()) return;
+
+    sounds.playClick();
+    const { section, oldName } = renamingCategory;
+    const newName = newCategoryNameInput.trim();
+
+    if (oldName === newName) {
+      setRenamingCategory(null);
+      return;
+    }
+
+    const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+    if (updatedRaw[section] && updatedRaw[section][oldName]) {
+      const cardsList = updatedRaw[section][oldName];
+      delete updatedRaw[section][oldName];
+      updatedRaw[section][newName] = cardsList;
+
+      saveActiveDeck(updatedRaw);
+      setDeckState(parseRawDeck(updatedRaw));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    }
+    setRenamingCategory(null);
+  };
+
+  // Delete Entire Category
+  const handleDeleteCategory = (section, categoryName) => {
+    if (window.confirm(`"${categoryName}" kategorisini ve içerisindeki tüm kartları silmek istediğinize emin misiniz?`)) {
+      sounds.playClick();
+      const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+      if (updatedRaw[section] && updatedRaw[section][categoryName]) {
+        delete updatedRaw[section][categoryName];
+        saveActiveDeck(updatedRaw);
+        setDeckState(parseRawDeck(updatedRaw));
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+      }
+    }
   };
 
   return (
@@ -400,6 +456,25 @@ export default function AdminPageView({ onBack, discordUser }) {
           </button>
 
           <button
+            onClick={() => setActiveTab('categories')}
+            style={{
+              flex: 1,
+              padding: '12px 18px',
+              borderRadius: '10px',
+              background: activeTab === 'categories' ? '#d90429' : 'transparent',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '0.92rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <FolderEdit size={18} /> kategorileri düzenle ({allCategories.length})
+          </button>
+
+          <button
             onClick={() => setActiveTab('add')}
             style={{
               flex: 1,
@@ -525,6 +600,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                 filteredCards.map((card) => {
                   const isPerk = card.type === 'perk';
                   const isEditing = editingCardId === card.id;
+                  const hasBlank = isBlankCard(card.text);
 
                   return (
                     <div
@@ -541,7 +617,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                         transition: 'background 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, flexWrap: 'wrap' }}>
                         <span style={{
                           background: isPerk ? '#ffffff' : '#d90429',
                           color: isPerk ? '#000000' : '#ffffff',
@@ -566,17 +642,35 @@ export default function AdminPageView({ onBack, discordUser }) {
                           {card.category}
                         </span>
 
+                        {hasBlank && (
+                          <span style={{
+                            background: 'rgba(56, 189, 248, 0.15)',
+                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                            color: '#38bdf8',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            <PenTool size={11} /> boşluklu kart
+                          </span>
+                        )}
+
                         {isEditing ? (
                           <input
                             type="text"
                             value={editingText}
                             onChange={(e) => setEditingText(e.target.value)}
                             className="form-input"
-                            style={{ height: '38px', fontSize: '0.92rem' }}
+                            style={{ height: '38px', fontSize: '0.92rem', flex: 1, minWidth: '300px' }}
                             autoFocus
                           />
                         ) : (
-                          <span style={{ fontSize: '0.92rem', fontWeight: 500, color: '#f1f5f9' }}>
+                          <span style={{ fontSize: '0.92rem', fontWeight: 500, color: '#f1f5f9', flex: 1 }}>
                             {card.text}
                           </span>
                         )}
@@ -631,7 +725,206 @@ export default function AdminPageView({ onBack, discordUser }) {
           </div>
         )}
 
-        {/* TAB 2: ADD CARD (FULL SCREEN FORM) */}
+        {/* TAB 2: CATEGORIES MANAGEMENT */}
+        {activeTab === 'categories' && (
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '18px',
+            padding: '30px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FolderEdit size={20} color="#fbbf24" /> kategori isimlerini düzenleme & yönetme
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>
+                kategorilerin isimlerini değiştirdiğinizde, o kategorideki tüm kartlar otomatik olarak yeni kategori ismine güncellenir.
+              </p>
+            </div>
+
+            {/* Perks Categories Section */}
+            <div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#38bdf8', marginBottom: '12px' }}>
+                🤍 beyaz kart (perks) kategorileri
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px' }}>
+                {perkCategories.map(catName => {
+                  const count = (deckState.raw.Perks[catName] || []).length;
+                  const isRenaming = renamingCategory?.section === 'Perks' && renamingCategory?.oldName === catName;
+
+                  return (
+                    <div
+                      key={catName}
+                      style={{
+                        background: '#242424',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px'
+                      }}
+                    >
+                      {isRenaming ? (
+                        <form onSubmit={handleRenameCategorySubmit} style={{ display: 'flex', gap: '8px', flex: 1 }}>
+                          <input
+                            type="text"
+                            value={newCategoryNameInput}
+                            onChange={(e) => setNewCategoryNameInput(e.target.value)}
+                            className="form-input"
+                            style={{ height: '36px', fontSize: '0.88rem' }}
+                            autoFocus
+                            required
+                          />
+                          <button
+                            type="submit"
+                            style={{
+                              background: '#10b981',
+                              color: '#fff',
+                              border: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            kaydet
+                          </button>
+                        </form>
+                      ) : (
+                        <>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>{catName}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{count} kart</div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => {
+                                setRenamingCategory({ section: 'Perks', oldName: catName });
+                                setNewCategoryNameInput(catName);
+                              }}
+                              className="btn-icon"
+                              style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.08)' }}
+                              title="Kategori ismini değiştir"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteCategory('Perks', catName)}
+                              className="btn-icon"
+                              style={{ width: '32px', height: '32px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+                              title="Kategoriyi sil"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Red Flags Categories Section */}
+            <div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f87171', marginBottom: '12px' }}>
+                🚩 kırmızı kart (red flags) kategorileri
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px' }}>
+                {redFlagCategories.map(catName => {
+                  const count = (deckState.raw['Red Flags'][catName] || []).length;
+                  const isRenaming = renamingCategory?.section === 'Red Flags' && renamingCategory?.oldName === catName;
+
+                  return (
+                    <div
+                      key={catName}
+                      style={{
+                        background: '#242424',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px'
+                      }}
+                    >
+                      {isRenaming ? (
+                        <form onSubmit={handleRenameCategorySubmit} style={{ display: 'flex', gap: '8px', flex: 1 }}>
+                          <input
+                            type="text"
+                            value={newCategoryNameInput}
+                            onChange={(e) => setNewCategoryNameInput(e.target.value)}
+                            className="form-input"
+                            style={{ height: '36px', fontSize: '0.88rem' }}
+                            autoFocus
+                            required
+                          />
+                          <button
+                            type="submit"
+                            style={{
+                              background: '#10b981',
+                              color: '#fff',
+                              border: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            kaydet
+                          </button>
+                        </form>
+                      ) : (
+                        <>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>{catName}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{count} kart</div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => {
+                                setRenamingCategory({ section: 'Red Flags', oldName: catName });
+                                setNewCategoryNameInput(catName);
+                              }}
+                              className="btn-icon"
+                              style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.08)' }}
+                              title="Kategori ismini değiştir"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteCategory('Red Flags', catName)}
+                              className="btn-icon"
+                              style={{ width: '32px', height: '32px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+                              title="Kategoriyi sil"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: ADD CARD (FULL SCREEN FORM) */}
         {activeTab === 'add' && (
           <div style={{
             background: '#1c1c1c',
@@ -709,15 +1002,43 @@ export default function AdminPageView({ onBack, discordUser }) {
               </div>
 
               <div>
-                <label className="form-label">kart metni (türkçe)</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>kart metni (türkçe)</label>
+
+                  {/* Insert Blank Tag Button */}
+                  <button
+                    type="button"
+                    onClick={handleInsertBlankPlaceholder}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      color: '#38bdf8',
+                      padding: '5px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    <PenTool size={13} /> + boşluk alanı ekle (______)
+                  </button>
+                </div>
+
                 <textarea
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
-                  placeholder="kartın üzerindeki metni buraya yazınız..."
+                  placeholder="kartın üzerindeki metni buraya yazınız... (örn: Hayatı, ______ 'nin dayandığı gerçek hikaye)"
                   className="form-input"
                   style={{ height: '140px', resize: 'vertical', fontSize: '0.96rem', background: '#242424' }}
                   required
                 />
+
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '6px' }}>
+                  💡 <b>ipucu:</b> kart metnine <code>______</code> eklediğinizde, oyuncular bu kartı masaya atarken ekranda bir modal açılır ve o turluk istedikleri kelimeyi girerek kartı tamamlarlar.
+                </div>
               </div>
 
               <button
@@ -731,7 +1052,7 @@ export default function AdminPageView({ onBack, discordUser }) {
           </div>
         )}
 
-        {/* TAB 3: RAW JSON EDITOR (FULL SCREEN) */}
+        {/* TAB 4: RAW JSON EDITOR (FULL SCREEN) */}
         {activeTab === 'json' && (
           <div style={{
             background: '#1c1c1c',

@@ -154,7 +154,7 @@ export class GameEngine {
     if (this.onStateChange) this.onStateChange();
   }
 
-  submitPerks(playerId, cardIds) {
+  submitPerks(playerId, cardIds, customTexts = {}) {
     if (this.phase !== PHASES.PERKS) return false;
     if (playerId !== this.turnPlayerId) return false; // Strictly enforce turn order!
     if (!this.candidates[playerId]) return false;
@@ -166,9 +166,19 @@ export class GameEngine {
     const selectedCards = hand.whiteCards.filter(c => cardIds.includes(c.id));
     if (selectedCards.length !== 2) return false;
 
+    // Process customTexts for fill-in-the-blank cards
+    const processedCards = selectedCards.map(c => {
+      const customVal = customTexts ? customTexts[c.id] : null;
+      if (customVal && typeof customVal === 'string' && customVal.trim()) {
+        const filled = c.text.replace(/_{3,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customVal.trim()}**`);
+        return { ...c, filledText: filled, customValue: customVal.trim() };
+      }
+      return c;
+    });
+
     // Remove played cards from hand (remaining 2 cards stay in hand for next rounds!)
     hand.whiteCards = hand.whiteCards.filter(c => !cardIds.includes(c.id));
-    this.candidates[playerId].whiteCards = selectedCards;
+    this.candidates[playerId].whiteCards = processedCards;
 
     // Advance turn to next matchmaker in sequence
     this.turnIndex++;
@@ -185,7 +195,7 @@ export class GameEngine {
     return true;
   }
 
-  submitSabotage(playerId, cardId, players) {
+  submitSabotage(playerId, cardId, players, customText = null) {
     if (this.phase !== PHASES.SABOTAGE) return false;
     if (playerId !== this.turnPlayerId) return false; // Strictly enforce turn order!
 
@@ -199,9 +209,13 @@ export class GameEngine {
     if (cardIndex === -1) return false;
 
     // Remove played red card from hand (remaining 2 red cards stay in hand for next rounds!)
-    const redCard = hand.redCards.splice(cardIndex, 1)[0];
+    let redCard = hand.redCards.splice(cardIndex, 1)[0];
+    if (customText && typeof customText === 'string' && customText.trim()) {
+      const filled = redCard.text.replace(/_{3,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
+      redCard = { ...redCard, filledText: filled, customValue: customText.trim() };
+    }
 
-    const player = players.find(p => p.id === playerId);
+    const player = players ? players.find(p => p.id === playerId) : null;
     this.candidates[targetId].redFlag = redCard;
     this.candidates[targetId].sabotagedBy = playerId;
     this.candidates[targetId].sabotagedByName = player ? player.name : (this.candidates[playerId]?.matchmakerName || 'Rakip');

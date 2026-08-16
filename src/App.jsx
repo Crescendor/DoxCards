@@ -169,22 +169,24 @@ export default function App() {
   };
 
   // Submit Perks (Matchmaker 2 White Cards)
-  const handleSubmitPerks = (cardIds) => {
+  const handleSubmitPerks = (cardIds, customTexts = {}) => {
     if (!currentRoom) return;
     socket.emit('submit_perks', {
       roomCode: currentRoom.code,
       playerId: player.id,
-      cardIds
+      cardIds,
+      customTexts
     });
   };
 
   // Submit Sabotage (Matchmaker 1 Red Flag Card)
-  const handleSubmitSabotage = (cardId) => {
+  const handleSubmitSabotage = (cardId, customText = null) => {
     if (!currentRoom) return;
     socket.emit('submit_sabotage', {
       roomCode: currentRoom.code,
       playerId: player.id,
-      cardId
+      cardId,
+      customText
     });
   };
 

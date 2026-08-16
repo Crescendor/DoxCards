@@ -201,10 +201,10 @@ export class GameRoomDO {
 
         // 6. Submit Perks (Matchmaker 2 White Cards)
         else if (evt === 'submit_perks') {
-          const { playerId: pId, cardIds } = data;
+          const { playerId: pId, cardIds, customTexts } = data;
           if (!this.room || !this.room.game) return;
 
-          const res = this.room.game.submitPerks(pId, cardIds);
+          const res = this.room.game.submitPerks(pId, cardIds, customTexts);
           if (res?.error) {
             sendAck({ error: res.error });
             return;
@@ -216,10 +216,10 @@ export class GameRoomDO {
 
         // 7. Submit Sabotage (Matchmaker 1 Red Flag Card)
         else if (evt === 'submit_sabotage') {
-          const { playerId: pId, cardId } = data;
+          const { playerId: pId, cardId, customText } = data;
           if (!this.room || !this.room.game) return;
 
-          const res = this.room.game.submitSabotage(pId, cardId);
+          const res = this.room.game.submitSabotage(pId, cardId, this.room.players, customText);
           if (res?.error) {
             sendAck({ error: res.error });
             return;

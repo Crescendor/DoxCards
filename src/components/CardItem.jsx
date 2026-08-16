@@ -108,7 +108,28 @@ export default function CardItem({
           wordBreak: 'break-word'
         }}
       >
-        {card.text}
+        {card.filledText ? (
+          card.filledText.split(/(\*\*.*?\*\*)/g).map((chunk, idx) => {
+            if (chunk.startsWith('**') && chunk.endsWith('**')) {
+              const val = chunk.slice(2, -2);
+              return (
+                <span
+                  key={idx}
+                  style={{
+                    color: isWhite ? '#0284c7' : '#fef08a',
+                    textDecoration: 'underline',
+                    fontWeight: 900
+                  }}
+                >
+                  {val}
+                </span>
+              );
+            }
+            return chunk;
+          })
+        ) : (
+          card.text
+        )}
       </div>
     </div>
   );

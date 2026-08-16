@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, Sparkles, Check, Flame, ShieldAlert, Clock, ArrowRight, UserCheck } from 'lucide-react';
 import CardItem from './CardItem';
+import FillBlankModal, { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
 import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
@@ -284,13 +285,16 @@ export default function TabletopView({
   const players = room.players || [];
   const myCandidate = candidates[player.id];
 
-  // Local pending placed white cards
+  // Local pending placed white cards & custom blank texts
   const [localWhitePlaced, setLocalWhitePlaced] = useState([]);
+  const [customTexts, setCustomTexts] = useState({});
+  const [fillModalState, setFillModalState] = useState({ isOpen: false, card: null, onConfirm: null });
   const [draggedCard, setDraggedCard] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
 
   useEffect(() => {
     setLocalWhitePlaced([]);
+    setCustomTexts({});
   }, [phase, turnPlayerId]);
 
   // Drag start
@@ -308,6 +312,32 @@ export default function TabletopView({
   // Drop card into table slot
   const handleDropCard = (type, cardId, slotIndex) => {
     if (!isMyTurn) return;
+
+    let targetCard = null;
+    if (type === 'white') {
+      targetCard = (hand.whiteCards || []).find(c => c.id === cardId);
+    } else {
+      targetCard = (hand.redCards || []).find(c => c.id === cardId);
+    }
+
+    if (targetCard && isBlankCard(targetCard.text) && !customTexts[cardId]) {
+      setFillModalState({
+        isOpen: true,
+        card: targetCard,
+        onConfirm: (val) => {
+          const updatedCustomTexts = { ...customTexts, [cardId]: val };
+          setCustomTexts(updatedCustomTexts);
+          setFillModalState({ isOpen: false, card: null, onConfirm: null });
+          proceedWithDrop(type, cardId, updatedCustomTexts);
+        }
+      });
+      return;
+    }
+
+    proceedWithDrop(type, cardId, customTexts);
+  };
+
+  const proceedWithDrop = (type, cardId, currentCustomTexts) => {
     sounds.playCardDeal();
 
     if (type === 'white' && phase === 'PERKS') {
@@ -316,16 +346,35 @@ export default function TabletopView({
       setLocalWhitePlaced(updated);
 
       if (updated.length === 2) {
-        onSubmitPerks(updated);
+        onSubmitPerks(updated, currentCustomTexts);
       }
     } else if (type === 'red' && phase === 'SABOTAGE') {
-      onSubmitSabotage(cardId);
+      onSubmitSabotage(cardId, currentCustomTexts[cardId] || null);
     }
   };
 
   // Card click (quick placement)
   const handleCardClick = (card, type) => {
     if (!isMyTurn) return;
+
+    if (isBlankCard(card.text) && !customTexts[card.id]) {
+      setFillModalState({
+        isOpen: true,
+        card,
+        onConfirm: (val) => {
+          const updatedCustomTexts = { ...customTexts, [card.id]: val };
+          setCustomTexts(updatedCustomTexts);
+          setFillModalState({ isOpen: false, card: null, onConfirm: null });
+          proceedWithCardClick(card, type, updatedCustomTexts);
+        }
+      });
+      return;
+    }
+
+    proceedWithCardClick(card, type, customTexts);
+  };
+
+  const proceedWithCardClick = (card, type, currentCustomTexts) => {
     sounds.playClick();
 
     if (type === 'perk' && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted) {
@@ -336,12 +385,12 @@ export default function TabletopView({
         setLocalWhitePlaced(next);
         if (next.length === 2) {
           sounds.playCardDeal();
-          onSubmitPerks(next);
+          onSubmitPerks(next, currentCustomTexts);
         }
       }
     } else if (type === 'redflag' && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag) {
       sounds.playSabotage();
-      onSubmitSabotage(card.id);
+      onSubmitSabotage(card.id, currentCustomTexts[card.id] || null);
     }
   };
 
@@ -356,7 +405,16 @@ export default function TabletopView({
     ...myCandidate,
     whiteCards: myCandidate?.whiteCards?.length === 2
       ? myCandidate.whiteCards
-      : localWhitePlaced.map(id => (hand.whiteCards || []).find(c => c.id === id)).filter(Boolean)
+      : localWhitePlaced.map(id => {
+          const base = (hand.whiteCards || []).find(c => c.id === id);
+          if (base && customTexts[id]) {
+            return {
+              ...base,
+              filledText: base.text.replace(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customTexts[id]}**`)
+            };
+          }
+          return base;
+        }).filter(Boolean)
   };
 
   const canDropWhite = phase === 'PERKS' && !isSingle && !myCandidate?.whiteCardsSubmitted;
@@ -732,6 +790,14 @@ export default function TabletopView({
           </div>
         </div>
       )}
+
+      {/* Fill-in-the-Blank Modal */}
+      <FillBlankModal
+        isOpen={fillModalState.isOpen}
+        card={fillModalState.card}
+        onConfirm={fillModalState.onConfirm}
+        onCancel={() => setFillModalState({ isOpen: false, card: null, onConfirm: null })}
+      />
     </div>
   );
 }
