@@ -11,8 +11,9 @@ export default function LandingPage({
   error,
   isLoading
 }) {
-  const [viewMode, setViewMode] = useState('menu'); // 'menu' | 'create' | 'join'
-  const [roomCodeInput, setRoomCodeInput] = useState('');
+  const urlRoomCode = new URLSearchParams(window.location.search).get('room') || '';
+  const [viewMode, setViewMode] = useState(urlRoomCode ? 'join' : 'menu'); // 'menu' | 'create' | 'join'
+  const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode.toUpperCase());
   const [targetScore, setTargetScore] = useState(3);
   const [roundTimer, setRoundTimer] = useState(45);
 

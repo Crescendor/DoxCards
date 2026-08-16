@@ -107,6 +107,7 @@ export default function App() {
       } else if (res.room) {
         setCurrentRoom(res.room);
         setGameState(null);
+        window.history.pushState({}, '', `?room=${res.room.code}`);
       }
     });
   };
@@ -131,12 +132,14 @@ export default function App() {
       } else if (res.room) {
         setCurrentRoom(res.room);
         setGameState(null);
+        window.history.pushState({}, '', `?room=${res.room.code}`);
       }
     });
   };
 
   // Leave Room
   const handleLeaveRoom = () => {
+    window.history.pushState({}, '', window.location.pathname);
     window.location.reload();
   };
 

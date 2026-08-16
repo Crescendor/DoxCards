@@ -48,6 +48,7 @@ class UniversalSocket {
     this.listeners = new Map();
     this.pendingAcks = new Map();
     this.currentRoomCode = null;
+    this.messageQueue = [];
 
     if (this.isWs) {
       this.initWs('GLOBAL');
@@ -65,6 +66,7 @@ class UniversalSocket {
     if (this.ws) {
       try {
         this.ws.onclose = null;
+        this.ws.onerror = null;
         this.ws.close();
       } catch (e) {}
     }
@@ -76,11 +78,18 @@ class UniversalSocket {
     wsUrl = wsUrl.replace(/\/$/, '') + `/ws?room=${encodeURIComponent(roomCode)}`;
 
     try {
+      console.log(`[Connecting to Worker WS]: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log(`[Worker WS Connected to room ${roomCode}]`);
+        console.log(`[Worker WS Connected to room: ${roomCode}]`);
         if (onOpenCallback) onOpenCallback();
+
+        // Flush any queued messages
+        while (this.messageQueue.length > 0) {
+          const item = this.messageQueue.shift();
+          this.ws.send(item);
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -103,12 +112,8 @@ class UniversalSocket {
         console.error('[Worker WS Error]:', err);
       };
 
-      this.ws.onclose = () => {
-        setTimeout(() => {
-          if (this.currentRoomCode === roomCode) {
-            this.initWs(roomCode);
-          }
-        }, 3000);
+      this.ws.onclose = (e) => {
+        console.log('[Worker WS Closed]', e.code, e.reason);
       };
     } catch (err) {
       console.error('Failed to init WebSocket:', err);
@@ -143,43 +148,41 @@ class UniversalSocket {
       return;
     }
 
-    // When creating a room on Cloudflare Worker:
-    if (event === 'create_room') {
-      const code = generateClientRoomCode();
-      const sendCreate = () => {
-        const ackId = callback ? 'ack_' + Math.random().toString(36).substring(2, 9) : null;
-        if (ackId) this.pendingAcks.set(ackId, callback);
-        this.ws.send(JSON.stringify({ event, data: { ...data, roomCode: code }, ackId }));
-      };
-
-      this.initWs(code, sendCreate);
-      return;
-    }
-
-    // When joining a room on Cloudflare Worker:
-    if (event === 'join_room') {
-      const code = (data.roomCode || '').toUpperCase().trim();
-      const sendJoin = () => {
-        const ackId = callback ? 'ack_' + Math.random().toString(36).substring(2, 9) : null;
-        if (ackId) this.pendingAcks.set(ackId, callback);
-        this.ws.send(JSON.stringify({ event, data, ackId }));
-      };
-
-      this.initWs(code, sendJoin);
-      return;
-    }
-
-    // General game events:
     const ackId = callback ? 'ack_' + Math.random().toString(36).substring(2, 9) : null;
     if (ackId) this.pendingAcks.set(ackId, callback);
 
+    // 1. Create Room: generate code and connect to that DO room
+    if (event === 'create_room') {
+      const code = data.roomCode || generateClientRoomCode();
+      const sendPayload = JSON.stringify({ event, data: { ...data, roomCode: code }, ackId });
+
+      this.initWs(code, () => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(sendPayload);
+        }
+      });
+      return;
+    }
+
+    // 2. Join Room: connect to that DO room and join
+    if (event === 'join_room') {
+      const code = (data.roomCode || '').toUpperCase().trim();
+      const sendPayload = JSON.stringify({ event, data: { ...data, roomCode: code }, ackId });
+
+      this.initWs(code, () => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(sendPayload);
+        }
+      });
+      return;
+    }
+
+    // 3. General Events
     const payload = JSON.stringify({ event, data, ackId });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(payload);
     } else {
-      if (callback) {
-        setTimeout(() => callback({ error: 'Sunucu bağlantısı bekleniyor...' }), 1000);
-      }
+      this.messageQueue.push(payload);
     }
   }
 }
