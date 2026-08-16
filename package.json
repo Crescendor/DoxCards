@@ -5,7 +5,7 @@
   "description": "DoxCards - Multiplayer Red Flags Türkçe Kart Oyunu",
   "type": "module",
   "scripts": {
-    "build": "vite build --config client/vite.config.js client && npm --prefix client run build",
+    "build": "node build.js",
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"red,cyan\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "dev:win": "concurrently -n \"SERVER,CLIENT\" -c \"red,cyan\" \"npm.cmd --prefix server run dev\" \"npm.cmd --prefix client run dev\"",
     "start": "node server/index.js"
