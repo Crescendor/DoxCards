@@ -2,5 +2,14 @@ name = "doxcards-server"
 main = "index.js"
 compatibility_date = "2024-09-23"
 
+[durable_objects]
+bindings = [
+  { name = "GAME_ROOMS", class_name = "GameRoomDO" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameRoomDO"]
+
 [vars]
 ENVIRONMENT = "production"
