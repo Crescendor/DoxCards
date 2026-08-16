@@ -31,17 +31,19 @@ export async function onRequest(context) {
 
   const cleanRoomCode = roomCode ? roomCode.toUpperCase().trim() : null;
 
-  const title = cleanRoomCode
-    ? `Doxcards - ${cleanRoomCode} Kodlu Odaya Katıl!`
-    : 'Doxcards - Dostluk bitiren çöpçatanlık oyunu';
+  const title = 'Doxcards - Dostluk bitiren çöpçatanlık oyunu';
 
   const description = cleanRoomCode
-    ? `Doxcards oyun odasına davet edildin! Lobi kodu: ${cleanRoomCode}. Hemen tıkla ve oyuna katıl!`
+    ? `Arkadaşlarınla 5 haneli lobi oluştur, en absürt randevuları kur ve rakiplerini kırmızı bayraklarla sabote et!\nLobi kodu: ${cleanRoomCode}`
     : 'Arkadaşlarınla 5 haneli lobi oluştur, en absürt randevuları kur ve rakiplerini kırmızı bayraklarla sabote et!';
 
   const fullUrl = cleanRoomCode
     ? `${url.origin}/?room=${cleanRoomCode.toLowerCase()}`
     : `${url.origin}/`;
+
+  const imageUrl = cleanRoomCode
+    ? `https://doxcards-server.burakcnaydin.workers.dev/api/og?room=${cleanRoomCode}`
+    : `${url.origin}/embed_banner.png`;
 
   const rewriter = new HTMLRewriter()
     .on('title', {
@@ -69,6 +71,11 @@ export async function onRequest(context) {
         element.setAttribute('content', fullUrl);
       }
     })
+    .on('meta[property="og:image"]', {
+      element(element) {
+        element.setAttribute('content', imageUrl);
+      }
+    })
     .on('meta[name="twitter:title"]', {
       element(element) {
         element.setAttribute('content', title);
@@ -77,6 +84,11 @@ export async function onRequest(context) {
     .on('meta[name="twitter:description"]', {
       element(element) {
         element.setAttribute('content', description);
+      }
+    })
+    .on('meta[name="twitter:image"]', {
+      element(element) {
+        element.setAttribute('content', imageUrl);
       }
     })
     .on('meta[name="theme-color"]', {

@@ -2,6 +2,7 @@
 import { getDeck, updateGlobalDeck, getActiveRawDeck } from './cards.js';
 import rawDeckJson from './Red_Flags_Turkish_Complete.json';
 import { GameEngine, PHASES } from './gameEngine.js';
+import { generateRoomOgPng } from './ogRenderer.js';
 
 function generateRoomCode() {
   const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
@@ -1121,7 +1122,24 @@ export default {
       return new Response(null, { status: 101, webSocket: clientWs });
     }
 
-    // 2. Database API Routing (/api/deck, /api/users, /api/config, /api/suggestions)
+    // 2. Dynamic OG Image API (/api/og, /og)
+    if (url.pathname === '/api/og' || url.pathname === '/og') {
+      const roomCode = url.searchParams.get('room') || url.searchParams.get('join') || url.searchParams.get('r') || '';
+      try {
+        const png = await generateRoomOgPng(roomCode);
+        return new Response(png, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400'
+          }
+        });
+      } catch (err) {
+        return new Response('Error generating image: ' + err.message, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // 3. Database API Routing (/api/deck, /api/users, /api/config, /api/suggestions)
     if (url.pathname.startsWith('/api/deck') || url.pathname.startsWith('/api/users') || url.pathname.startsWith('/api/config') || url.pathname.startsWith('/api/suggestions')) {
       if (env && env.GAME_ROOMS) {
         const id = env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
