@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, Play, Square, Save, X, Sparkles, Crown, ShieldCheck } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
-import { fetchAppConfig, updateUser } from '../services/userService';
+import { fetchAppConfig, updateUser, saveLocalUserProfile } from '../services/userService';
 
 export default function SoundSettingsModal({
   isOpen,
@@ -58,19 +58,27 @@ export default function SoundSettingsModal({
       gameWinSoundId: selectedWinSound || null
     };
 
+    const optimisticUser = {
+      ...userProfile,
+      customSounds: customSounds
+    };
+    saveLocalUserProfile(optimisticUser);
+    if (onUpdateProfile) onUpdateProfile(optimisticUser);
+
     const updated = await updateUser(userProfile.id, {
       customSounds: customSounds
     });
 
     setIsSaving(false);
     if (updated) {
+      saveLocalUserProfile(updated);
       if (onUpdateProfile) onUpdateProfile(updated);
-      setSaveSuccess(true);
-      setTimeout(() => {
-        setSaveSuccess(false);
-        onClose();
-      }, 1200);
     }
+    setSaveSuccess(true);
+    setTimeout(() => {
+      setSaveSuccess(false);
+      onClose();
+    }, 1000);
   };
 
   const whiteOptions = appSounds.filter(s => s.category === 'white_card' || s.category === 'general');

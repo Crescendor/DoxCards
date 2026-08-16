@@ -144,10 +144,10 @@ export class GameRoomDO {
         });
       }
 
-      // 3. Update user profile by Admin
+      // 3. Update user profile by Admin or User
       if (url.pathname === '/api/users/update' && request.method === 'POST') {
         const body = await request.json();
-        const { userId, tags, unlockedDecks, totalScore } = body;
+        const { userId, tags, unlockedDecks, totalScore, customSounds, ...rest } = body;
         if (!userId || !usersMap[userId]) {
           return Response.json({ error: 'User not found' }, { status: 404, headers: corsHeaders });
         }
@@ -156,6 +156,8 @@ export class GameRoomDO {
         if (Array.isArray(tags)) user.tags = tags;
         if (Array.isArray(unlockedDecks)) user.unlockedDecks = unlockedDecks;
         if (typeof totalScore === 'number') user.totalScore = totalScore;
+        if (customSounds !== undefined) user.customSounds = customSounds;
+        Object.assign(user, rest);
         user.updatedAt = Date.now();
 
         usersMap[userId] = user;

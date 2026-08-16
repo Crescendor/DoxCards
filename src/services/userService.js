@@ -132,7 +132,7 @@ export async function fetchAllUsers() {
   return [];
 }
 
-// Admin update user
+// Admin / User update profile
 export async function updateUser(userId, updates) {
   try {
     const res = await fetch(`${SERVER_URL}/api/users/update`, {
@@ -142,7 +142,13 @@ export async function updateUser(userId, updates) {
     });
     if (res.ok) {
       const data = await res.json();
-      return data.user;
+      if (data.user) {
+        const cached = getLocalUserProfile();
+        if (cached && cached.id === userId) {
+          saveLocalUserProfile(data.user);
+        }
+        return data.user;
+      }
     }
   } catch (err) {
     console.error('Failed to update user in Cloudflare:', err);
