@@ -38,7 +38,12 @@ export default function LobbyView({
     ? (appConfig.allDecks || DEFAULT_CONFIG.allDecks)
     : (discordUser ? (userProfile?.unlockedDecks || appConfig.discordDecks || DEFAULT_CONFIG.discordDecks) : (appConfig.guestDecks || DEFAULT_CONFIG.guestDecks));
 
-  const selectedDecks = room.settings?.selectedDecks || availableDecksForHost;
+  const selectedDecks = room.settings?.selectedDecks || ['Ana Deste'];
+
+  const nonHostPlayers = players.filter(p => p.id !== room.hostId);
+  const allNonHostsReady = nonHostPlayers.length > 0 && nonHostPlayers.every(p => p.isReady);
+  const canStart = isHost && players.length >= 2 && allNonHostsReady;
+  const canChangeDecks = isHost && (nonHostPlayers.length === 0 || allNonHostsReady);
 
   const handleToggleDeck = (deckName) => {
     if (!isHost) return;
@@ -273,7 +278,11 @@ export default function LobbyView({
           <div style={{ marginTop: '16px' }}>
             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Layers size={13} color="#ef4444" /> oyun desteleri {isHost ? '(ekle/çıkar)' : ''}
+                <Layers size={13} color="#ef4444" /> oyun desteleri {
+                  isHost
+                    ? (!canChangeDecks ? '(deste seçimi için tüm oyuncular hazır olmalı)' : '(ekle/çıkar)')
+                    : ''
+                }
               </span>
               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                 {selectedDecks.length} aktif deste
@@ -345,14 +354,15 @@ export default function LobbyView({
                   );
                 }
 
-                // 4. Host player: interactive toggleable pill
+                // 4. Host player: interactive toggleable pill (only if canChangeDecks)
                 return (
                   <button
                     key={deckName}
                     type="button"
-                    onClick={() => handleToggleDeck(deckName)}
-                    className={`deck-tag-btn ${isSelected ? 'active' : ''}`}
-                    title={`${deckName} destesini aç/kapat`}
+                    disabled={!canChangeDecks}
+                    onClick={() => canChangeDecks && handleToggleDeck(deckName)}
+                    className={`deck-tag-btn ${isSelected ? 'active' : ''} ${!canChangeDecks ? 'disabled' : ''}`}
+                    title={!canChangeDecks ? 'Deste seçimi için tüm oyuncuların hazır olması gerekir' : `${deckName} destesini aç/kapat`}
                   >
                     {isSelected ? <Check size={13} /> : <Plus size={13} />}
                     {deckName}
@@ -374,43 +384,62 @@ export default function LobbyView({
               onMouseEnter={() => setIsReadyHovered(true)}
               onMouseLeave={() => setIsReadyHovered(false)}
               style={{
-                padding: '12px 26px',
+                padding: '12px 28px',
                 borderRadius: 'var(--radius-md)',
-                fontWeight: 700,
+                fontWeight: 800,
                 fontSize: '0.92rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                background: player.isReady
-                  ? (isReadyHovered ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.15)')
-                  : (isReadyHovered ? '#d90429' : '#262626'),
-                color: player.isReady
-                  ? (isReadyHovered ? '#f87171' : '#34d399')
-                  : (isReadyHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.6)'),
-                border: player.isReady
-                  ? (isReadyHovered ? '1px solid #ef4444' : '1px solid #10b981')
-                  : (isReadyHovered ? '1px solid #ef233c' : '1px solid rgba(255, 255, 255, 0.12)'),
-                boxShadow: (!player.isReady && isReadyHovered) ? '0 4px 16px rgba(217, 4, 41, 0.4)' : 'none'
+                background: !player.isReady
+                  ? (isReadyHovered ? '#ef233c' : '#d90429')
+                  : (isReadyHovered ? 'rgba(239, 68, 68, 0.25)' : '#262626'),
+                color: !player.isReady
+                  ? '#ffffff'
+                  : (isReadyHovered ? '#f87171' : '#a3a3a3'),
+                border: !player.isReady
+                  ? '1px solid #ef233c'
+                  : (isReadyHovered ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)'),
+                boxShadow: !player.isReady ? '0 4px 16px rgba(217, 4, 41, 0.45)' : 'none'
               }}
             >
-              {player.isReady
-                ? (isReadyHovered ? 'hazır değilim' : 'hazır')
-                : (isReadyHovered ? 'hazırım' : 'hazır değil')}
+              {!player.isReady ? 'hazırım' : 'hazır değilim'}
             </button>
           )}
 
           {isHost && (
-            <button
-              onClick={() => {
-                sounds.playClick();
-                onStartGame();
-              }}
-              disabled={players.length < 2 || isLoading}
-              className="btn-primary"
-              style={{ padding: '12px 28px' }}
-            >
-              <Play size={15} fill="#fff" />
-              {players.length < 2 ? 'en az 2 oyuncu gerekli' : 'oyunu başlat'}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+              <button
+                onClick={() => {
+                  if (!canStart) return;
+                  sounds.playClick();
+                  onStartGame();
+                }}
+                disabled={!canStart || isLoading}
+                className="btn-primary"
+                style={{
+                  padding: '12px 28px',
+                  opacity: canStart ? 1 : 0.45,
+                  cursor: canStart ? 'pointer' : 'not-allowed',
+                  boxShadow: canStart ? '0 4px 18px rgba(217, 4, 41, 0.5)' : 'none'
+                }}
+                title={
+                  players.length < 2
+                    ? 'En az 2 oyuncu gereklidir'
+                    : (!allNonHostsReady ? 'Tüm oyuncuların hazır olması gerekiyor' : 'Oyunu Başlat')
+                }
+              >
+                <Play size={15} fill="#fff" />
+                {players.length < 2
+                  ? 'en az 2 oyuncu gerekli'
+                  : (!allNonHostsReady ? 'oyuncular bekleniyor' : 'oyunu başlat')}
+              </button>
+
+              {!allNonHostsReady && players.length >= 2 && (
+                <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 600 }}>
+                  ⏳ tüm oyuncuların hazır olması bekleniyor
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

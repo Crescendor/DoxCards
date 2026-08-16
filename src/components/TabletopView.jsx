@@ -410,61 +410,10 @@ export default function TabletopView({
       maxHeight: '100%',
       background: 'radial-gradient(ellipse at 50% 35%, #242424 0%, #171717 60%, #0d0d0d 100%)',
       color: '#ffffff',
-      fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Top Turn & Phase Header Bar */}
-      <div style={{
-        height: '42px',
-        minHeight: '42px',
-        padding: '0 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: isMyTurn ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0, 0, 0, 0.5)',
-        borderBottom: isMyTurn ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
-        transition: 'all 0.3s ease',
-        boxSizing: 'border-box',
-        zIndex: 50
-      }}>
-        {/* Phase & Turn Order Banner */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{
-            background: isMyTurn ? '#38bdf8' : (phase === 'VOTING' ? '#f59e0b' : '#ff0000'),
-            color: (isMyTurn || phase === 'VOTING') ? '#000000' : '#ffffff',
-            fontSize: '0.76rem',
-            fontWeight: 800,
-            padding: '3px 12px',
-            borderRadius: '9999px',
-            textTransform: 'lowercase',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}>
-            {isMyTurn ? <UserCheck size={13} /> : null}
-            {phase === 'PERKS' && '1. aşama: aday hazırlama'}
-            {phase === 'SABOTAGE' && '2. aşama: sabotaj'}
-            {(phase === 'REVEAL' || phase === 'VOTING') && '3. aşama: bekârın kararı'}
-            {phase === 'ROUND_SUMMARY' && 'tur tamamlandı'}
-          </span>
-
-          <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'lowercase' }}>
-            {isMyTurn ? (
-              <span style={{ color: '#38bdf8' }}>
-                🎯 senin sıran! {phase === 'PERKS' ? '(2 beyaz kartını masana sürükle)' : `(kırmızı kartını ${mySabotageTarget?.targetPlayerName || 'rakibin'} masasına sürükle)`}
-              </span>
-            ) : (
-              <span style={{ color: '#94a3b8' }}>
-                {phase === 'VOTING'
-                  ? (isSingle ? '👉 tüm adayları incele ve kazanana tıkla!' : `bekâr (${singlePlayerName}) karar veriyor...`)
-                  : `⏳ sıra: ${turnPlayerName} (${turnPlayerName} kart koyuyor...)`}
-              </span>
-            )}
-          </span>
-        </div>
-      </div>
-
       {/* Virtual Table Area */}
       <div style={{
         flex: 1,
@@ -472,7 +421,7 @@ export default function TabletopView({
         flexDirection: 'column',
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '12px 20px 60px 20px',
+        padding: '16px 20px 60px 20px',
         maxWidth: '1440px',
         margin: '0 auto',
         width: '100%',

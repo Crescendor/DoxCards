@@ -99,16 +99,16 @@ export default function CardItem({
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: isSmall ? '15px 13px' : '18px 15px',
-          paddingRight: isSmall ? '18px' : '22px',
-          fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-          fontWeight: 700,
-          fontSize: isSmall ? '0.94rem' : '1.04rem',
-          lineHeight: 1.25,
+          padding: isSmall ? '14px 12px' : '16px 14px',
+          paddingRight: isSmall ? '16px' : '20px',
+          fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          fontWeight: 800,
+          fontSize: isSmall ? '0.78rem' : '0.86rem',
+          lineHeight: 1.28,
           textAlign: 'left',
           textTransform: 'lowercase',
           color: isWhite ? '#ff0000' : '#ffffff',
-          letterSpacing: '-0.025em',
+          letterSpacing: '-0.02em',
           wordBreak: 'break-word'
         }}
       >

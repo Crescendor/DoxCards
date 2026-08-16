@@ -279,7 +279,10 @@ export class GameRoomDO {
             allowCustomCards: false,
             isPrivate: true,
             deckType: 'all',
-            maxPlayers: 6
+            maxPlayers: 6,
+            selectedDecks: (Array.isArray(settings?.selectedDecks) && settings.selectedDecks.length > 0)
+              ? settings.selectedDecks
+              : ['Ana Deste']
           };
 
           this.room = {
