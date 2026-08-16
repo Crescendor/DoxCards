@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PenTool, Check, X } from 'lucide-react';
-import cardWhiteBack from '../assets/cards/card_white_back.png';
-import cardRedBack from '../assets/cards/card_red_back.png';
 import { sounds } from '../services/soundEffects';
 
-export const BLANK_REGEX = /([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i;
+export const BLANK_REGEX = /(?:\[boşluk\]|[_\s]*_{2,}[_\s]*|\[blank\]|\{blank\})/i;
 
 export function isBlankCard(text) {
   if (!text) return false;
@@ -54,15 +52,15 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
         borderRadius: '20px',
         padding: '24px',
         color: '#ffffff',
-        border: isWhite ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(239, 68, 68, 0.3)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.7)'
+        border: '1px solid rgba(255, 0, 0, 0.35)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.85)'
       }}>
         {/* Modal Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
-              background: isWhite ? '#ffffff' : '#FF0000',
-              color: isWhite ? '#000000' : '#ffffff',
+              background: '#FF0000',
+              color: '#ffffff',
               padding: '6px',
               borderRadius: '8px',
               display: 'flex'
@@ -79,67 +77,61 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
           </button>
         </div>
 
-        {/* Card Live Preview */}
+        {/* Clean Plain White Card Preview (No Card Pattern BG) */}
         <div style={{
           position: 'relative',
-          borderRadius: '14px',
-          overflow: 'hidden',
-          padding: '22px 20px',
-          minHeight: '130px',
+          borderRadius: '16px',
+          padding: '24px 20px',
+          minHeight: '110px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
           textAlign: 'center',
           marginBottom: '20px',
-          border: isWhite ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(239, 68, 68, 0.4)',
-          boxShadow: isWhite ? '0 8px 24px rgba(255,255,255,0.06)' : '0 8px 24px rgba(239,68,68,0.2)'
+          background: '#ffffff',
+          border: '1px solid rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)'
         }}>
-          {/* Card Background Image */}
-          <img
-            src={isWhite ? cardWhiteBack : cardRedBack}
-            alt="card bg"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              zIndex: 0
-            }}
-          />
-
-          {/* Card Text with Exactly ONE Filled Blank */}
+          {/* Card Text with Clean Filled Blank */}
           <div style={{
             position: 'relative',
             zIndex: 1,
-            color: isWhite ? '#ff0000' : '#ffffff',
-            fontWeight: 700,
-            fontSize: '1.02rem',
-            lineHeight: '1.4',
+            color: '#FF0000',
+            fontWeight: 800,
+            fontSize: '1.08rem',
+            lineHeight: '1.45',
             fontFamily: "'Plus Jakarta Sans', sans-serif"
           }}>
             {match ? (
               <>
                 <span>{before}</span>
-                <span style={{
-                  background: customText.trim()
-                    ? (isWhite ? 'rgba(0, 0, 0, 0.08)' : '#ffffff')
-                    : 'rgba(0, 0, 0, 0.15)',
-                  color: customText.trim()
-                    ? '#000000'
-                    : (isWhite ? '#94a3b8' : '#cbd5e1'),
-                  borderBottom: `2px dashed ${customText.trim() ? '#000000' : '#94a3b8'}`,
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontWeight: 900,
-                  margin: '0 4px',
-                  textDecoration: customText.trim() ? 'underline' : 'none',
-                  display: 'inline-block'
-                }}>
-                  {customText.trim() || '_________'}
-                </span>
+                {customText.trim() ? (
+                  <span style={{
+                    background: '#fff0f0',
+                    color: '#000000',
+                    borderBottom: '2.5px solid #FF0000',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontWeight: 900,
+                    margin: '0 4px',
+                    textDecoration: 'underline',
+                    display: 'inline-block'
+                  }}>
+                    {customText.trim()}
+                  </span>
+                ) : (
+                  <span style={{
+                    display: 'inline-block',
+                    width: '48px',
+                    height: '2.5px',
+                    background: '#FF0000',
+                    margin: '0 6px',
+                    verticalAlign: 'middle',
+                    borderRadius: '2px',
+                    opacity: 0.95
+                  }} />
+                )}
                 <span>{after}</span>
               </>
             ) : (

@@ -168,7 +168,7 @@ export class GameEngine {
 
     let card = hand.whiteCards.splice(cardIndex, 1)[0];
     if (customText && typeof customText === 'string' && customText.trim()) {
-      const filled = card.text.replace(/([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
+      const filled = card.text.replace(/(?:\[boşluk\]|[_\s]*_{2,}[_\s]*|\[blank\]|\{blank\})/i, `**${customText.trim()}**`);
       card = { ...card, filledText: filled, customValue: customText.trim() };
     }
 
@@ -251,7 +251,7 @@ export class GameEngine {
     // Remove played red card from hand (remaining 2 red cards stay in hand for next rounds!)
     let redCard = hand.redCards.splice(cardIndex, 1)[0];
     if (customText && typeof customText === 'string' && customText.trim()) {
-      const filled = redCard.text.replace(/([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
+      const filled = redCard.text.replace(/(?:\[boşluk\]|[_\s]*_{2,}[_\s]*|\[blank\]|\{blank\})/i, `**${customText.trim()}**`);
       redCard = { ...redCard, filledText: filled, customValue: customText.trim() };
     }
 

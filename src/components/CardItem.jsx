@@ -123,7 +123,7 @@ export default function CardItem({
                   key={idx}
                   style={{
                     color: '#000000',
-                    background: isWhite ? 'rgba(0, 0, 0, 0.07)' : '#ffffff',
+                    background: isWhite ? 'rgba(0, 0, 0, 0.08)' : '#ffffff',
                     padding: '1px 5px',
                     borderRadius: '4px',
                     textDecoration: 'underline',
@@ -139,23 +139,22 @@ export default function CardItem({
             return chunk;
           })
         ) : (
-          card.text.split(/\[boşluk\]|([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/i).map((chunk, idx, arr) => (
+          card.text.split(/(?:\[boşluk\]|[_\s]*_{2,}[_\s]*|\[blank\]|\{blank\})/i).map((chunk, idx, arr) => (
             <React.Fragment key={idx}>
               {chunk}
               {idx < arr.length - 1 && (
                 <span
                   style={{
                     display: 'inline-block',
-                    borderBottom: `2px dashed ${isWhite ? '#ff0000' : '#ffffff'}`,
-                    padding: '0 4px',
+                    width: '32px',
+                    height: '2px',
+                    background: isWhite ? '#FF0000' : '#ffffff',
                     margin: '0 3px',
-                    letterSpacing: '1.5px',
-                    fontWeight: 900,
-                    opacity: 0.9
+                    verticalAlign: 'middle',
+                    borderRadius: '1px',
+                    opacity: 0.95
                   }}
-                >
-                  ______
-                </span>
+                />
               )}
             </React.Fragment>
           ))
