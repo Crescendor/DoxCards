@@ -453,8 +453,7 @@ export default function TabletopView({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: '6px',
-          position: 'relative',
-          overflow: 'hidden'
+          position: 'relative'
         }}
         title={canBekarSelectThisDesk ? `${deskPlayer.name} adlı adayı kazanan seçmek için tıkla!` : ''}
       >
@@ -462,18 +461,19 @@ export default function TabletopView({
         {canBekarSelectThisDesk && (
           <div style={{
             position: 'absolute',
-            top: '-12px',
+            top: '-13px',
             background: '#f59e0b',
             color: '#000000',
             fontWeight: 900,
-            fontSize: '0.78rem',
+            fontSize: '0.74rem',
             padding: '3px 14px',
             borderRadius: '9999px',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '5px',
             boxShadow: '0 4px 14px rgba(245, 158, 11, 0.6)',
-            zIndex: 10
+            zIndex: 50,
+            pointerEvents: 'none'
           }}>
             <Crown size={13} color="#000000" /> bu adayı seçmek için tıkla
           </div>
@@ -705,20 +705,36 @@ export default function TabletopView({
         flexDirection: 'column',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '6px 16px 52px 16px',
+        padding: 'clamp(8px, 1.2vh, 16px) clamp(10px, 1.5vw, 24px) clamp(44px, 5vh, 60px) clamp(10px, 1.5vw, 24px)',
         width: '100%',
         maxWidth: '100%',
         height: 'calc(100vh - 50px)',
         maxHeight: 'calc(100vh - 50px)',
         overflow: 'hidden',
         boxSizing: 'border-box',
-        gap: '6px'
+        gap: '4px'
       }}>
+        {/* TOP ROW: Up to 3 player desks side-by-side */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'stretch',
+          gap: 'clamp(10px, 1.4vw, 20px)',
+          width: '100%',
+          maxWidth: '1840px',
+          flex: '1 1 0',
+          maxHeight: '44vh',
+          margin: '0 auto'
+        }}>
+          {topPlayers.map(p => renderDesk(p))}
+        </div>
+
         {/* DoxCards Logo in Table Header Gap */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          height: 'clamp(16px, 2.4vh, 26px)',
           padding: '0',
           userSelect: 'none',
           pointerEvents: 'none',
@@ -728,28 +744,12 @@ export default function TabletopView({
             src={doxcardsLogoImg}
             alt="DoxCards"
             style={{
-              height: 'clamp(20px, 3vh, 30px)',
+              height: '100%',
               objectFit: 'contain',
-              opacity: 0.9,
+              opacity: 0.85,
               filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))'
             }}
           />
-        </div>
-
-        {/* TOP ROW: Up to 3 player desks side-by-side */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'stretch',
-          gap: '14px',
-          width: '100%',
-          maxWidth: '1780px',
-          flex: 1,
-          maxHeight: '44vh',
-          margin: '0 auto',
-          overflow: 'hidden'
-        }}>
-          {topPlayers.map(p => renderDesk(p))}
         </div>
 
         {/* BOTTOM ROW: Up to 3 player desks side-by-side */}
@@ -757,13 +757,12 @@ export default function TabletopView({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'stretch',
-          gap: '14px',
+          gap: 'clamp(10px, 1.4vw, 20px)',
           width: '100%',
-          maxWidth: '1780px',
-          flex: 1,
+          maxWidth: '1840px',
+          flex: '1 1 0',
           maxHeight: '44vh',
-          margin: '0 auto',
-          overflow: 'hidden'
+          margin: '0 auto'
         }}>
           {bottomPlayers.map(p => renderDesk(p))}
         </div>

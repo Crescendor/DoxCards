@@ -55,12 +55,12 @@ export default function CardItem({
       onClick={disabled ? undefined : onClick}
       style={{
         position: 'relative',
-        width: isSmall ? '154px' : '180px',
-        maxWidth: isSmall ? '154px' : '180px',
-        height: isSmall ? '216px' : '252px',
-        minHeight: isSmall ? '216px' : '252px',
+        width: isSmall ? '100%' : '180px',
+        maxWidth: isSmall ? '100%' : '180px',
+        height: isSmall ? '100%' : '252px',
+        maxHeight: isSmall ? '100%' : '252px',
         aspectRatio: '5 / 7',
-        borderRadius: isSmall ? '14px' : '16px',
+        borderRadius: isSmall ? '10px' : '16px',
         overflow: 'hidden',
         boxSizing: 'border-box',
         cursor: onClick && !disabled ? 'pointer' : 'default',
@@ -78,7 +78,9 @@ export default function CardItem({
           : 'none',
         background: isWhite ? '#ffffff' : '#FF0000',
         border: '1px solid rgba(0,0,0,0.12)',
-        margin: '0 auto'
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       {/* Exact PNG Card Base Asset */}
@@ -101,17 +103,18 @@ export default function CardItem({
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: isSmall ? '16px 13px' : '18px 15px',
-          paddingRight: isSmall ? '18px' : '22px',
+          padding: isSmall ? '10px 8px 4px 8px' : '18px 15px',
+          paddingRight: isSmall ? '10px' : '22px',
           fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           fontWeight: 800,
-          fontSize: isSmall ? '0.84rem' : '0.88rem',
-          lineHeight: 1.28,
+          fontSize: isSmall ? 'clamp(0.70rem, 0.85vw, 0.92rem)' : '0.88rem',
+          lineHeight: 1.22,
           textAlign: 'left',
           textTransform: 'lowercase',
           color: isWhite ? '#ff0000' : '#ffffff',
           letterSpacing: '-0.02em',
-          wordBreak: 'break-word'
+          wordBreak: 'break-word',
+          overflow: 'hidden'
         }}
       >
         {card.filledText ? (
