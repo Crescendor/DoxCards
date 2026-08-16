@@ -156,16 +156,51 @@ function TableSlotsRow({
 
   const isVoting = (phase === 'VOTING' || phase === 'REVEAL') && isSingle;
 
+  const slotBoxStyle = (hasCard, isHovered, isActionable, borderColor) => ({
+    width: '108px',
+    minWidth: '108px',
+    maxWidth: '108px',
+    height: '151px',
+    minHeight: '151px',
+    maxHeight: '151px',
+    borderRadius: '12px',
+    border: hasCard
+      ? 'none'
+      : (isHovered
+          ? `2px dashed ${borderColor}`
+          : (isActionable
+              ? `2px dashed ${borderColor}`
+              : '2px dashed rgba(255,255,255,0.18)')),
+    background: isHovered
+      ? (borderColor === '#ef4444' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(56, 189, 248, 0.18)')
+      : (hasCard ? 'transparent' : 'rgba(0, 0, 0, 0.22)'),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    flexShrink: 0,
+    position: 'relative',
+    transition: 'all 0.2s ease'
+  });
+
   return (
     <div
       onClick={() => isVoting && onSelectWinner && onSelectWinner(candidate?.matchmakerId)}
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '12px',
-        maxWidth: '440px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        width: '364px',
+        minWidth: '364px',
+        maxWidth: '364px',
+        height: '167px',
+        minHeight: '167px',
+        maxHeight: '167px',
         margin: '0 auto',
-        padding: '12px',
+        padding: '8px',
+        boxSizing: 'border-box',
         borderRadius: '18px',
         background: isWinner
           ? 'rgba(16, 185, 129, 0.15)'
@@ -185,16 +220,7 @@ function TableSlotsRow({
         onDragOver={(e) => handleDragOver(e, 0)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 0)}
-        style={{
-          aspectRatio: '5 / 7',
-          borderRadius: '12px',
-          border: white1 ? 'none' : (dragOverIndex === 0 ? '2px dashed #38bdf8' : (isMySlots && canDropWhite && isMyTurn ? '2px dashed #38bdf8' : '2px dashed rgba(255,255,255,0.22)')),
-          background: dragOverIndex === 0 ? 'rgba(56, 189, 248, 0.18)' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease'
-        }}
+        style={slotBoxStyle(!!white1, dragOverIndex === 0, isMySlots && canDropWhite && isMyTurn, '#38bdf8')}
       >
         {white1 ? (
           <CardItem card={white1} type="perk" isSmall={true} />
@@ -210,16 +236,7 @@ function TableSlotsRow({
         onDragOver={(e) => handleDragOver(e, 1)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 1)}
-        style={{
-          aspectRatio: '5 / 7',
-          borderRadius: '12px',
-          border: white2 ? 'none' : (dragOverIndex === 1 ? '2px dashed #38bdf8' : (isMySlots && canDropWhite && isMyTurn ? '2px dashed #38bdf8' : '2px dashed rgba(255,255,255,0.22)')),
-          background: dragOverIndex === 1 ? 'rgba(56, 189, 248, 0.18)' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease'
-        }}
+        style={slotBoxStyle(!!white2, dragOverIndex === 1, isMySlots && canDropWhite && isMyTurn, '#38bdf8')}
       >
         {white2 ? (
           <CardItem card={white2} type="perk" isSmall={true} />
@@ -235,16 +252,7 @@ function TableSlotsRow({
         onDragOver={(e) => handleDragOver(e, 2)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 2)}
-        style={{
-          aspectRatio: '5 / 7',
-          borderRadius: '12px',
-          border: redFlag ? 'none' : (dragOverIndex === 2 ? '2px dashed #ef4444' : (isTarget && canDropRed && isMyTurn ? '2px dashed #ef4444' : '2px dashed rgba(255,255,255,0.22)')),
-          background: dragOverIndex === 2 ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease'
-        }}
+        style={slotBoxStyle(!!redFlag, dragOverIndex === 2, isTarget && canDropRed && isMyTurn, '#ef4444')}
       >
         {redFlag ? (
           <CardItem card={redFlag} type="redflag" isSmall={true} />
@@ -511,19 +519,28 @@ export default function TabletopView({
                 key={opp.id}
                 style={{
                   textAlign: 'center',
-                  minWidth: '340px',
+                  width: '388px',
+                  minWidth: '388px',
+                  maxWidth: '388px',
+                  minHeight: '340px',
+                  maxHeight: '340px',
                   padding: '12px',
+                  boxSizing: 'border-box',
                   borderRadius: '20px',
                   background: isOppTurn ? 'rgba(56, 189, 248, 0.08)' : 'transparent',
                   border: isOppTurn ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  marginBottom: '10px',
+                  marginBottom: '6px',
                   fontSize: '0.88rem',
                   fontWeight: 600,
                   textTransform: 'lowercase'
@@ -624,6 +641,10 @@ export default function TabletopView({
             <div
               style={{
                 textAlign: 'center',
+                width: '388px',
+                minWidth: '388px',
+                maxWidth: '388px',
+                margin: '0 auto',
                 padding: '12px',
                 borderRadius: '20px',
                 background: isMyTurn ? 'rgba(56, 189, 248, 0.08)' : 'transparent',

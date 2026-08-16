@@ -55,16 +55,20 @@ export default function CardItem({
       onClick={disabled ? undefined : onClick}
       style={{
         position: 'relative',
-        width: '100%',
-        maxWidth: isSmall ? '135px' : '170px',
+        width: isSmall ? '108px' : '100%',
+        maxWidth: isSmall ? '108px' : '170px',
+        height: isSmall ? '151px' : 'auto',
+        minHeight: isSmall ? '151px' : 'auto',
         aspectRatio: '5 / 7',
         borderRadius: isSmall ? '12px' : '16px',
         overflow: 'hidden',
+        boxSizing: 'border-box',
         cursor: onClick && !disabled ? 'pointer' : 'default',
         boxShadow: isWhite
-          ? '0 6px 18px rgba(0, 0, 0, 0.35)'
-          : '0 6px 20px rgba(255, 0, 0, 0.45)',
+          ? '0 4px 14px rgba(0, 0, 0, 0.35)'
+          : '0 4px 16px rgba(255, 0, 0, 0.45)',
         userSelect: 'none',
+        flexShrink: 0,
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
         transform: isSelected ? 'translateY(-10px)' : 'none',
         outline: isSelected
