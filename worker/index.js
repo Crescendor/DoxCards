@@ -1,5 +1,6 @@
 // Cloudflare Worker Multiplayer Game Server with Durable Objects for DoxCards (Red Flags)
-import { getDeck } from './cards.js';
+import { getDeck, updateGlobalDeck, getActiveRawDeck } from './cards.js';
+import rawDeckJson from './Red_Flags_Turkish_Complete.json';
 import { GameEngine, PHASES } from './gameEngine.js';
 
 function generateRoomCode() {
@@ -25,6 +26,58 @@ export class GameRoomDO {
 
   async fetch(request) {
     const url = new URL(request.url);
+
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    // Deck Database API Endpoints in Cloudflare DO Storage
+    if (url.pathname === '/api/deck' || url.pathname === '/api/deck/') {
+      if (request.method === 'GET') {
+        let savedDeck = null;
+        if (this.state?.storage) {
+          savedDeck = await this.state.storage.get('active_deck');
+        }
+        return Response.json(savedDeck || getActiveRawDeck(), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (request.method === 'POST') {
+        const body = await request.json();
+        const newDeck = body.deck || body;
+        if (this.state?.storage) {
+          await this.state.storage.put('active_deck', newDeck);
+        }
+        updateGlobalDeck(newDeck);
+        return Response.json({
+          success: true,
+          message: 'Kartlar Cloudflare veritabanına başarıyla kaydedildi!'
+        }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    if (url.pathname === '/api/deck/reset') {
+      if (this.state?.storage) {
+        await this.state.storage.delete('active_deck');
+      }
+      updateGlobalDeck(rawDeckJson);
+      return Response.json({
+        success: true,
+        message: 'Cloudflare veritabanı orijinal haline sıfırlandı!'
+      }, {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const upgradeHeader = request.headers.get('Upgrade') || request.headers.get('upgrade');
 
     if (upgradeHeader?.toLowerCase() === 'websocket' || url.pathname.startsWith('/ws')) {
@@ -501,7 +554,29 @@ export default {
       return new Response(null, { status: 101, webSocket: clientWs });
     }
 
-    // 2. HTTP Health check / Root info
+    // 2. Deck Database API (/api/deck)
+    if (url.pathname.startsWith('/api/deck')) {
+      if (env && env.GAME_ROOMS) {
+        const id = env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
+        const storageObj = env.GAME_ROOMS.get(id);
+        return storageObj.fetch(request);
+      }
+
+      // In-Memory Fallback
+      if (url.pathname === '/api/deck/reset') {
+        updateGlobalDeck(rawDeckJson);
+        return Response.json({ success: true, message: 'Veritabanı sıfırlandı!' }, { headers: corsHeaders });
+      }
+      if (request.method === 'POST') {
+        const body = await request.json();
+        const newDeck = body.deck || body;
+        updateGlobalDeck(newDeck);
+        return Response.json({ success: true, message: 'Veritabanına kaydedildi!' }, { headers: corsHeaders });
+      }
+      return Response.json(getActiveRawDeck(), { headers: corsHeaders });
+    }
+
+    // 3. HTTP Health check / Root info
     if (url.pathname === '/health' || url.pathname === '/') {
       return new Response(JSON.stringify({
         status: 'ok',

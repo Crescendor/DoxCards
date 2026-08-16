@@ -78,7 +78,9 @@ export function parseRawDeck(jsonData) {
   };
 }
 
-// Get active deck (either stored custom deck or default rawCardsData)
+const SERVER_URL = 'https://doxcards-server.burakcnaydin.workers.dev';
+
+// Get active deck from localStorage cache or fallback
 export function getActiveDeck() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -92,14 +94,53 @@ export function getActiveDeck() {
   return parseRawDeck(rawCardsData);
 }
 
-// Save customized deck to localStorage
-export function saveActiveDeck(jsonData) {
+// Local cache save
+export function saveActiveDeckLocal(jsonData) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(jsonData, null, 2));
 }
 
-// Reset customized deck back to original JSON
-export function resetActiveDeck() {
+// Fetch live database deck from Cloudflare backend
+export async function syncDeckFromCloudflare() {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/deck`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.Perks || data.perks || data['Red Flags'] || data.red_flags)) {
+        saveActiveDeckLocal(data);
+        return parseRawDeck(data);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch deck from Cloudflare database, using local fallback:', err);
+  }
+  return getActiveDeck();
+}
+
+// Save customized deck to localStorage and Cloudflare Database
+export async function saveActiveDeck(jsonData) {
+  saveActiveDeckLocal(jsonData);
+  try {
+    await fetch(`${SERVER_URL}/api/deck`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deck: jsonData })
+    });
+  } catch (err) {
+    console.error('Failed to sync deck to Cloudflare database:', err);
+  }
+}
+
+// Reset customized deck back to original JSON in Cloudflare Database & localStorage
+export async function resetActiveDeck() {
   localStorage.removeItem(STORAGE_KEY);
+  try {
+    await fetch(`${SERVER_URL}/api/deck/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (err) {
+    console.error('Failed to reset deck on Cloudflare database:', err);
+  }
 }
 
 export const DEFAULT_RAW_CARDS = rawCardsData;

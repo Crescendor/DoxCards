@@ -9,57 +9,67 @@ export function standardizeBlankTokens(text) {
     .trim();
 }
 
-function buildCardsFromRaw(jsonData) {
+export function buildCardsFromRaw(jsonData) {
   const whiteCards = [];
   const redCards = [];
   let wIndex = 1;
   let rIndex = 1;
 
-  if (jsonData.Perks) {
-    Object.entries(jsonData.Perks).forEach(([category, list]) => {
-      if (Array.isArray(list)) {
-        list.forEach(text => {
-          const trimmed = (text || '').trim();
-          if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
-            const standardized = standardizeBlankTokens(trimmed);
-            whiteCards.push({
-              id: `w_${String(wIndex++).padStart(4, '0')}`,
-              text: standardized,
-              type: 'perk',
-              category
-            });
-          }
-        });
-      }
-    });
-  }
+  const perks = jsonData?.Perks || jsonData?.perks || {};
+  const redFlags = jsonData?.['Red Flags'] || jsonData?.red_flags || jsonData?.redFlags || {};
 
-  if (jsonData['Red Flags']) {
-    Object.entries(jsonData['Red Flags']).forEach(([category, list]) => {
-      if (Array.isArray(list)) {
-        list.forEach(text => {
-          const trimmed = (text || '').trim();
-          if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
-            const standardized = standardizeBlankTokens(trimmed);
-            redCards.push({
-              id: `r_${String(rIndex++).padStart(4, '0')}`,
-              text: standardized,
-              type: 'redflag',
-              category
-            });
-          }
-        });
-      }
-    });
-  }
+  Object.entries(perks).forEach(([category, list]) => {
+    if (Array.isArray(list)) {
+      list.forEach(text => {
+        const trimmed = (text || '').trim();
+        if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
+          const standardized = standardizeBlankTokens(trimmed);
+          whiteCards.push({
+            id: `w_${String(wIndex++).padStart(4, '0')}`,
+            text: standardized,
+            type: 'perk',
+            category
+          });
+        }
+      });
+    }
+  });
+
+  Object.entries(redFlags).forEach(([category, list]) => {
+    if (Array.isArray(list)) {
+      list.forEach(text => {
+        const trimmed = (text || '').trim();
+        if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
+          const standardized = standardizeBlankTokens(trimmed);
+          redCards.push({
+            id: `r_${String(rIndex++).padStart(4, '0')}`,
+            text: standardized,
+            type: 'redflag',
+            category
+          });
+        }
+      });
+    }
+  });
 
   return { whiteCards, redCards };
 }
 
-const { whiteCards, redCards } = buildCardsFromRaw(rawDeckJson);
+let activeRawDeck = rawDeckJson;
+let activeParsed = buildCardsFromRaw(rawDeckJson);
 
-export const WHITE_CARDS = whiteCards;
-export const RED_CARDS = redCards;
+export function getActiveRawDeck() {
+  return activeRawDeck;
+}
+
+export function updateGlobalDeck(newRawDeck) {
+  if (!newRawDeck) return;
+  activeRawDeck = newRawDeck;
+  activeParsed = buildCardsFromRaw(newRawDeck);
+}
+
+export const WHITE_CARDS = () => activeParsed.whiteCards;
+export const RED_CARDS = () => activeParsed.redCards;
 
 // Shuffle helper
 export function shuffleArray(array) {
@@ -72,9 +82,10 @@ export function shuffleArray(array) {
 }
 
 // Get shuffled full match deck
-export function getDeck(deckType = 'all') {
-  let selectedWhite = [...WHITE_CARDS];
-  let selectedRed = [...RED_CARDS];
+export function getDeck(deckType = 'all', customRawDeck = null) {
+  const parsed = customRawDeck ? buildCardsFromRaw(customRawDeck) : activeParsed;
+  let selectedWhite = [...parsed.whiteCards];
+  let selectedRed = [...parsed.redCards];
 
   if (deckType !== 'all') {
     const filteredWhite = selectedWhite.filter(c => c.category?.toLowerCase().includes(deckType.toLowerCase()));

@@ -23,6 +23,7 @@ import {
   getActiveDeck,
   saveActiveDeck,
   resetActiveDeck,
+  syncDeckFromCloudflare,
   parseRawDeck,
   DEFAULT_RAW_CARDS
 } from '../data/cardsData';
@@ -72,6 +73,18 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [jsonText, setJsonText] = useState(JSON.stringify(deckState.raw, null, 2));
   const [jsonError, setJsonError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+
+  // Sync with live Cloudflare Database on mount
+  useEffect(() => {
+    setIsCloudSyncing(true);
+    syncDeckFromCloudflare().then(liveDeck => {
+      if (liveDeck && liveDeck.allCards.length > 0) {
+        setDeckState(liveDeck);
+      }
+      setIsCloudSyncing(false);
+    }).catch(() => setIsCloudSyncing(false));
+  }, []);
 
   // Filter & Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,7 +97,7 @@ export default function AdminPageView({ onBack, discordUser }) {
 
   // Add card form state
   const [newType, setNewType] = useState('perk'); // 'perk' | 'redflag'
-  const [newCategory, setNewCategory] = useState('Core Deck');
+  const [newCategory, setNewCategory] = useState('Ana Deste');
   const [customCategoryInput, setCustomCategoryInput] = useState('');
   const [newText, setNewText] = useState('');
 
@@ -550,7 +563,7 @@ export default function AdminPageView({ onBack, discordUser }) {
             alignItems: 'center',
             gap: '8px'
           }}>
-            <Check size={18} /> değişiklikler kaydedildi ve aktif desteye uygulandı!
+            <Check size={18} /> değişiklikler Cloudflare veritabanına başarıyla kaydedildi ve tüm odalarda aktif!
           </div>
         )}
 
