@@ -123,18 +123,6 @@ export default function LobbyView({
             </div>
 
             <div style={{ display: 'flex', gap: '6px' }}>
-              {isHost && (isMainAdmin || userProfile?.tags?.includes('admin')) && players.length < MAX_SLOTS && (
-                <button
-                  type="button"
-                  onClick={() => { sounds.playClick(); if (onAddBot) onAddBot(); }}
-                  className="btn-secondary"
-                  style={{ padding: '7px 12px', fontSize: '0.82rem', borderColor: 'rgba(234, 179, 8, 0.4)', color: '#fde047', background: 'rgba(234, 179, 8, 0.08)' }}
-                  title="bot oyuncu ekle"
-                >
-                  <Plus size={14} /> bot ekle
-                </button>
-              )}
-
               <button
                 onClick={handleCopyCode}
                 className="btn-secondary"
