@@ -587,9 +587,8 @@ export default function TabletopView({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2px 0 2px 0',
-            gap: 'clamp(6px, 1vh, 10px)'
+            justifyContent: 'space-between',
+            padding: '2px 0 2px 0'
           }}>
             {/* Large 3D Layered Deck */}
             <div style={{
@@ -597,7 +596,7 @@ export default function TabletopView({
               width: 'clamp(88px, 7.5vw, 124px)',
               height: 'clamp(124px, 17vh, 174px)',
               aspectRatio: '5 / 7',
-              margin: '0 auto'
+              margin: 'auto auto'
             }}>
               {/* Layer 3 */}
               <div style={{
@@ -638,7 +637,7 @@ export default function TabletopView({
               </div>
             </div>
 
-            {/* Bekâr Status Message */}
+            {/* Bekâr Status Message (Anchored at Bottom of Desk) */}
             <div style={{
               fontSize: '0.78rem',
               fontWeight: 700,
@@ -650,7 +649,8 @@ export default function TabletopView({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              marginTop: '2px'
+              marginTop: 'auto',
+              marginBottom: '2px'
             }}>
               <Crown size={13} color="#fbbf24" />
               <span>
