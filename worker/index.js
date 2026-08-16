@@ -86,7 +86,8 @@ export default {
     }
 
     // WebSocket Upgrade Request
-    if (request.headers.get('Upgrade') === 'websocket') {
+    const upgradeHeader = request.headers.get('Upgrade') || request.headers.get('upgrade');
+    if (upgradeHeader?.toLowerCase() === 'websocket' || url.pathname.startsWith('/ws')) {
       const pair = new WebSocketPair();
       const [clientWs, serverWs] = Object.values(pair);
 
