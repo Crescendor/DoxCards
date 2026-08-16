@@ -470,10 +470,12 @@ export class GameRoomDO {
               : ['Ana Deste']
           };
 
+          const cleanPlayerName = (player.name || 'oyuncu').slice(0, 19);
+
           this.room = {
             code,
             hostId: player.id,
-            players: [{ ...player, isHost: true, isReady: true, score: 0 }],
+            players: [{ ...player, name: cleanPlayerName, isHost: true, isReady: true, score: 0 }],
             settings: initialSettings,
             game: null,
             messages: []
@@ -513,14 +515,17 @@ export class GameRoomDO {
             return;
           }
 
+          const cleanPlayerName = (player.name || 'oyuncu').slice(0, 19);
+
           const existingIdx = this.room.players.findIndex(p => p.id === player.id);
           if (existingIdx !== -1) {
-            this.room.players[existingIdx].name = player.name;
+            this.room.players[existingIdx].name = cleanPlayerName;
             this.room.players[existingIdx].color = player.color;
             if (player.avatar) this.room.players[existingIdx].avatar = player.avatar;
           } else {
             this.room.players.push({
               ...player,
+              name: cleanPlayerName,
               isHost: false,
               isReady: false,
               score: 0

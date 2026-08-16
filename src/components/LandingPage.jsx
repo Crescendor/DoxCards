@@ -44,7 +44,7 @@ export default function LandingPage({
   const urlRoomCode = new URLSearchParams(window.location.search).get('room') || '';
   const [viewMode, setViewMode] = useState(urlRoomCode ? 'join' : 'menu'); // 'menu' | 'create' | 'join'
   const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode.toLowerCase());
-  const [targetScore, setTargetScore] = useState(3);
+  const [targetScore, setTargetScore] = useState(6);
   const [discordUser, setDiscordUser] = useState(getDiscordUser());
   const [useDiscordName, setUseDiscordName] = useState(true);
 
@@ -55,7 +55,7 @@ export default function LandingPage({
         setDiscordUser(user);
         onUpdatePlayer({
           ...player,
-          name: user.displayName.toLowerCase(),
+          name: (user.displayName || user.username || '').toLowerCase().slice(0, 19),
           avatar: user.avatarUrl,
           discordId: user.id
         });
@@ -84,7 +84,7 @@ export default function LandingPage({
   };
 
   const handleNameChange = (e) => {
-    onUpdatePlayer({ ...player, name: e.target.value.toLowerCase() });
+    onUpdatePlayer({ ...player, name: e.target.value.toLowerCase().slice(0, 19) });
   };
 
   const handleToggleNameSource = (isDiscord) => {
@@ -92,7 +92,7 @@ export default function LandingPage({
     if (isDiscord && discordUser) {
       onUpdatePlayer({
         ...player,
-        name: discordUser.displayName.toLowerCase()
+        name: (discordUser.displayName || discordUser.username || '').toLowerCase().slice(0, 19)
       });
     }
   };
@@ -102,6 +102,7 @@ export default function LandingPage({
     if (!player.name.trim()) return;
     sounds.playClick();
     onCreateRoom({
+      roundLimit: Number(targetScore),
       targetScore: Number(targetScore),
       deckType: 'all'
     });
@@ -354,7 +355,7 @@ export default function LandingPage({
                     value={player.name}
                     onChange={handleNameChange}
                     placeholder="özel oyuncu adı yaz..."
-                    maxLength={50}
+                    maxLength={19}
                     className="form-input"
                     required
                   />
@@ -368,7 +369,7 @@ export default function LandingPage({
                   value={player.name}
                   onChange={handleNameChange}
                   placeholder="bir isim yaz..."
-                  maxLength={50}
+                  maxLength={19}
                   className="form-input"
                   autoFocus
                   required
@@ -377,15 +378,15 @@ export default function LandingPage({
             )}
 
             <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label">hedef puan</label>
+              <label className="form-label">tur limiti</label>
               <select
                 value={targetScore}
                 onChange={(e) => setTargetScore(e.target.value)}
                 className="form-input"
               >
-                <option value={3}>3 puan (hızlı)</option>
-                <option value={5}>5 puan (standart)</option>
-                <option value={7}>7 puan (uzun)</option>
+                <option value={6}>6 tur (hızlı)</option>
+                <option value={12}>12 tur (standart)</option>
+                <option value={18}>18 tur (uzun)</option>
               </select>
             </div>
 
@@ -497,7 +498,7 @@ export default function LandingPage({
                     value={player.name}
                     onChange={handleNameChange}
                     placeholder="özel oyuncu adı yaz..."
-                    maxLength={50}
+                    maxLength={19}
                     className="form-input"
                     required
                   />
@@ -511,7 +512,7 @@ export default function LandingPage({
                   value={player.name}
                   onChange={handleNameChange}
                   placeholder="bir isim yaz..."
-                  maxLength={50}
+                  maxLength={19}
                   className="form-input"
                   autoFocus
                   required
