@@ -110,16 +110,21 @@ export default function GameView({
           </span>
         </div>
 
-        {/* Center: Turn Status Banner in Sleek Dark Grey */}
+        {/* Center: Turn Status Banner mathematically centered */}
         <div style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           background: '#262626',
           border: isMyTurn ? '1px solid rgba(217, 4, 41, 0.6)' : '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '4px 16px',
+          padding: '5px 18px',
           borderRadius: '9999px',
-          boxShadow: isMyTurn ? '0 0 12px rgba(217, 4, 41, 0.25)' : 'none'
+          boxShadow: isMyTurn ? '0 0 14px rgba(217, 4, 41, 0.3)' : 'none',
+          whiteSpace: 'nowrap',
+          zIndex: 10
         }}>
           {isMyTurn ? (
             <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>

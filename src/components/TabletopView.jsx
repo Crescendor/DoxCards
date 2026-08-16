@@ -11,21 +11,24 @@ import defaultAvatarImg from '../assets/default_avatar.png';
 function OpponentHandFanned({ count = 7 }) {
   const cards = Array.from({ length: Math.min(count, 8) });
   const mid = (cards.length - 1) / 2;
+  const cardWidth = 92;
+  const step = 28;
+  const totalWidth = (cards.length - 1) * step + cardWidth;
 
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      height: '110px',
+      height: '132px',
       position: 'relative',
-      width: `${cards.length * 24 + 80}px`,
-      margin: '0 auto 12px auto'
+      width: `${totalWidth}px`,
+      margin: '6px auto 14px auto'
     }}>
       {cards.map((_, i) => {
         const offset = i - mid;
-        const rot = offset * 4.5;
-        const translateY = Math.abs(offset) * 3;
+        const rot = offset * 3.8;
+        const translateY = Math.abs(offset) * 3.5;
         const isWhiteBack = i >= 4;
 
         return (
@@ -33,15 +36,15 @@ function OpponentHandFanned({ count = 7 }) {
             key={i}
             style={{
               position: 'absolute',
-              left: `${i * 24}px`,
-              width: '78px',
+              left: `${i * step}px`,
+              width: `${cardWidth}px`,
               aspectRatio: '5 / 7',
-              borderRadius: '10px',
+              borderRadius: '12px',
               overflow: 'hidden',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+              boxShadow: '0 6px 16px rgba(0, 0, 0, 0.65)',
               transform: `rotate(${rot}deg) translateY(${translateY}px)`,
               zIndex: i,
-              border: '1px solid rgba(0,0,0,0.25)'
+              border: '1px solid rgba(0, 0, 0, 0.2)'
             }}
           >
             <img
@@ -458,11 +461,12 @@ export default function TabletopView({
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-evenly',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '10px 20px 60px 20px',
+        padding: '20px 20px 85px 20px',
         width: '100%',
         maxWidth: '100%',
+        minHeight: 'calc(100vh - 50px)',
         overflowY: 'auto',
         boxSizing: 'border-box'
       }}>
@@ -476,7 +480,8 @@ export default function TabletopView({
           flexWrap: 'wrap',
           width: '100%',
           maxWidth: '1800px',
-          margin: '0 auto'
+          margin: '0 auto',
+          paddingTop: '6px'
         }}>
           {/* Bekâr Player Zone */}
           {!isSingle && singlePlayer && (
@@ -615,7 +620,15 @@ export default function TabletopView({
         </div>
 
         {/* BOTTOM ROW: Local Player's Zone & Slots */}
-        <div style={{ marginTop: '16px', textAlign: 'center', width: '100%', maxWidth: '1800px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{
+          marginTop: 'auto',
+          marginBottom: '20px',
+          textAlign: 'center',
+          width: '100%',
+          maxWidth: '1800px',
+          display: 'flex',
+          justifyContent: 'center'
+        }}>
           {isSingle ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{
@@ -777,10 +790,40 @@ export default function TabletopView({
                 <Layers size={16} color="#ef4444" />
                 <span>destem</span>
               </span>
-              <span style={{ fontSize: '0.74rem', background: '#ffffff', color: '#000000', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
+              <span style={{
+                height: '24px',
+                minWidth: '78px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#ffffff',
+                color: '#1e1e1e',
+                fontWeight: 800,
+                fontSize: '0.74rem',
+                lineHeight: '1',
+                padding: '0 10px',
+                borderRadius: '9999px',
+                boxSizing: 'border-box',
+                textAlign: 'center'
+              }}>
                 {availableWhiteCards.length} beyaz
               </span>
-              <span style={{ fontSize: '0.74rem', background: '#d90429', color: '#ffffff', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
+              <span style={{
+                height: '24px',
+                minWidth: '78px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#d90429',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.74rem',
+                lineHeight: '1',
+                padding: '0 10px',
+                borderRadius: '9999px',
+                boxSizing: 'border-box',
+                textAlign: 'center'
+              }}>
                 {availableRedCards.length} kırmızı
               </span>
             </div>
