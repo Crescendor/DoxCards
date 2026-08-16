@@ -11,7 +11,7 @@ export default function HowToPlayModal({ isOpen, onClose }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.8rem' }}>🚩</span>
+            <Flag size={26} color="#ef4444" />
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Nasıl Oynanır?</h2>
           </div>
           <button

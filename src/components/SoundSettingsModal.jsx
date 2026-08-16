@@ -189,7 +189,7 @@ export default function SoundSettingsModal({
           <div style={{ background: '#242424', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ⚪ beyaz kart atma sesi
+                beyaz kart atma sesi
               </span>
               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                 masaya beyaz kart bıraktığınızda çalar
@@ -206,7 +206,7 @@ export default function SoundSettingsModal({
               >
                 <option value="">(varsayılan sistem sesi)</option>
                 {whiteOptions.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} {s.isDefault ? '⭐' : ''}</option>
+                  <option key={s.id} value={s.id}>{s.name} {s.isDefault ? '(varsayılan)' : ''}</option>
                 ))}
               </select>
 
@@ -240,7 +240,7 @@ export default function SoundSettingsModal({
           <div style={{ background: '#242424', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 0, 0, 0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ff6666', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                🔴 kırmızı kart (sabotaj) sesi
+                kırmızı kart (sabotaj) sesi
               </span>
               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                 rakibe kırmızı kart koyduğunuzda çalar
@@ -257,7 +257,7 @@ export default function SoundSettingsModal({
               >
                 <option value="">(varsayılan sistem sesi)</option>
                 {redOptions.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} {s.isDefault ? '⭐' : ''}</option>
+                  <option key={s.id} value={s.id}>{s.name} {s.isDefault ? '(varsayılan)' : ''}</option>
                 ))}
               </select>
 
@@ -291,7 +291,7 @@ export default function SoundSettingsModal({
           <div style={{ background: '#242424', padding: '14px', borderRadius: '12px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#fde047', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                🏆 oyunu kazanma (zafer) sesi
+                oyunu kazanma (zafer) sesi
               </span>
               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                 hedef puana ulaşıp kazandığınızda çalar
@@ -308,7 +308,7 @@ export default function SoundSettingsModal({
               >
                 <option value="">(varsayılan sistem sesi)</option>
                 {winOptions.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} {s.isDefault ? '⭐' : ''}</option>
+                  <option key={s.id} value={s.id}>{s.name} {s.isDefault ? '(varsayılan)' : ''}</option>
                 ))}
               </select>
 

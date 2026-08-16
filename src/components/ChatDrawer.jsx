@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Smile, Flame } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 
-const REACTIONS = ['😂', '🚩', '💀', '🍿', '💍', '💩', '🤡', '🔥'];
-
-export default function ChatDrawer({ messages = [], onSendMessage, onSendReaction, player }) {
+export default function ChatDrawer({ messages = [], onSendMessage, player }) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
@@ -38,14 +36,9 @@ export default function ChatDrawer({ messages = [], onSendMessage, onSendReactio
     setInput('');
   };
 
-  const handleReactionClick = (emoji) => {
-    sounds.playReaction();
-    onSendReaction(emoji);
-  };
-
   return (
     <>
-      {/* Floating Reaction Bar & Chat Toggle Button */}
+      {/* Chat Toggle Button */}
       <div style={{
         position: 'fixed',
         bottom: '220px',
@@ -56,36 +49,6 @@ export default function ChatDrawer({ messages = [], onSendMessage, onSendReactio
         gap: '10px',
         zIndex: 95
       }}>
-        {/* Quick Reactions Strip */}
-        <div style={{
-          background: 'rgba(15, 18, 30, 0.85)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '9999px',
-          padding: '6px 12px',
-          display: 'flex',
-          gap: '6px',
-          boxShadow: 'var(--shadow-md)'
-        }}>
-          {REACTIONS.map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => handleReactionClick(emoji)}
-              style={{
-                background: 'transparent',
-                fontSize: '1.2rem',
-                padding: '4px',
-                borderRadius: '50%',
-                transition: 'transform 0.15s'
-              }}
-              className="hover:scale-125"
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-
-        {/* Chat Toggle Button */}
         <button
           onClick={() => {
             sounds.playClick();
@@ -174,7 +137,7 @@ export default function ChatDrawer({ messages = [], onSendMessage, onSendReactio
           }}>
             {messages.length === 0 ? (
               <div style={{ color: 'var(--text-subtle)', textAlign: 'center', marginTop: '40px', fontSize: '0.85rem' }}>
-                Henüz mesaj yok. İlk mesajı sen yaz! 💬
+                Henüz mesaj yok. İlk mesajı sen yaz!
               </div>
             ) : (
               messages.map((m) => (

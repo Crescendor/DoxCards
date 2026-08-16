@@ -190,7 +190,7 @@ export default function LobbyView({
                             gap: '4px',
                             boxSizing: 'border-box'
                           }}>
-                            🤖 bot
+                            bot
                           </span>
                         )}
 

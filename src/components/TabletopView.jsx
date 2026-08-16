@@ -1268,11 +1268,6 @@ export default function TabletopView({
               boxShadow: isWhite ? '0 4px 16px rgba(255, 255, 255, 0.35)' : '0 4px 16px rgba(255, 0, 0, 0.45)',
               textTransform: 'lowercase'
             }}>
-              {info.playerAvatar ? (
-                <img src={info.playerAvatar} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
-              ) : (
-                <span>🎴</span>
-              )}
               <span>{info.playerName} kart sürüklüyor...</span>
             </div>
 

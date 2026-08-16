@@ -264,7 +264,7 @@ export default function SuggestionModal({
               transition: 'all 0.2s ease'
             }}
           >
-            🃏 kart öner
+            kart öner
           </button>
 
           <button
@@ -283,7 +283,7 @@ export default function SuggestionModal({
               transition: 'all 0.2s ease'
             }}
           >
-            📦 deste öner (min 10+10)
+            deste öner (min 10+10)
           </button>
 
           <button
@@ -303,7 +303,7 @@ export default function SuggestionModal({
               marginLeft: 'auto'
             }}
           >
-            📋 önerilerim ({mySuggestions.length})
+            önerilerim ({mySuggestions.length})
           </button>
         </div>
 
@@ -348,7 +348,7 @@ export default function SuggestionModal({
                       fontSize: '0.85rem'
                     }}
                   >
-                    ⚪ beyaz kart (avantaj / perk)
+                    beyaz kart (avantaj / perk)
                   </button>
 
                   <button
@@ -366,7 +366,7 @@ export default function SuggestionModal({
                       fontSize: '0.85rem'
                     }}
                   >
-                    🔴 kırmızı kart (sabotaj / red flag)
+                    kırmızı kart (sabotaj / red flag)
                   </button>
                 </div>
               </div>
@@ -451,7 +451,7 @@ export default function SuggestionModal({
                 fontSize: '0.8rem',
                 fontWeight: 600
               }}>
-                ⚠️ Deste önerebilmek için en az <b>10 Beyaz Kart</b> ve <b>10 Kırmızı Kart</b> girilmelidir.
+                Deste önerebilmek için en az <b>10 Beyaz Kart</b> ve <b>10 Kırmızı Kart</b> girilmelidir.
               </div>
 
               <div>
@@ -502,7 +502,7 @@ export default function SuggestionModal({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ffffff' }}>
-                    ⚪ Beyaz Kartlar ({validWhiteCount}/10 en az)
+                    Beyaz Kartlar ({validWhiteCount}/10 en az)
                   </span>
                   <button
                     type="button"
@@ -569,7 +569,7 @@ export default function SuggestionModal({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#f87171' }}>
-                    🔴 Kırmızı Kartlar (Sabotaj) ({validRedCount}/10 en az)
+                    Kırmızı Kartlar (Sabotaj) ({validRedCount}/10 en az)
                   </span>
                   <button
                     type="button"
@@ -713,7 +713,7 @@ export default function SuggestionModal({
                             borderRadius: '9999px',
                             textTransform: 'lowercase'
                           }}>
-                            {sug.type === 'deck' ? '📦 deste önerisi' : (sug.cardData?.type === 'perk' ? '⚪ beyaz kart' : '🔴 kırmızı kart')}
+                            {sug.type === 'deck' ? 'deste önerisi' : (sug.cardData?.type === 'perk' ? 'beyaz kart' : 'kırmızı kart')}
                           </span>
 
                           {sug.author?.isAnonymous && (
@@ -808,7 +808,7 @@ export default function SuggestionModal({
                             </div>
                           )}
                           <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '4px' }}>
-                            ⚪ {sug.deckData?.whiteCards?.length || 0} Beyaz Kart, 🔴 {sug.deckData?.redCards?.length || 0} Kırmızı Kart
+                            {sug.deckData?.whiteCards?.length || 0} Beyaz Kart, {sug.deckData?.redCards?.length || 0} Kırmızı Kart
                           </div>
                         </div>
                       )}

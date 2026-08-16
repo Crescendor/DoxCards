@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 
-const QUICK_REACTIONS = ['😂', '🚩', '💀', '🍿', '💍', '💩', '🔥'];
-
-export default function LobbyChat({ messages = [], onSendMessage, onSendReaction, player }) {
+// LobbyChat without emojis
+export default function LobbyChat({ messages = [], onSendMessage, player }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -23,11 +22,6 @@ export default function LobbyChat({ messages = [], onSendMessage, onSendReaction
       text: input.trim()
     });
     setInput('');
-  };
-
-  const handleReaction = (emoji) => {
-    sounds.playReaction();
-    onSendReaction(emoji);
   };
 
   return (
@@ -75,21 +69,6 @@ export default function LobbyChat({ messages = [], onSendMessage, onSendReaction
           ))
         )}
         <div ref={messagesEndRef} />
-      </div>
-
-      {/* Quick Reactions Bar */}
-      <div className="lobby-chat-reactions">
-        {QUICK_REACTIONS.map((emoji) => (
-          <button
-            key={emoji}
-            type="button"
-            onClick={() => handleReaction(emoji)}
-            className="reaction-btn"
-            title={emoji}
-          >
-            {emoji}
-          </button>
-        ))}
       </div>
 
       {/* Input Form */}

@@ -1500,7 +1500,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                             textAlign: 'center'
                           }}
                         >
-                          {newDeckIsSecret ? '🔒 gizli (secret) deste' : '🔓 genel (silik görünür)'}
+                          {newDeckIsSecret ? 'gizli (secret) deste' : 'genel (silik görünür)'}
                         </button>
                       </div>
 
@@ -1909,7 +1909,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                   cursor: 'pointer'
                                 }}
                               >
-                                {meta.isSecret ? '🔒 gizli (secret) deste: aktif' : '🔓 genel deste (silik görünür)'}
+                                {meta.isSecret ? 'gizli (secret) deste: aktif' : 'genel deste (silik görünür)'}
                               </button>
                             </div>
 
@@ -2265,7 +2265,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                       borderRadius: '6px',
                                       textTransform: 'lowercase'
                                     }}>
-                                      {isWhite ? '⚪ beyaz kart' : '🔴 kırmızı kart'}
+                                      {isWhite ? 'beyaz kart' : 'kırmızı kart'}
                                     </span>
                                   </div>
 
@@ -2299,7 +2299,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                     </span>
                                     {sug.author?.isAnonymous && (
                                       <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
-                                        🕵️ kullanıcı anonim gönderdi
+                                        kullanıcı anonim gönderdi
                                       </span>
                                     )}
                                   </div>
@@ -2455,7 +2455,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff' }}>
-                                      📦 {sug.deckData?.title}
+                                      {sug.deckData?.title}
                                     </span>
                                   </div>
 
@@ -2467,10 +2467,10 @@ export default function AdminPageView({ onBack, discordUser }) {
 
                                   <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
                                     <span style={{ fontSize: '0.78rem', color: '#ffffff', fontWeight: 700 }}>
-                                      ⚪ {whiteCount} Beyaz Kart
+                                      {whiteCount} Beyaz Kart
                                     </span>
                                     <span style={{ fontSize: '0.78rem', color: '#f87171', fontWeight: 700 }}>
-                                      🔴 {redCount} Kırmızı Kart
+                                      {redCount} Kırmızı Kart
                                     </span>
                                   </div>
                                 </div>
@@ -2500,7 +2500,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                     </span>
                                     {sug.author?.isAnonymous && (
                                       <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
-                                        🕵️ kullanıcı anonim önerdi
+                                        kullanıcı anonim önerdi
                                       </span>
                                     )}
                                   </div>
@@ -2540,7 +2540,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                   }}>
                                     <div>
                                       <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '6px' }}>
-                                        ⚪ Beyaz Kartlar ({whiteCount})
+                                        Beyaz Kartlar ({whiteCount})
                                       </span>
                                       <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                         {(sug.deckData?.whiteCards || []).map((c, i) => (
@@ -2551,7 +2551,7 @@ export default function AdminPageView({ onBack, discordUser }) {
 
                                     <div>
                                       <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', display: 'block', marginBottom: '6px' }}>
-                                        🔴 Kırmızı Kartlar ({redCount})
+                                        Kırmızı Kartlar ({redCount})
                                       </span>
                                       <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#fca5a5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                         {(sug.deckData?.redCards || []).map((c, i) => (
@@ -2972,10 +2972,10 @@ export default function AdminPageView({ onBack, discordUser }) {
                       className="form-input"
                       style={{ cursor: 'pointer' }}
                     >
-                      <option value="white_card">⚪ beyaz kart atılınca</option>
-                      <option value="red_card">🔴 kırmızı kart atılınca</option>
-                      <option value="game_win">🏆 oyun kazanılınca (skorbord)</option>
-                      <option value="general">🌐 genel / serbest ses</option>
+                      <option value="white_card">beyaz kart atılınca</option>
+                      <option value="red_card">kırmızı kart atılınca</option>
+                      <option value="game_win">oyun kazanılınca (skorbord)</option>
+                      <option value="general">genel / serbest ses</option>
                     </select>
                   </div>
                 </div>
@@ -3005,7 +3005,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                         gap: '6px'
                       }}
                     >
-                      📁 yerel ses dosyası (mp3/wav)
+                      yerel ses dosyası (mp3/wav)
                     </button>
                     <button
                       type="button"
@@ -3026,7 +3026,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                         gap: '6px'
                       }}
                     >
-                      🎬 youtube video linki
+                      youtube video linki
                     </button>
                     <button
                       type="button"
@@ -3047,7 +3047,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                         gap: '6px'
                       }}
                     >
-                      🔗 doğrudan ses url'si
+                      doğrudan ses url'si
                     </button>
                   </div>
 
@@ -3058,8 +3058,8 @@ export default function AdminPageView({ onBack, discordUser }) {
                         <input type="file" accept="audio/*" onChange={handleSoundFileUpload} style={{ display: 'none' }} />
                       </label>
                       {audioFileName && (
-                        <span style={{ fontSize: '0.82rem', color: '#34d399', fontWeight: 700 }}>
-                          ✓ {audioFileName} seçildi
+                        <span style={{ fontSize: '0.82rem', color: '#34d399', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Check size={14} /> {audioFileName} seçildi
                         </span>
                       )}
                     </div>
@@ -3182,10 +3182,10 @@ export default function AdminPageView({ onBack, discordUser }) {
                     const isEditing = editingSoundId === sound.id;
 
                     const catBadge =
-                      sound.category === 'white_card' ? { label: '⚪ beyaz kart', bg: '#ffffff', color: '#000000' } :
-                      sound.category === 'red_card' ? { label: '🔴 kırmızı kart', bg: '#FF0000', color: '#ffffff' } :
-                      sound.category === 'game_win' ? { label: '🏆 zafer / skorbord', bg: '#eab308', color: '#000000' } :
-                      { label: '🌐 genel', bg: '#64748b', color: '#ffffff' };
+                      sound.category === 'white_card' ? { label: 'beyaz kart', bg: '#ffffff', color: '#000000' } :
+                      sound.category === 'red_card' ? { label: 'kırmızı kart', bg: '#FF0000', color: '#ffffff' } :
+                      sound.category === 'game_win' ? { label: 'zafer / skorbord', bg: '#eab308', color: '#000000' } :
+                      { label: 'genel', bg: '#64748b', color: '#ffffff' };
 
                     return (
                       <div
@@ -3282,9 +3282,9 @@ export default function AdminPageView({ onBack, discordUser }) {
                               </span>
 
                               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                                {sound.type === 'youtube' ? `🎬 youtube (${sound.startSec}s - ${sound.endSec}s)` :
-                                 sound.type === 'local' ? `📁 dosya (${sound.startSec}s - ${sound.endSec}s)` :
-                                 `🔗 url (${sound.startSec}s - ${sound.endSec}s)`}
+                                {sound.type === 'youtube' ? `youtube (${sound.startSec}s - ${sound.endSec}s)` :
+                                 sound.type === 'local' ? `dosya (${sound.startSec}s - ${sound.endSec}s)` :
+                                 `url (${sound.startSec}s - ${sound.endSec}s)`}
                               </span>
 
                               {sound.isDefault && (
@@ -3297,7 +3297,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                                   fontSize: '0.66rem',
                                   fontWeight: 800
                                 }}>
-                                  ⭐ varsayılan sistem sesi
+                                  varsayılan sistem sesi
                                 </span>
                               )}
                             </div>
@@ -3320,7 +3320,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                               cursor: 'pointer'
                             }}
                           >
-                            {sound.isDefault ? '⭐ varsayılan' : 'varsayılan yap'}
+                            {sound.isDefault ? 'varsayılan' : 'varsayılan yap'}
                           </button>
 
                           <button
