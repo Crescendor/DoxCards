@@ -197,10 +197,21 @@ export default function AdminPageView({ onBack, discordUser }) {
     setEditingText(card.text);
   };
 
+  // Insert Standard [boşluk] Tag into Inline Edit Field
+  const handleInsertBlankToEdit = () => {
+    sounds.playClick();
+    setEditingText(prev => (prev ? prev.trim() + ' [boşluk] ' : '[boşluk] '));
+  };
+
   // Save Inline Edit
   const handleSaveEdit = (card) => {
     if (!editingText.trim()) return;
     sounds.playClick();
+
+    const formattedText = editingText
+      .replace(/([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/gi, ' [boşluk] ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
     const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
     const section = card.type === 'perk' ? 'Perks' : 'Red Flags';
@@ -210,7 +221,7 @@ export default function AdminPageView({ onBack, discordUser }) {
         t => (t || '').trim().toLowerCase() === card.text.toLowerCase()
       );
       if (idx !== -1) {
-        updatedRaw[section][card.category][idx] = editingText.trim();
+        updatedRaw[section][card.category][idx] = formattedText;
         saveActiveDeck(updatedRaw);
         setDeckState(parseRawDeck(updatedRaw));
       }
@@ -224,6 +235,11 @@ export default function AdminPageView({ onBack, discordUser }) {
     if (!newText.trim()) return;
 
     sounds.playClick();
+    const formattedText = newText
+      .replace(/([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/gi, ' [boşluk] ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
     const section = newType === 'perk' ? 'Perks' : 'Red Flags';
     const targetCategory = customCategoryInput.trim() || newCategory;
@@ -231,7 +247,7 @@ export default function AdminPageView({ onBack, discordUser }) {
     if (!updatedRaw[section]) updatedRaw[section] = {};
     if (!updatedRaw[section][targetCategory]) updatedRaw[section][targetCategory] = [];
 
-    updatedRaw[section][targetCategory].push(newText.trim());
+    updatedRaw[section][targetCategory].push(formattedText);
 
     saveActiveDeck(updatedRaw);
     setDeckState(parseRawDeck(updatedRaw));
@@ -241,10 +257,10 @@ export default function AdminPageView({ onBack, discordUser }) {
     setTimeout(() => setSaveSuccess(false), 2000);
   };
 
-  // Insert Blank Placeholder (______) into New Card Text
+  // Insert Blank Placeholder ([boşluk]) into New Card Text
   const handleInsertBlankPlaceholder = () => {
     sounds.playClick();
-    setNewText(prev => prev + ' ______ ');
+    setNewText(prev => (prev ? prev.trim() + ' [boşluk] ' : '[boşluk] '));
   };
 
   // Rename Category
@@ -661,17 +677,61 @@ export default function AdminPageView({ onBack, discordUser }) {
                         )}
 
                         {isEditing ? (
-                          <input
-                            type="text"
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className="form-input"
-                            style={{ height: '38px', fontSize: '0.92rem', flex: 1, minWidth: '300px' }}
-                            autoFocus
-                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '320px' }}>
+                            <input
+                              type="text"
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="form-input"
+                              style={{ height: '38px', fontSize: '0.92rem', flex: 1 }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleInsertBlankToEdit}
+                              style={{
+                                background: 'rgba(56, 189, 248, 0.15)',
+                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                color: '#38bdf8',
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Standart [boşluk] tagi ekle"
+                            >
+                              <PenTool size={12} /> + [boşluk] ekle
+                            </button>
+                          </div>
                         ) : (
                           <span style={{ fontSize: '0.92rem', fontWeight: 500, color: '#f1f5f9', flex: 1 }}>
-                            {card.text}
+                            {card.text.split(/(\[boşluk\])/gi).map((part, pIdx) => {
+                              if (part.toLowerCase() === '[boşluk]') {
+                                return (
+                                  <span
+                                    key={pIdx}
+                                    style={{
+                                      background: 'rgba(56, 189, 248, 0.15)',
+                                      color: '#38bdf8',
+                                      border: '1px dashed #38bdf8',
+                                      padding: '1px 6px',
+                                      borderRadius: '4px',
+                                      fontWeight: 800,
+                                      margin: '0 3px',
+                                      display: 'inline-block'
+                                    }}
+                                  >
+                                    [boşluk]
+                                  </span>
+                                );
+                              }
+                              return part;
+                            })}
                           </span>
                         )}
                       </div>
@@ -1023,21 +1083,21 @@ export default function AdminPageView({ onBack, discordUser }) {
                       gap: '5px'
                     }}
                   >
-                    <PenTool size={13} /> + boşluk alanı ekle (______)
+                    <PenTool size={13} /> + [boşluk] ekle
                   </button>
                 </div>
 
                 <textarea
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
-                  placeholder="kartın üzerindeki metni buraya yazınız... (örn: Hayatı, ______ 'nin dayandığı gerçek hikaye)"
+                  placeholder="kartın üzerindeki metni buraya yazınız... (örn: Hayatı, [boşluk] 'nin dayandığı gerçek hikaye)"
                   className="form-input"
                   style={{ height: '140px', resize: 'vertical', fontSize: '0.96rem', background: '#242424' }}
                   required
                 />
 
                 <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '6px' }}>
-                  💡 <b>ipucu:</b> kart metnine <code>______</code> eklediğinizde, oyuncular bu kartı masaya atarken ekranda bir modal açılır ve o turluk istedikleri kelimeyi girerek kartı tamamlarlar.
+                  💡 <b>ipucu:</b> kart metnine <code>[boşluk]</code> eklediğinizde, oyuncular bu kartı masaya atarken ekranda bir modal açılır ve o turluk istedikleri kelimeyi girerek kartı tamamlarlar.
                 </div>
               </div>
 

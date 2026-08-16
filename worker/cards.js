@@ -1,6 +1,14 @@
 // Turkish Cards Database for Red Flags (DoxCards) - Complete 800+ Cards Edition
 import rawDeckJson from './Red_Flags_Turkish_Complete.json';
 
+export function standardizeBlankTokens(text) {
+  if (!text) return '';
+  return text
+    .replace(/([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/gi, ' [boşluk] ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function buildCardsFromRaw(jsonData) {
   const whiteCards = [];
   const redCards = [];
@@ -13,9 +21,10 @@ function buildCardsFromRaw(jsonData) {
         list.forEach(text => {
           const trimmed = (text || '').trim();
           if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
+            const standardized = standardizeBlankTokens(trimmed);
             whiteCards.push({
               id: `w_${String(wIndex++).padStart(4, '0')}`,
-              text: trimmed,
+              text: standardized,
               type: 'perk',
               category
             });
@@ -31,9 +40,10 @@ function buildCardsFromRaw(jsonData) {
         list.forEach(text => {
           const trimmed = (text || '').trim();
           if (trimmed && trimmed.toLowerCase() !== category.toLowerCase()) {
+            const standardized = standardizeBlankTokens(trimmed);
             redCards.push({
               id: `r_${String(rIndex++).padStart(4, '0')}`,
-              text: trimmed,
+              text: standardized,
               type: 'redflag',
               category
             });
