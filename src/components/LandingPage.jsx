@@ -15,7 +15,6 @@ export default function LandingPage({
   const [viewMode, setViewMode] = useState(urlRoomCode ? 'join' : 'menu'); // 'menu' | 'create' | 'join'
   const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode.toUpperCase());
   const [targetScore, setTargetScore] = useState(3);
-  const [roundTimer, setRoundTimer] = useState(45);
 
   const handleNameChange = (e) => {
     onUpdatePlayer({ ...player, name: e.target.value.toLowerCase() });
@@ -27,7 +26,6 @@ export default function LandingPage({
     sounds.playClick();
     onCreateRoom({
       targetScore: Number(targetScore),
-      roundTimerDuration: Number(roundTimer),
       deckType: 'all'
     });
   };
@@ -46,14 +44,14 @@ export default function LandingPage({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: '28px'
+        marginBottom: '32px'
       }}>
         <img
           src={doxcardsLogo}
-          alt="doxcards"
+          alt="dox"
           style={{
-            width: '380px',
-            maxWidth: '85vw',
+            width: '320px',
+            maxWidth: '80vw',
             height: 'auto',
             display: 'block'
           }}
@@ -71,7 +69,7 @@ export default function LandingPage({
                 setViewMode('create');
               }}
               className="btn-primary"
-              style={{ width: '100%', padding: '15px', fontSize: '1rem' }}
+              style={{ width: '100%', padding: '15px', fontSize: '0.96rem' }}
             >
               oda oluştur
             </button>
@@ -82,7 +80,7 @@ export default function LandingPage({
                 setViewMode('join');
               }}
               className="btn-secondary"
-              style={{ width: '100%', padding: '15px', fontSize: '1rem' }}
+              style={{ width: '100%', padding: '15px', fontSize: '0.96rem' }}
             >
               odaya katıl
             </button>
@@ -105,7 +103,7 @@ export default function LandingPage({
               >
                 <ArrowLeft size={16} />
               </button>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>oda oluştur</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>oda oluştur</h3>
             </div>
 
             <div className="form-group">
@@ -122,37 +120,21 @@ export default function LandingPage({
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '18px' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">hedef puan</label>
-                <select
-                  value={targetScore}
-                  onChange={(e) => setTargetScore(e.target.value)}
-                  className="form-input"
-                >
-                  <option value={3}>3 puan (hızlı)</option>
-                  <option value={5}>5 puan (standart)</option>
-                  <option value={7}>7 puan (uzun)</option>
-                </select>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">tur süresi</label>
-                <select
-                  value={roundTimer}
-                  onChange={(e) => setRoundTimer(e.target.value)}
-                  className="form-input"
-                >
-                  <option value={30}>30 saniye</option>
-                  <option value={45}>45 saniye</option>
-                  <option value={60}>60 saniye</option>
-                  <option value={0}>süresiz</option>
-                </select>
-              </div>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label">hedef puan</label>
+              <select
+                value={targetScore}
+                onChange={(e) => setTargetScore(e.target.value)}
+                className="form-input"
+              >
+                <option value={3}>3 puan (hızlı)</option>
+                <option value={5}>5 puan (standart)</option>
+                <option value={7}>7 puan (uzun)</option>
+              </select>
             </div>
 
             {error && (
-              <div style={{ color: '#ef4444', fontSize: '0.88rem', marginBottom: '12px', textAlign: 'center', fontWeight: 600 }}>
+              <div style={{ color: '#ef4444', fontSize: '0.86rem', marginBottom: '12px', textAlign: 'center', fontWeight: 600 }}>
                 {error}
               </div>
             )}
@@ -184,7 +166,7 @@ export default function LandingPage({
               >
                 <ArrowLeft size={16} />
               </button>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>odaya katıl</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>odaya katıl</h3>
             </div>
 
             <div className="form-group">
@@ -201,7 +183,7 @@ export default function LandingPage({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label className="form-label">oda kodu</label>
               <input
                 type="text"
@@ -215,7 +197,7 @@ export default function LandingPage({
             </div>
 
             {error && (
-              <div style={{ color: '#ef4444', fontSize: '0.88rem', marginBottom: '12px', textAlign: 'center', fontWeight: 600 }}>
+              <div style={{ color: '#ef4444', fontSize: '0.86rem', marginBottom: '12px', textAlign: 'center', fontWeight: 600 }}>
                 {error}
               </div>
             )}

@@ -179,39 +179,22 @@ export default function LobbyView({
 
         {/* Room Settings */}
         <div className="settings-panel">
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+          <h3 style={{ fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
             <Settings2 size={15} color="#ef4444" /> oda ayarları
           </h3>
 
-          <div className="settings-grid">
-            <div>
-              <label className="form-label">hedef puan</label>
-              <select
-                value={room.settings?.targetScore || 3}
-                onChange={(e) => isHost && onUpdateSettings({ targetScore: Number(e.target.value) })}
-                disabled={!isHost}
-                className="select-box"
-              >
-                <option value={3}>3 puan (hızlı)</option>
-                <option value={5}>5 puan (standart)</option>
-                <option value={7}>7 puan (uzun)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="form-label">tur süresi</label>
-              <select
-                value={room.settings?.roundTimerDuration ?? 0}
-                onChange={(e) => isHost && onUpdateSettings({ roundTimerDuration: Number(e.target.value) })}
-                disabled={!isHost}
-                className="select-box"
-              >
-                <option value={0}>süresiz (sıra tabanlı)</option>
-                <option value={30}>30 saniye</option>
-                <option value={45}>45 saniye</option>
-                <option value={60}>60 saniye</option>
-              </select>
-            </div>
+          <div>
+            <label className="form-label">hedef puan</label>
+            <select
+              value={room.settings?.targetScore || 3}
+              onChange={(e) => isHost && onUpdateSettings({ targetScore: Number(e.target.value) })}
+              disabled={!isHost}
+              className="select-box"
+            >
+              <option value={3}>3 puan (hızlı)</option>
+              <option value={5}>5 puan (standart)</option>
+              <option value={7}>7 puan (uzun)</option>
+            </select>
           </div>
         </div>
 
