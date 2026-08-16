@@ -791,8 +791,10 @@ export default function TabletopView({
                 <span>destem</span>
               </span>
               <span style={{
+                width: '88px',
+                minWidth: '88px',
+                maxWidth: '88px',
                 height: '24px',
-                minWidth: '78px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -801,16 +803,18 @@ export default function TabletopView({
                 fontWeight: 800,
                 fontSize: '0.74rem',
                 lineHeight: '1',
-                padding: '0 10px',
                 borderRadius: '9999px',
                 boxSizing: 'border-box',
-                textAlign: 'center'
+                textAlign: 'center',
+                flexShrink: 0
               }}>
                 {availableWhiteCards.length} beyaz
               </span>
               <span style={{
+                width: '88px',
+                minWidth: '88px',
+                maxWidth: '88px',
                 height: '24px',
-                minWidth: '78px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -819,10 +823,10 @@ export default function TabletopView({
                 fontWeight: 800,
                 fontSize: '0.74rem',
                 lineHeight: '1',
-                padding: '0 10px',
                 borderRadius: '9999px',
                 boxSizing: 'border-box',
-                textAlign: 'center'
+                textAlign: 'center',
+                flexShrink: 0
               }}>
                 {availableRedCards.length} kırmızı
               </span>

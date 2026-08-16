@@ -171,32 +171,58 @@ export default function LobbyView({
                         {slotPlayer.name} {isMe && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>(sen)</span>}
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
                         {/* Admin Badge */}
                         {(slotPlayer.discordId === ADMIN_DISCORD_ID || slotPlayer.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && (
                           <span style={{
-                            background: 'rgba(239, 68, 68, 0.2)',
-                            border: '1px solid rgba(239, 68, 68, 0.5)',
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.45)',
                             color: '#f87171',
                             fontSize: '0.72rem',
-                            fontWeight: 800,
-                            padding: '1px 7px',
-                            borderRadius: '6px',
+                            fontWeight: 700,
+                            height: '22px',
+                            padding: '0 8px',
+                            borderRadius: '9999px',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '3px',
-                            lineHeight: 1.4
+                            gap: '4px',
+                            boxSizing: 'border-box'
                           }}>
                             <ShieldCheck size={11} /> admin
                           </span>
                         )}
 
                         {slotPlayer.isHost ? (
-                          <span className="badge-host">
+                          <span style={{
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                            color: '#fbbf24',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            height: '22px',
+                            padding: '0 8px',
+                            borderRadius: '9999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxSizing: 'border-box'
+                          }}>
                             <Crown size={11} /> oda kurucusu
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          <span style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: '#94a3b8',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            height: '22px',
+                            padding: '0 8px',
+                            borderRadius: '9999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            boxSizing: 'border-box'
+                          }}>
                             çöpçatan
                           </span>
                         )}
@@ -206,12 +232,36 @@ export default function LobbyView({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {slotPlayer.isReady ? (
-                      <span className="badge-ready">
-                        <ShieldCheck size={11} style={{ display: 'inline', marginRight: '3px' }} />
-                        hazır
+                      <span style={{
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        color: '#34d399',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        height: '26px',
+                        padding: '0 10px',
+                        borderRadius: '9999px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        boxSizing: 'border-box'
+                      }}>
+                        <ShieldCheck size={12} /> hazır
                       </span>
                     ) : (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
+                      <span style={{
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: '#64748b',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        height: '26px',
+                        padding: '0 10px',
+                        borderRadius: '9999px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        boxSizing: 'border-box'
+                      }}>
                         bekleniyor
                       </span>
                     )}
