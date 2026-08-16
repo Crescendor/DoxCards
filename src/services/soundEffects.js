@@ -194,6 +194,125 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.12);
   }
+
+  // Play YouTube Clip Audio with Start / End seconds
+  playYouTubeAudio(ytId, startSec = 0, endSec = 0) {
+    if (this.muted || !ytId) return;
+
+    try {
+      let ytContainer = document.getElementById('doxcards-yt-audio-container');
+      if (!ytContainer) {
+        ytContainer = document.createElement('div');
+        ytContainer.id = 'doxcards-yt-audio-container';
+        ytContainer.style.position = 'fixed';
+        ytContainer.style.top = '-9999px';
+        ytContainer.style.left = '-9999px';
+        ytContainer.style.width = '1px';
+        ytContainer.style.height = '1px';
+        ytContainer.style.opacity = '0';
+        ytContainer.style.pointerEvents = 'none';
+        document.body.appendChild(ytContainer);
+      }
+
+      const start = Number(startSec) || 0;
+      const end = Number(endSec) || (start + 5);
+      const durationMs = Math.max(500, (end - start) * 1000);
+
+      // Create iframe embed with autoplay
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&start=${Math.floor(start)}&end=${Math.ceil(end)}&controls=0&disablekb=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+      iframe.allow = 'autoplay';
+      iframe.style.width = '1px';
+      iframe.style.height = '1px';
+
+      ytContainer.innerHTML = '';
+      ytContainer.appendChild(iframe);
+
+      // Automatically clean up after clip finishes
+      setTimeout(() => {
+        if (ytContainer) ytContainer.innerHTML = '';
+      }, durationMs + 1000);
+    } catch (err) {
+      console.warn('YouTube Audio play error:', err);
+    }
+  }
+
+  // Play Custom Sound Item (Local DataURL / Web URL / YouTube)
+  playCustomAudio(soundItem) {
+    if (this.muted || !soundItem) return;
+
+    if (soundItem.type === 'youtube' && soundItem.ytId) {
+      this.playYouTubeAudio(soundItem.ytId, soundItem.startSec, soundItem.endSec);
+      return;
+    }
+
+    const audioUrl = soundItem.url || soundItem.dataUrl;
+    if (!audioUrl) return;
+
+    try {
+      const audio = new Audio(audioUrl);
+      audio.volume = 0.85;
+
+      const start = Number(soundItem.startSec) || 0;
+      const end = Number(soundItem.endSec) || 0;
+
+      if (start > 0) {
+        audio.currentTime = start;
+      }
+
+      audio.play().catch(() => {});
+
+      if (end > start) {
+        const durationMs = (end - start) * 1000;
+        setTimeout(() => {
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+          } catch (e) {}
+        }, durationMs);
+      }
+    } catch (e) {
+      console.warn('Custom audio playback error:', e);
+    }
+  }
+
+  // Play Trigger Sound for specific event and player
+  playTriggerSound(triggerCategory, playerObj = null, customSoundsList = []) {
+    if (this.muted) return;
+
+    // 1. Check if the player has a custom sound chosen in profile
+    const customSoundId = playerObj?.customSounds?.[
+      triggerCategory === 'white_card' ? 'whiteCardSoundId' :
+      triggerCategory === 'red_card' ? 'redCardSoundId' :
+      triggerCategory === 'game_win' ? 'gameWinSoundId' : ''
+    ];
+
+    if (customSoundId && Array.isArray(customSoundsList)) {
+      const matched = customSoundsList.find(s => s.id === customSoundId);
+      if (matched) {
+        this.playCustomAudio(matched);
+        return;
+      }
+    }
+
+    // 2. Check if there is an admin default sound for this category
+    if (Array.isArray(customSoundsList)) {
+      const defaultSound = customSoundsList.find(s => s.category === triggerCategory && s.isDefault);
+      if (defaultSound) {
+        this.playCustomAudio(defaultSound);
+        return;
+      }
+    }
+
+    // 3. Fallback to procedural sound
+    if (triggerCategory === 'white_card') {
+      this.playCardDeal();
+    } else if (triggerCategory === 'red_card') {
+      this.playSabotage();
+    } else if (triggerCategory === 'game_win') {
+      this.playWin();
+    }
+  }
 }
 
 export const sounds = new SoundEngine();

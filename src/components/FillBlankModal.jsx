@@ -61,7 +61,7 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
-              background: isWhite ? '#ffffff' : '#d90429',
+              background: isWhite ? '#ffffff' : '#FF0000',
               color: isWhite ? '#000000' : '#ffffff',
               padding: '6px',
               borderRadius: '8px',

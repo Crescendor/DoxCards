@@ -1,17 +1,21 @@
 /* Dark Theme Lobby & Landing Styles */
 
-/* Centered Landing Page */
+/* Centered Landing Page - Fixed Logo Top Position */
 .landing-hero {
   max-width: 440px;
   width: 100%;
   margin: 0 auto;
-  min-height: calc(100vh - 60px);
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 24px 20px;
+  justify-content: flex-start;
+  padding-top: max(40px, calc(42vh - 210px));
+  padding-bottom: 40px;
+  padding-left: 20px;
+  padding-right: 20px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 /* Action Box */
@@ -54,7 +58,7 @@
 
 .form-input:focus {
   background: #2d2d2d;
-  border-color: #d90429;
+  border-color: #FF0000;
   outline: none;
 }
 
@@ -64,7 +68,7 @@
   letter-spacing: 0.2em;
   text-align: center;
   font-weight: 900;
-  color: #ff0000;
+  color: #FF0000;
   background: #141414;
 }
 
@@ -265,10 +269,10 @@
 }
 
 .deck-tag-btn.active {
-  background: #d90429;
-  border-color: #ef4444;
+  background: #FF0000;
+  border-color: #ff3333;
   color: #ffffff;
-  box-shadow: 0 0 12px rgba(217, 4, 41, 0.35);
+  box-shadow: 0 0 14px rgba(255, 0, 0, 0.45);
 }
 
 .deck-tag-btn:hover:not(.disabled):not(.locked):not(.readonly) {
@@ -368,7 +372,7 @@
 }
 
 .select-box:focus {
-  border-color: #d90429;
+  border-color: #FF0000;
   outline: none;
 }
 

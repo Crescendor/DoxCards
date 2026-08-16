@@ -82,7 +82,7 @@ export default function GameView({
         {/* Left: Round, Target Score & Phase */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{
-            background: '#d90429',
+            background: '#FF0000',
             color: '#ffffff',
             fontWeight: 800,
             fontSize: '0.78rem',

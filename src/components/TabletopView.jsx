@@ -537,9 +537,9 @@ export default function TabletopView({
                   padding: '14px',
                   boxSizing: 'border-box',
                   borderRadius: '24px',
-                  background: isOppTurn ? 'rgba(217, 4, 41, 0.14)' : 'rgba(20, 20, 20, 0.65)',
-                  border: isOppTurn ? '1.5px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: isOppTurn ? '0 0 28px rgba(217, 4, 41, 0.35)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
+                  background: isOppTurn ? 'rgba(255, 0, 0, 0.16)' : 'rgba(20, 20, 20, 0.65)',
+                  border: isOppTurn ? '1.5px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: isOppTurn ? '0 0 28px rgba(255, 0, 0, 0.45)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   flexDirection: 'column',
@@ -572,7 +572,7 @@ export default function TabletopView({
                   <span>{opp.name}</span>
                   {isOppTurn && (
                     <span style={{
-                      background: '#d90429',
+                      background: '#FF0000',
                       color: '#ffffff',
                       fontSize: '0.72rem',
                       padding: '2px 8px',
@@ -672,9 +672,9 @@ export default function TabletopView({
                 margin: '0 auto',
                 padding: '14px',
                 borderRadius: '24px',
-                background: isMyTurn ? 'rgba(217, 4, 41, 0.16)' : 'rgba(20, 20, 20, 0.65)',
-                border: isMyTurn ? '1.5px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: isMyTurn ? '0 0 30px rgba(217, 4, 41, 0.45)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
+                background: isMyTurn ? 'rgba(255, 0, 0, 0.18)' : 'rgba(20, 20, 20, 0.65)',
+                border: isMyTurn ? '1.5px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: isMyTurn ? '0 0 30px rgba(255, 0, 0, 0.5)' : '0 6px 20px rgba(0, 0, 0, 0.5)',
                 transition: 'all 0.3s ease'
               }}
             >
@@ -702,7 +702,7 @@ export default function TabletopView({
                 <span>{player.name} (senin masan)</span>
                 {isMyTurn && (
                   <span style={{
-                    background: '#d90429',
+                    background: '#FF0000',
                     color: '#ffffff',
                     fontSize: '0.72rem',
                     padding: '2px 8px',
@@ -760,7 +760,7 @@ export default function TabletopView({
             border: '1px solid rgba(255, 255, 255, 0.16)',
             borderBottom: 'none',
             boxShadow: (isHandDrawerOpen || isDragging)
-              ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(217, 4, 41, 0.25)'
+              ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 0, 0, 0.3)'
               : '0 -4px 18px rgba(0, 0, 0, 0.7)',
             boxSizing: 'border-box',
             paddingBottom: '16px'
@@ -787,7 +787,7 @@ export default function TabletopView({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Layers size={16} color="#ef4444" />
+                <Layers size={16} color="#FF0000" />
                 <span>destem</span>
               </span>
               <span style={{
@@ -818,7 +818,7 @@ export default function TabletopView({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#d90429',
+                background: '#FF0000',
                 color: '#ffffff',
                 fontWeight: 800,
                 fontSize: '0.74rem',

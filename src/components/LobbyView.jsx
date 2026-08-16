@@ -441,15 +441,15 @@ export default function LobbyView({
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 background: !player.isReady
-                  ? (isReadyHovered ? '#ef233c' : '#d90429')
-                  : (isReadyHovered ? 'rgba(239, 68, 68, 0.25)' : '#262626'),
+                  ? (isReadyHovered ? '#ff2222' : '#FF0000')
+                  : (isReadyHovered ? 'rgba(255, 0, 0, 0.25)' : '#262626'),
                 color: !player.isReady
                   ? '#ffffff'
-                  : (isReadyHovered ? '#f87171' : '#a3a3a3'),
+                  : (isReadyHovered ? '#ff6666' : '#a3a3a3'),
                 border: !player.isReady
-                  ? '1px solid #ef233c'
-                  : (isReadyHovered ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)'),
-                boxShadow: !player.isReady ? '0 4px 16px rgba(217, 4, 41, 0.45)' : 'none'
+                  ? '1px solid #ff3333'
+                  : (isReadyHovered ? '1px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.15)'),
+                boxShadow: !player.isReady ? '0 4px 18px rgba(255, 0, 0, 0.5)' : 'none'
               }}
             >
               {!player.isReady ? 'hazırım' : 'hazır değilim'}

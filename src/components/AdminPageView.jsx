@@ -23,7 +23,12 @@ import {
   Star,
   UserCheck,
   X,
-  RefreshCw
+  RefreshCw,
+  Volume2,
+  Play,
+  Square,
+  Music,
+  Radio
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
@@ -127,6 +132,20 @@ export default function AdminPageView({ onBack, discordUser }) {
   // Global Config Section State
   const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
   const [configSaving, setConfigSaving] = useState(false);
+
+  // Sound Management Section State
+  const [newSoundName, setNewSoundName] = useState('');
+  const [newSoundCategory, setNewSoundCategory] = useState('white_card'); // 'white_card' | 'red_card' | 'game_win' | 'general'
+  const [newSoundSourceType, setNewSoundSourceType] = useState('local'); // 'local' | 'url' | 'youtube'
+  const [newSoundUrl, setNewSoundUrl] = useState('');
+  const [newSoundYtUrl, setNewSoundYtUrl] = useState('');
+  const [newSoundStartSec, setNewSoundStartSec] = useState('0');
+  const [newSoundEndSec, setNewSoundEndSec] = useState('3');
+  const [newSoundIsDefault, setNewSoundIsDefault] = useState(false);
+  const [playingSoundId, setPlayingSoundId] = useState(null);
+  const [audioFileName, setAudioFileName] = useState('');
+  const [editingSoundId, setEditingSoundId] = useState(null);
+  const [editingSoundName, setEditingSoundName] = useState('');
 
   // Sync deck & users from Cloudflare Database on mount
   useEffect(() => {
@@ -505,6 +524,149 @@ export default function AdminPageView({ onBack, discordUser }) {
     }
   };
 
+  // -------------------------------------------------------------------------
+  // SOUND MANAGEMENT HANDLERS
+  // -------------------------------------------------------------------------
+  const extractYouTubeId = (url) => {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url.trim();
+  };
+
+  const handleSoundFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAudioFileName(file.name);
+    if (!newSoundName.trim()) {
+      setNewSoundName(file.name.replace(/\.[^/.]+$/, ""));
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setNewSoundUrl(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleTestPlay = (soundObj) => {
+    sounds.playClick();
+    setPlayingSoundId(soundObj.id || 'preview');
+    sounds.playCustomAudio(soundObj);
+    const duration = ((Number(soundObj.endSec) || 3) - (Number(soundObj.startSec) || 0)) * 1000;
+    setTimeout(() => {
+      setPlayingSoundId(null);
+    }, Math.max(1000, duration));
+  };
+
+  const handleAddSoundSubmit = async (e) => {
+    e.preventDefault();
+    if (!newSoundName.trim()) {
+      alert('Lütfen ses için bir isim girin.');
+      return;
+    }
+
+    sounds.playClick();
+    let finalUrl = newSoundUrl;
+    let ytId = '';
+
+    if (newSoundSourceType === 'youtube') {
+      ytId = extractYouTubeId(newSoundYtUrl);
+      if (!ytId) {
+        alert('Lütfen geçerli bir YouTube video linki girin.');
+        return;
+      }
+    } else if (!finalUrl.trim()) {
+      alert('Lütfen bir ses dosyası seçin veya ses URL bağlantısı girin.');
+      return;
+    }
+
+    const newSoundItem = {
+      id: 'sound_' + Date.now(),
+      name: newSoundName.trim().toLowerCase(),
+      category: newSoundCategory,
+      type: newSoundSourceType,
+      url: finalUrl,
+      ytId: ytId,
+      startSec: Number(newSoundStartSec) || 0,
+      endSec: Number(newSoundEndSec) || 3,
+      isDefault: newSoundIsDefault
+    };
+
+    const currentSounds = appConfig.customSounds || [];
+    let updatedSounds = [...currentSounds];
+
+    if (newSoundIsDefault) {
+      updatedSounds = updatedSounds.map(s => s.category === newSoundCategory ? { ...s, isDefault: false } : s);
+    }
+    updatedSounds.push(newSoundItem);
+
+    const updatedConfig = {
+      ...appConfig,
+      customSounds: updatedSounds
+    };
+
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+
+    setNewSoundName('');
+    setNewSoundUrl('');
+    setNewSoundYtUrl('');
+    setAudioFileName('');
+    setNewSoundStartSec('0');
+    setNewSoundEndSec('3');
+    setNewSoundIsDefault(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleDeleteSound = async (soundId) => {
+    if (window.confirm('bu ses efektini silmek istediğinize emin misiniz?')) {
+      sounds.playClick();
+      const updatedSounds = (appConfig.customSounds || []).filter(s => s.id !== soundId);
+      const updatedConfig = { ...appConfig, customSounds: updatedSounds };
+      setAppConfig(updatedConfig);
+      await updateAppConfig(updatedConfig);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    }
+  };
+
+  const handleToggleSoundDefault = async (soundId, category) => {
+    sounds.playClick();
+    const updatedSounds = (appConfig.customSounds || []).map(s => {
+      if (s.id === soundId) {
+        return { ...s, isDefault: !s.isDefault };
+      } else if (s.category === category) {
+        return { ...s, isDefault: false };
+      }
+      return s;
+    });
+
+    const updatedConfig = { ...appConfig, customSounds: updatedSounds };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleSaveSoundEdit = async (soundId) => {
+    if (!editingSoundName.trim()) return;
+    sounds.playClick();
+    const updatedSounds = (appConfig.customSounds || []).map(s => {
+      if (s.id === soundId) {
+        return { ...s, name: editingSoundName.trim().toLowerCase() };
+      }
+      return s;
+    });
+    const updatedConfig = { ...appConfig, customSounds: updatedSounds };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setEditingSoundId(null);
+    setEditingSoundName('');
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
   // Filtered users
   const filteredUsers = usersList.filter(u => {
     const q = usersSearch.toLowerCase().trim();
@@ -529,7 +691,7 @@ export default function AdminPageView({ onBack, discordUser }) {
         width: '260px',
         minWidth: '260px',
         background: '#161616',
-        borderRight: '1px solid rgba(217, 4, 41, 0.3)',
+        borderRight: '1px solid rgba(255, 0, 0, 0.3)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -546,7 +708,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                 doxcards
               </span>
               <span style={{
-                background: '#d90429',
+                background: '#FF0000',
                 color: '#ffffff',
                 fontSize: '0.68rem',
                 fontWeight: 800,
@@ -571,14 +733,14 @@ export default function AdminPageView({ onBack, discordUser }) {
                 gap: '12px',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                background: mainNav === 'cards' ? '#d90429' : 'transparent',
+                background: mainNav === 'cards' ? '#FF0000' : 'transparent',
                 color: '#ffffff',
-                border: mainNav === 'cards' ? '1px solid #ef4444' : '1px solid transparent',
+                border: mainNav === 'cards' ? '1px solid #ff3333' : '1px solid transparent',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: mainNav === 'cards' ? '0 4px 14px rgba(217, 4, 41, 0.4)' : 'none',
+                boxShadow: mainNav === 'cards' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
                 textAlign: 'left'
               }}
             >
@@ -594,18 +756,41 @@ export default function AdminPageView({ onBack, discordUser }) {
                 gap: '12px',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                background: mainNav === 'users' ? '#d90429' : 'transparent',
+                background: mainNav === 'users' ? '#FF0000' : 'transparent',
                 color: '#ffffff',
-                border: mainNav === 'users' ? '1px solid #ef4444' : '1px solid transparent',
+                border: mainNav === 'users' ? '1px solid #ff3333' : '1px solid transparent',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: mainNav === 'users' ? '0 4px 14px rgba(217, 4, 41, 0.4)' : 'none',
+                boxShadow: mainNav === 'users' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
                 textAlign: 'left'
               }}
             >
               <Users size={18} /> kullanıcılar ({usersList.length})
+            </button>
+
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('sounds'); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'sounds' ? '#FF0000' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'sounds' ? '1px solid #ff3333' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'sounds' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Volume2 size={18} /> ses ayarları ({(appConfig.customSounds || []).length})
             </button>
           </nav>
         </div>
@@ -1994,6 +2179,494 @@ export default function AdminPageView({ onBack, discordUser }) {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION C: SES AYARLARI (SOUNDS MANAGEMENT) */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'sounds' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1000px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+                ses efektleri & müzik yönetimi
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
+                beyaz kart atarken, kırmızı kart atarken ve oyun kazanıldığında çalacak sesleri ekleyin. yerel mp3/wav yükleyebilir veya youtube video linki verip saniye aralığı belirleyebilirsiniz.
+              </p>
+            </div>
+
+            {/* 1. YENİ SES EKLEME FORMU */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 0, 0, 0.35)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+                <span style={{
+                  background: '#FF0000',
+                  color: '#ffffff',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '0.8rem'
+                }}>
+                  yeni ses
+                </span>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                  kütüphaneye yeni ses efekti ekle
+                </span>
+              </div>
+
+              <form onSubmit={handleAddSoundSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Ses İsmi */}
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
+                      ses adı / başlığı:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="örn: bruh sesi, zafer fanfarı, mlg korna..."
+                      value={newSoundName}
+                      onChange={(e) => setNewSoundName(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+
+                  {/* Olay Türü / Kategorisi */}
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
+                      çalacağı olay türü:
+                    </label>
+                    <select
+                      value={newSoundCategory}
+                      onChange={(e) => setNewSoundCategory(e.target.value)}
+                      className="form-input"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="white_card">⚪ beyaz kart atılınca</option>
+                      <option value="red_card">🔴 kırmızı kart atılınca</option>
+                      <option value="game_win">🏆 oyun kazanılınca (skorbord)</option>
+                      <option value="general">🌐 genel / serbest ses</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Ses Kaynağı Seçimi (Local / YouTube / URL) */}
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>
+                    ses kaynağı türü:
+                  </label>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => { sounds.playClick(); setNewSoundSourceType('local'); }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: newSoundSourceType === 'local' ? '#FF0000' : '#262626',
+                        color: '#ffffff',
+                        border: newSoundSourceType === 'local' ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.1)',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📁 yerel dosya yükle (.mp3, .wav)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { sounds.playClick(); setNewSoundSourceType('youtube'); }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: newSoundSourceType === 'youtube' ? '#FF0000' : '#262626',
+                        color: '#ffffff',
+                        border: newSoundSourceType === 'youtube' ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.1)',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🎬 youtube videosu & kırpma
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { sounds.playClick(); setNewSoundSourceType('url'); }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: newSoundSourceType === 'url' ? '#FF0000' : '#262626',
+                        color: '#ffffff',
+                        border: newSoundSourceType === 'url' ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.1)',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔗 doğrudan ses url'si
+                    </button>
+                  </div>
+
+                  {/* Local File Upload Input */}
+                  {newSoundSourceType === 'local' && (
+                    <div style={{
+                      background: '#242424',
+                      border: '1px dashed rgba(255, 255, 255, 0.2)',
+                      borderRadius: '10px',
+                      padding: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '14px'
+                    }}>
+                      <label style={{
+                        background: '#333333',
+                        color: '#ffffff',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        <Upload size={14} /> dosya seç...
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleSoundFileUpload}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                      <span style={{ fontSize: '0.84rem', color: audioFileName ? '#22c55e' : '#94a3b8' }}>
+                        {audioFileName ? `seçilen dosya: ${audioFileName}` : 'bilgisayarınızdan bir ses dosyası seçin (.mp3, .wav, .ogg)'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* YouTube Video URL Input */}
+                  {newSoundSourceType === 'youtube' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <input
+                        type="text"
+                        placeholder="https://www.youtube.com/watch?v=... veya https://youtu.be/..."
+                        value={newSoundYtUrl}
+                        onChange={(e) => setNewSoundYtUrl(e.target.value)}
+                        className="form-input"
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        youtube videosunun linkini girip aşağıdaki başlangıç ve bitiş saniyelerini ayarlayın.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Direct URL Input */}
+                  {newSoundSourceType === 'url' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <input
+                        type="text"
+                        placeholder="https://example.com/audio/effect.mp3"
+                        value={newSoundUrl}
+                        onChange={(e) => setNewSoundUrl(e.target.value)}
+                        className="form-input"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Saniye Aralığı Kırpma (StartSec - EndSec) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '16px', alignItems: 'flex-end' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
+                      başlangıç (saniye):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={newSoundStartSec}
+                      onChange={(e) => setNewSoundStartSec(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
+                      bitiş (saniye):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.5"
+                      value={newSoundEndSec}
+                      onChange={(e) => setNewSoundEndSec(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+
+                  {/* Test Play Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ytId = newSoundSourceType === 'youtube' ? extractYouTubeId(newSoundYtUrl) : '';
+                      handleTestPlay({
+                        type: newSoundSourceType,
+                        url: newSoundUrl,
+                        ytId: ytId,
+                        startSec: Number(newSoundStartSec) || 0,
+                        endSec: Number(newSoundEndSec) || 3
+                      });
+                    }}
+                    style={{
+                      height: '46px',
+                      padding: '0 16px',
+                      borderRadius: '8px',
+                      background: '#262626',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#ffffff',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Play size={14} color="#22c55e" /> önizle / test et
+                  </button>
+                </div>
+
+                {/* Varsayılan Yap Checkbox & Ekle Butonu */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.84rem', color: '#ffffff', fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      checked={newSoundIsDefault}
+                      onChange={(e) => setNewSoundIsDefault(e.target.checked)}
+                      style={{ accentColor: '#FF0000', width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    bu kategorideki tüm oyuncular için varsayılan sistem sesi yap
+                  </label>
+
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{ padding: '0 24px', height: '44px' }}
+                  >
+                    <Plus size={16} /> sesi kütüphaneye ekle
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* 2. MEVCUT SES KÜTÜPHANESİ */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                  ses efektleri kütüphanesi ({(appConfig.customSounds || []).length} ses)
+                </span>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                  oyuncular profillerinden bu sesleri seçebilirler.
+                </span>
+              </div>
+
+              {(!appConfig.customSounds || appConfig.customSounds.length === 0) ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '0.88rem' }}>
+                  henüz ses efekti eklenmedi. yukarıdaki formdan ilk sesinizi ekleyebilirsiniz.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {appConfig.customSounds.map((sound) => {
+                    const isPlaying = playingSoundId === sound.id;
+                    const isEditing = editingSoundId === sound.id;
+
+                    const catBadge =
+                      sound.category === 'white_card' ? { label: '⚪ beyaz kart', bg: '#ffffff', color: '#000000' } :
+                      sound.category === 'red_card' ? { label: '🔴 kırmızı kart', bg: '#FF0000', color: '#ffffff' } :
+                      sound.category === 'game_win' ? { label: '🏆 zafer / skorbord', bg: '#eab308', color: '#000000' } :
+                      { label: '🌐 genel', bg: '#64748b', color: '#ffffff' };
+
+                    return (
+                      <div
+                        key={sound.id}
+                        style={{
+                          background: '#242424',
+                          border: sound.isDefault ? '1.5px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '12px',
+                          padding: '12px 16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px'
+                        }}
+                      >
+                        {/* Left: Play button + Title */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleTestPlay(sound)}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '50%',
+                              background: isPlaying ? '#FF0000' : 'rgba(255, 255, 255, 0.1)',
+                              border: 'none',
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              flexShrink: 0
+                            }}
+                            title="Çal"
+                          >
+                            {isPlaying ? <Square size={14} fill="#ffffff" /> : <Play size={14} fill="#ffffff" />}
+                          </button>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                            {isEditing ? (
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                  type="text"
+                                  value={editingSoundName}
+                                  onChange={(e) => setEditingSoundName(e.target.value)}
+                                  className="form-input"
+                                  style={{ padding: '4px 8px', fontSize: '0.85rem', width: '220px' }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveSoundEdit(sound.id)}
+                                  style={{ background: '#22c55e', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                  kaydet
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingSoundId(null)}
+                                  style={{ background: '#333333', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                >
+                                  iptal
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#ffffff' }}>
+                                  {sound.name}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingSoundId(sound.id);
+                                    setEditingSoundName(sound.name);
+                                  }}
+                                  style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  title="İsmi düzenle"
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                background: catBadge.bg,
+                                color: catBadge.color,
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.68rem',
+                                fontWeight: 800
+                              }}>
+                                {catBadge.label}
+                              </span>
+
+                              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                                {sound.type === 'youtube' ? `🎬 youtube (${sound.startSec}s - ${sound.endSec}s)` :
+                                 sound.type === 'local' ? `📁 dosya (${sound.startSec}s - ${sound.endSec}s)` :
+                                 `🔗 url (${sound.startSec}s - ${sound.endSec}s)`}
+                              </span>
+
+                              {sound.isDefault && (
+                                <span style={{
+                                  background: 'rgba(255, 0, 0, 0.2)',
+                                  color: '#ff6666',
+                                  border: '1px solid #FF0000',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800
+                                }}>
+                                  ⭐ varsayılan sistem sesi
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right: Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSoundDefault(sound.id, sound.category)}
+                            style={{
+                              background: sound.isDefault ? '#FF0000' : 'rgba(255, 255, 255, 0.08)',
+                              border: sound.isDefault ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.15)',
+                              color: '#ffffff',
+                              padding: '5px 10px',
+                              borderRadius: '8px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {sound.isDefault ? '⭐ varsayılan' : 'varsayılan yap'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSound(sound.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#f87171',
+                              padding: '6px',
+                              borderRadius: '8px',
+                              cursor: 'pointer'
+                            }}
+                            title="Sesi Sil"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Save Config Button */}
+            <button
+              onClick={handleSaveConfig}
+              disabled={configSaving}
+              className="btn-primary"
+              style={{ padding: '0 28px', height: '48px', alignSelf: 'flex-start' }}
+            >
+              <Save size={18} /> {configSaving ? 'kaydediliyor...' : 'genel ses ayarlarını kaydet'}
+            </button>
           </div>
         )}
       </main>

@@ -224,7 +224,7 @@ export default function LandingPage({
                 setViewMode('create');
               }}
               className="btn-primary"
-              style={{ width: '100%', padding: '15px', fontSize: '0.96rem' }}
+              style={{ width: '100%' }}
             >
               oda oluştur
             </button>
@@ -235,7 +235,7 @@ export default function LandingPage({
                 setViewMode('join');
               }}
               className="btn-secondary"
-              style={{ width: '100%', padding: '15px', fontSize: '0.96rem' }}
+              style={{ width: '100%' }}
             >
               odaya katıl
             </button>
@@ -251,11 +251,9 @@ export default function LandingPage({
                 className="btn-secondary"
                 style={{
                   width: '100%',
-                  padding: '14px',
-                  fontSize: '0.9rem',
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
+                  background: 'rgba(255, 0, 0, 0.12)',
+                  border: '1px solid rgba(255, 0, 0, 0.35)',
+                  color: '#ff4d4d',
                   fontWeight: 700
                 }}
               >
@@ -339,9 +337,9 @@ export default function LandingPage({
                       flex: 1,
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      background: !useDiscordName ? 'rgba(217, 4, 41, 0.2)' : '#262626',
-                      border: !useDiscordName ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.1)',
-                      color: !useDiscordName ? '#f87171' : '#94a3b8',
+                      background: !useDiscordName ? 'rgba(255, 0, 0, 0.18)' : '#262626',
+                      border: !useDiscordName ? '1px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.1)',
+                      color: !useDiscordName ? '#ff6666' : '#94a3b8',
                       fontSize: '0.8rem',
                       fontWeight: 600
                     }}
@@ -428,7 +426,7 @@ export default function LandingPage({
               type="submit"
               disabled={isLoading || !player.name.trim()}
               className="btn-primary"
-              style={{ width: '100%', padding: '14px' }}
+              style={{ width: '100%' }}
             >
               {isLoading ? 'oda oluşturuluyor...' : 'oda oluştur'}
             </button>
@@ -482,9 +480,9 @@ export default function LandingPage({
                       flex: 1,
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      background: !useDiscordName ? 'rgba(217, 4, 41, 0.2)' : '#262626',
-                      border: !useDiscordName ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.1)',
-                      color: !useDiscordName ? '#f87171' : '#94a3b8',
+                      background: !useDiscordName ? 'rgba(255, 0, 0, 0.18)' : '#262626',
+                      border: !useDiscordName ? '1px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.1)',
+                      color: !useDiscordName ? '#ff6666' : '#94a3b8',
                       fontSize: '0.8rem',
                       fontWeight: 600
                     }}
@@ -571,7 +569,7 @@ export default function LandingPage({
               type="submit"
               disabled={isLoading || !player.name.trim() || roomCodeInput.trim().length !== 5}
               className="btn-primary"
-              style={{ width: '100%', padding: '14px' }}
+              style={{ width: '100%', padding: '14px', background: '#FF0000' }}
             >
               {isLoading ? 'odaya bağlanılıyor...' : 'odaya katıl'}
             </button>

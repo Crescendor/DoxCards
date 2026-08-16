@@ -22,7 +22,39 @@ export const DEFAULT_CONFIG = {
     'Sekso Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium veya VIP yetkisi gereklidir.' },
     'Kara Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium yetkisi gereklidir.' },
     'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' }
-  }
+  },
+  customSounds: [
+    {
+      id: 'sound_default_deal',
+      name: 'Klasik Kart Kayma Sesi',
+      category: 'white_card',
+      type: 'synth',
+      url: '',
+      startSec: 0,
+      endSec: 1,
+      isDefault: true
+    },
+    {
+      id: 'sound_default_sabotage',
+      name: 'Dramatik Sabotaj Sesi',
+      category: 'red_card',
+      type: 'synth',
+      url: '',
+      startSec: 0,
+      endSec: 1,
+      isDefault: true
+    },
+    {
+      id: 'sound_default_victory',
+      name: 'Kutlama Fanfarı',
+      category: 'game_win',
+      type: 'synth',
+      url: '',
+      startSec: 0,
+      endSec: 3,
+      isDefault: true
+    }
+  ]
 };
 
 // Get locally cached user profile

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
+import SoundSettingsModal from './SoundSettingsModal';
 
 export default function Navbar({
   roomCode,
@@ -11,10 +12,12 @@ export default function Navbar({
   soundMuted,
   onToggleSound,
   userProfile,
+  onUpdateProfile,
   onLogout
 }) {
   const [copied, setCopied] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [soundModalOpen, setSoundModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const handleCopyCode = () => {
@@ -174,9 +177,9 @@ export default function Navbar({
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {(userProfile.unlockedDecks || ['Ana Deste']).map(deck => (
                     <span key={deck} style={{
-                      background: 'rgba(217, 4, 41, 0.15)',
-                      border: '1px solid rgba(217, 4, 41, 0.3)',
-                      color: '#f87171',
+                      background: 'rgba(255, 0, 0, 0.15)',
+                      border: '1px solid rgba(255, 0, 0, 0.3)',
+                      color: '#ff6666',
                       fontSize: '0.68rem',
                       fontWeight: 700,
                       padding: '2px 7px',
@@ -187,6 +190,33 @@ export default function Navbar({
                   ))}
                 </div>
               </div>
+
+              {/* Custom Sound Settings Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setProfileMenuOpen(false);
+                  setSoundModalOpen(true);
+                }}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255, 0, 0, 0.12)',
+                  border: '1px solid rgba(255, 0, 0, 0.35)',
+                  color: '#ff6666',
+                  borderRadius: '10px',
+                  padding: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                <Music size={14} /> özel ses efektlerim
+              </button>
 
               <button
                 onClick={() => {
@@ -207,13 +237,23 @@ export default function Navbar({
                   justifyContent: 'center',
                   gap: '6px',
                   cursor: 'pointer',
-                  marginTop: '4px'
+                  marginTop: '2px'
                 }}
               >
                 <LogOut size={14} /> çıkış yap
               </button>
             </div>
           )}
+
+          {/* Sound Settings Modal */}
+          <SoundSettingsModal
+            isOpen={soundModalOpen}
+            onClose={() => setSoundModalOpen(false)}
+            userProfile={userProfile}
+            onUpdateProfile={(updated) => {
+              if (onUpdateProfile) onUpdateProfile(updated);
+            }}
+          />
         </div>
       )}
 

@@ -74,9 +74,9 @@ export default function CardItem({
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
         transform: isSelected ? 'translateY(-12px)' : 'none',
         outline: isSelected
-          ? (isWhite ? '3px solid #ffffff' : '3px solid #d90429')
+          ? (isWhite ? '3px solid #ffffff' : '3px solid #FF0000')
           : 'none',
-        background: isWhite ? '#ffffff' : '#ff0000',
+        background: isWhite ? '#ffffff' : '#FF0000',
         border: '1px solid rgba(0,0,0,0.12)',
         margin: '0 auto'
       }}

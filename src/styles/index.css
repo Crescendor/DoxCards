@@ -12,10 +12,10 @@
   --text-muted: #94a3b8;
   --text-subtle: #64748b;
 
-  --red-primary: #d90429;
-  --red-hover: #ef233c;
-  --red-dark: #7f1d1d;
-  --red-light: #fee2e2;
+  --red-primary: #FF0000;
+  --red-hover: #e60000;
+  --red-dark: #800000;
+  --red-light: #ffe5e5;
 
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
@@ -98,22 +98,27 @@ button:active {
 
 /* Primary Red Button */
 .btn-primary {
-  background: #d90429;
+  background: #FF0000;
   color: #ffffff;
-  padding: 14px 24px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 24px;
   border-radius: var(--radius-md);
   font-weight: 800;
   font-size: 0.96rem;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 16px rgba(217, 4, 41, 0.35);
+  box-shadow: 0 4px 18px rgba(255, 0, 0, 0.45);
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #ef233c;
-  box-shadow: 0 6px 22px rgba(217, 4, 41, 0.5);
+  background: #e60000;
+  box-shadow: 0 6px 24px rgba(255, 0, 0, 0.65);
   transform: translateY(-2px);
 }
 
@@ -129,14 +134,19 @@ button:active {
   background: #262626;
   color: #ffffff;
   border: 1px solid var(--border-site);
-  padding: 14px 24px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 24px;
   border-radius: var(--radius-md);
   font-weight: 700;
   font-size: 0.96rem;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 .btn-secondary:hover:not(:disabled) {

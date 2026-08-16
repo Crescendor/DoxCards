@@ -9,11 +9,12 @@ import HowToPlayModal from './components/HowToPlayModal';
 import RightSidebarDrawer from './components/RightSidebarDrawer';
 import AdminPageView from './components/AdminPageView';
 import { getDiscordUser, logoutDiscord } from './services/discordAuth';
-import { syncUserProfile, getLocalUserProfile } from './services/userService';
+import { syncUserProfile, getLocalUserProfile, fetchAppConfig } from './services/userService';
 
 export default function App() {
   const [player, setPlayer] = useState(getLocalPlayer());
   const [userProfile, setUserProfile] = useState(getLocalUserProfile());
+  const [appConfig, setAppConfig] = useState(null);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [gameState, setGameState] = useState(null);
   const [soundMuted, setSoundMuted] = useState(false);
@@ -22,8 +23,12 @@ export default function App() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sync Discord user profile on mount
+  // Sync Discord user profile & App Config on mount
   useEffect(() => {
+    fetchAppConfig().then(cfg => {
+      if (cfg) setAppConfig(cfg);
+    });
+
     const dUser = getDiscordUser();
     if (dUser) {
       syncUserProfile(dUser).then(profile => {
@@ -197,6 +202,7 @@ export default function App() {
   // Place Single White Card (Instant visibility on table)
   const handlePlaceWhiteCard = (cardId, customText = null) => {
     if (!currentRoom) return;
+    sounds.playTriggerSound('white_card', userProfile || player, appConfig?.customSounds || []);
     socket.emit('place_white_card', {
       roomCode: currentRoom.code,
       playerId: player.id,
@@ -208,6 +214,7 @@ export default function App() {
   // Submit Perks (Batch fallback)
   const handleSubmitPerks = (cardIds, customTexts = {}) => {
     if (!currentRoom) return;
+    sounds.playTriggerSound('white_card', userProfile || player, appConfig?.customSounds || []);
     socket.emit('submit_perks', {
       roomCode: currentRoom.code,
       playerId: player.id,
@@ -219,6 +226,7 @@ export default function App() {
   // Submit Sabotage (Matchmaker 1 Red Flag Card)
   const handleSubmitSabotage = (cardId, customText = null) => {
     if (!currentRoom) return;
+    sounds.playTriggerSound('red_card', userProfile || player, appConfig?.customSounds || []);
     socket.emit('submit_sabotage', {
       roomCode: currentRoom.code,
       playerId: player.id,
@@ -230,7 +238,8 @@ export default function App() {
   // Select Winner (Single Player)
   const handleSelectWinner = (winnerMatchmakerId) => {
     if (!currentRoom) return;
-    sounds.playWin();
+    const winningPlayer = currentRoom?.players?.find(p => p.id === winnerMatchmakerId);
+    sounds.playTriggerSound('game_win', winningPlayer || userProfile || player, appConfig?.customSounds || []);
     socket.emit('select_winner', {
       roomCode: currentRoom.code,
       playerId: player.id,
@@ -281,6 +290,7 @@ export default function App() {
           soundMuted={soundMuted}
           onToggleSound={handleToggleSound}
           userProfile={userProfile}
+          onUpdateProfile={(updated) => setUserProfile(updated)}
           onLogout={handleLogout}
         />
       )}

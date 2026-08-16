@@ -48,13 +48,13 @@ export default function RightSidebarDrawer({
           right: 0,
           bottom: 0,
           width: '16px',
-          background: '#d90429',
+          background: '#FF0000',
           cursor: 'pointer',
           zIndex: 900,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '-4px 0 15px rgba(217, 4, 41, 0.4)',
+          boxShadow: '-4px 0 15px rgba(255, 0, 0, 0.5)',
           transition: 'background 0.2s ease, width 0.2s ease'
         }}
         title="Oda Menüsünü Aç"
