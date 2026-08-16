@@ -298,16 +298,20 @@ export default function TabletopView({
   const [fillModalState, setFillModalState] = useState({ isOpen: false, card: null, onConfirm: null });
   const [draggedCard, setDraggedCard] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
+  const [isHandDrawerOpen, setIsHandDrawerOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Drag start
   const handleCardDragStart = (e, card, type) => {
     if (!isMyTurn) return;
+    setIsDragging(true);
     e.dataTransfer.setData('cardId', card.id);
     e.dataTransfer.setData('cardType', type);
     setDraggedCard({ card, type });
   };
 
   const handleCardDragEnd = () => {
+    setIsDragging(false);
     setDraggedCard(null);
   };
 
@@ -402,22 +406,27 @@ export default function TabletopView({
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      minHeight: '100vh',
+      height: '100%',
+      maxHeight: '100%',
       background: 'radial-gradient(ellipse at 50% 35%, #242424 0%, #171717 60%, #0d0d0d 100%)',
       color: '#ffffff',
       fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: 'relative',
-      overflowX: 'hidden'
+      overflow: 'hidden'
     }}>
       {/* Top Turn & Phase Header Bar */}
       <div style={{
-        padding: '12px 24px',
+        height: '42px',
+        minHeight: '42px',
+        padding: '0 24px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: isMyTurn ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0, 0, 0, 0.4)',
+        background: isMyTurn ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0, 0, 0, 0.5)',
         borderBottom: isMyTurn ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        boxSizing: 'border-box',
+        zIndex: 50
       }}>
         {/* Phase & Turn Order Banner */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -440,7 +449,7 @@ export default function TabletopView({
             {phase === 'ROUND_SUMMARY' && 'tur tamamlandı'}
           </span>
 
-          <span style={{ fontSize: '0.94rem', fontWeight: 700, color: '#ffffff', textTransform: 'lowercase' }}>
+          <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', textTransform: 'lowercase' }}>
             {isMyTurn ? (
               <span style={{ color: '#38bdf8' }}>
                 🎯 senin sıran! {phase === 'PERKS' ? '(2 beyaz kartını masana sürükle)' : `(kırmızı kartını ${mySabotageTarget?.targetPlayerName || 'rakibin'} masasına sürükle)`}
@@ -461,11 +470,14 @@ export default function TabletopView({
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '24px 20px 330px 20px',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        padding: '12px 20px 60px 20px',
         maxWidth: '1440px',
         margin: '0 auto',
-        width: '100%'
+        width: '100%',
+        overflowY: 'auto',
+        boxSizing: 'border-box'
       }}>
 
         {/* TOP ROW: Opponents & Bekâr Seated Around Table */}
@@ -707,32 +719,92 @@ export default function TabletopView({
         </div>
       </div>
 
-      {/* FIXED BOTTOM FANNED HAND (Drag & Drop Tray) */}
+      {/* PEEK & SLIDE HOVER HAND DRAWER */}
       {!isSingle && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '290px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          paddingBottom: '16px',
-          pointerEvents: 'none',
-          zIndex: 80
-        }}>
+        <div
+          className="player-hand-drawer"
+          onMouseEnter={() => setIsHandDrawerOpen(true)}
+          onMouseLeave={() => setIsHandDrawerOpen(false)}
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: '50%',
+            transform: `translateX(-50%) translateY(${
+              (isHandDrawerOpen || isDragging) ? '0%' : 'calc(100% - 44px)'
+            })`,
+            transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
+            zIndex: 85,
+            width: '92%',
+            maxWidth: '1200px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'rgba(18, 18, 18, 0.96)',
+            backdropFilter: 'blur(20px)',
+            borderTopLeftRadius: '22px',
+            borderTopRightRadius: '22px',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            borderBottom: 'none',
+            boxShadow: (isHandDrawerOpen || isDragging)
+              ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(217, 4, 41, 0.25)'
+              : '0 -4px 18px rgba(0, 0, 0, 0.7)',
+            boxSizing: 'border-box',
+            paddingBottom: '16px'
+          }}
+        >
+          {/* Pull Tab Bar */}
+          <div
+            onClick={() => setIsHandDrawerOpen(prev => !prev)}
+            style={{
+              width: '100%',
+              height: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 24px',
+              cursor: 'pointer',
+              borderBottom: (isHandDrawerOpen || isDragging) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+              userSelect: 'none',
+              background: (isHandDrawerOpen || isDragging) ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+              borderTopLeftRadius: '22px',
+              borderTopRightRadius: '22px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🎴 destem
+              </span>
+              <span style={{ fontSize: '0.74rem', background: '#ffffff', color: '#000000', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
+                {availableWhiteCards.length} beyaz
+              </span>
+              <span style={{ fontSize: '0.74rem', background: '#d90429', color: '#ffffff', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
+                {availableRedCards.length} kırmızı
+              </span>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: (isHandDrawerOpen || isDragging) ? '#94a3b8' : '#38bdf8',
+              fontSize: '0.78rem',
+              fontWeight: 700
+            }}>
+              <span>{(isHandDrawerOpen || isDragging) ? '▼ desteyi gizle' : '▲ kartlarını görmek için üzerine gel'}</span>
+            </div>
+          </div>
+
+          {/* Fanned Cards Container */}
           <div style={{
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
             position: 'relative',
-            pointerEvents: 'auto',
-            height: '100%',
-            maxWidth: '1200px',
-            width: '100%'
+            height: '240px',
+            width: '100%',
+            paddingTop: '12px'
           }}>
-            {/* All Hand Cards in Fanned Arc (Full Large Size) */}
             {[
               ...availableWhiteCards.map(c => ({ card: c, type: 'perk' })),
               ...availableRedCards.map(c => ({ card: c, type: 'redflag' }))

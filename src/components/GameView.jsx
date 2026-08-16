@@ -36,16 +36,30 @@ export default function GameView({
   }, [phase]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#141414' }}>
-      {/* Minimal Top Header Bar */}
+    <div style={{
+      height: '100vh',
+      maxHeight: '100vh',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#141414',
+      position: 'relative'
+    }}>
+      {/* Minimal Top Header Bar (Fixed at Top) */}
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '46px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '10px 24px',
-        background: 'rgba(10, 10, 10, 0.95)',
+        padding: '0 24px',
+        background: 'rgba(10, 10, 10, 0.98)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        zIndex: 100
+        zIndex: 100,
+        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.6)'
       }}>
         {/* Round & Target Score */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -79,15 +93,24 @@ export default function GameView({
       </div>
 
       {/* Main Virtual Tabletop Game Engine */}
-      <TabletopView
-        room={room}
-        gameState={gameState}
-        player={player}
-        onPlaceWhiteCard={onPlaceWhiteCard}
-        onSubmitPerks={onSubmitPerks}
-        onSubmitSabotage={onSubmitSabotage}
-        onSelectWinner={onSelectWinner}
-      />
+      <div style={{
+        paddingTop: '46px',
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <TabletopView
+          room={room}
+          gameState={gameState}
+          player={player}
+          onPlaceWhiteCard={onPlaceWhiteCard}
+          onSubmitPerks={onSubmitPerks}
+          onSubmitSabotage={onSubmitSabotage}
+          onSelectWinner={onSelectWinner}
+        />
+      </div>
 
       {/* Game Over Modal */}
       <GameOverModal
