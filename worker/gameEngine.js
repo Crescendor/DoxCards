@@ -1,4 +1,4 @@
-// Game Engine for Red Flags (DoxCards) - Turn-Based Sequential Tabletop Engine
+// Game Engine for Red Flags (DoxCards) - Turn-Based Sequential Tabletop Engine with Persistent Hands & Unique Cards
 import { getDeck } from './cards.js';
 
 export const PHASES = {
@@ -23,9 +23,11 @@ export class GameEngine {
     this.singleIndex = 0; // Bekâr indexi
     this.singlePlayerId = null;
 
+    // Global match decks & unique card tracking
     this.deck = { white: [], red: [] };
-    this.discardPile = { white: [], red: [] };
+    this.usedCardIds = new Set();
 
+    // Persistent player hands throughout the entire match!
     this.hands = {};
     this.scores = {};
     this.stats = {};
@@ -47,20 +49,17 @@ export class GameEngine {
 
   initDecks() {
     this.deck = getDeck(this.deckType);
-    this.discardPile = { white: [], red: [] };
+    this.usedCardIds = new Set();
   }
 
+  // Draws only fresh, previously unused cards
   drawCards(type, count) {
     const cards = [];
-    for (let i = 0; i < count; i++) {
-      if (this.deck[type].length === 0) {
-        if (this.discardPile[type].length > 0) {
-          this.deck[type] = [...this.discardPile[type]].sort(() => Math.random() - 0.5);
-          this.discardPile[type] = [];
-        }
-      }
-      if (this.deck[type].length > 0) {
-        cards.push(this.deck[type].pop());
+    while (cards.length < count && this.deck[type].length > 0) {
+      const candidate = this.deck[type].pop();
+      if (!this.usedCardIds.has(candidate.id)) {
+        this.usedCardIds.add(candidate.id);
+        cards.push(candidate);
       }
     }
     return cards;
@@ -78,6 +77,7 @@ export class GameEngine {
     this.scores = {};
     this.stats = {};
 
+    // Initial card distribution (4 white, 3 red)
     players.forEach(p => {
       this.scores[p.id] = 0;
       this.stats[p.id] = { wins: 0, sabotagesGiven: 0, sabotagesWon: 0 };
@@ -126,20 +126,25 @@ export class GameEngine {
       };
     });
 
-    // Replenish hands to 4 white, 3 red
-    matchmakers.forEach(m => {
-      const hand = this.hands[m.id];
-      if (hand) {
-        while (hand.whiteCards.length < 4) {
-          const newCard = this.drawCards('white', 1);
-          if (newCard.length) hand.whiteCards.push(newCard[0]);
-          else break;
-        }
-        while (hand.redCards.length < 3) {
-          const newCard = this.drawCards('red', 1);
-          if (newCard.length) hand.redCards.push(newCard[0]);
-          else break;
-        }
+    // Persistent hands: Only replenish the discarded/used cards with fresh unique cards!
+    activePlayers.forEach(p => {
+      if (!this.hands[p.id]) {
+        this.hands[p.id] = { whiteCards: [], redCards: [] };
+      }
+      const hand = this.hands[p.id];
+
+      // Draw only the missing white cards (up to 4)
+      const neededWhite = 4 - hand.whiteCards.length;
+      if (neededWhite > 0) {
+        const freshWhite = this.drawCards('white', neededWhite);
+        hand.whiteCards.push(...freshWhite);
+      }
+
+      // Draw only the missing red cards (up to 3)
+      const neededRed = 3 - hand.redCards.length;
+      if (neededRed > 0) {
+        const freshRed = this.drawCards('red', neededRed);
+        hand.redCards.push(...freshRed);
       }
     });
 
@@ -161,9 +166,8 @@ export class GameEngine {
     const selectedCards = hand.whiteCards.filter(c => cardIds.includes(c.id));
     if (selectedCards.length !== 2) return false;
 
-    // Remove from hand and save to candidate
+    // Remove played cards from hand (remaining 2 cards stay in hand for next rounds!)
     hand.whiteCards = hand.whiteCards.filter(c => !cardIds.includes(c.id));
-    this.discardPile.white.push(...selectedCards);
     this.candidates[playerId].whiteCards = selectedCards;
 
     // Advance turn to next matchmaker in sequence
@@ -215,8 +219,8 @@ export class GameEngine {
     const cardIndex = hand.redCards.findIndex(c => c.id === cardId);
     if (cardIndex === -1) return false;
 
+    // Remove played red card from hand (remaining 2 red cards stay in hand for next rounds!)
     const redCard = hand.redCards.splice(cardIndex, 1)[0];
-    this.discardPile.red.push(redCard);
 
     const player = players.find(p => p.id === playerId);
     this.candidates[targetId].redFlag = redCard;
@@ -280,7 +284,7 @@ export class GameEngine {
       this.phase = PHASES.GAME_OVER;
     } else {
       this.phase = PHASES.ROUND_SUMMARY;
-      this.startTimer(7, () => {
+      this.startTimer(6, () => {
         this.singleIndex++;
         this.startRound(players);
         if (this.onStateChange) this.onStateChange();
