@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Check, X, Sparkles } from 'lucide-react';
+import { PenTool, Check, X } from 'lucide-react';
 import cardWhiteBack from '../assets/cards/card_white_back.png';
 import cardRedBack from '../assets/cards/card_red_back.png';
 import { sounds } from '../services/soundEffects';
 
+export const BLANK_REGEX = /([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i;
+
 export function isBlankCard(text) {
   if (!text) return false;
-  return /_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i.test(text);
+  return BLANK_REGEX.test(text);
 }
 
 export function formatBlankCardText(text, fillValue = null) {
   if (!text) return '';
-  const regex = /_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i;
-
   if (fillValue) {
-    return text.replace(regex, `[ ${fillValue.trim()} ]`);
+    return text.replace(BLANK_REGEX, `[ ${fillValue.trim()} ]`);
   }
   return text;
 }
@@ -36,7 +36,14 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
     onConfirm(customText.trim());
   };
 
-  const previewText = formatBlankCardText(card.text, customText || '_____________');
+  // Find exact first blank instance
+  const match = (card.text || '').match(BLANK_REGEX);
+  let before = card.text || '';
+  let after = '';
+  if (match) {
+    before = (card.text || '').substring(0, match.index);
+    after = (card.text || '').substring(match.index + match[0].length);
+  }
 
   return (
     <div className="modal-overlay" style={{ zIndex: 1100 }}>
@@ -77,7 +84,7 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
           position: 'relative',
           borderRadius: '14px',
           overflow: 'hidden',
-          padding: '20px 18px',
+          padding: '22px 20px',
           minHeight: '130px',
           display: 'flex',
           flexDirection: 'column',
@@ -103,34 +110,41 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
             }}
           />
 
+          {/* Card Text with Exactly ONE Filled Blank */}
           <div style={{
             position: 'relative',
             zIndex: 1,
-            color: isWhite ? '#111827' : '#ffffff',
+            color: isWhite ? '#ff0000' : '#ffffff',
             fontWeight: 700,
-            fontSize: '1rem',
-            lineHeight: '1.45',
+            fontSize: '1.02rem',
+            lineHeight: '1.4',
             fontFamily: "'Plus Jakarta Sans', sans-serif"
           }}>
-            {card.text.split(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i).map((part, i, arr) => (
-              <React.Fragment key={i}>
-                {part}
-                {i < arr.length - 1 && (
-                  <span style={{
-                    background: customText.trim() ? (isWhite ? 'rgba(56, 189, 248, 0.25)' : 'rgba(251, 191, 36, 0.3)') : 'rgba(0,0,0,0.15)',
-                    color: customText.trim() ? (isWhite ? '#0284c7' : '#fef08a') : (isWhite ? '#94a3b8' : '#cbd5e1'),
-                    borderBottom: `2px dashed ${customText.trim() ? (isWhite ? '#0284c7' : '#fef08a') : '#94a3b8'}`,
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontWeight: 800,
-                    margin: '0 4px',
-                    display: 'inline-block'
-                  }}>
-                    {customText.trim() || '_________'}
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
+            {match ? (
+              <>
+                <span>{before}</span>
+                <span style={{
+                  background: customText.trim()
+                    ? (isWhite ? 'rgba(0, 0, 0, 0.08)' : '#ffffff')
+                    : 'rgba(0, 0, 0, 0.15)',
+                  color: customText.trim()
+                    ? '#000000'
+                    : (isWhite ? '#94a3b8' : '#cbd5e1'),
+                  borderBottom: `2px dashed ${customText.trim() ? '#000000' : '#94a3b8'}`,
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontWeight: 900,
+                  margin: '0 4px',
+                  textDecoration: customText.trim() ? 'underline' : 'none',
+                  display: 'inline-block'
+                }}>
+                  {customText.trim() || '_________'}
+                </span>
+                <span>{after}</span>
+              </>
+            ) : (
+              <span>{card.text}</span>
+            )}
           </div>
         </div>
 
@@ -144,8 +158,8 @@ export default function FillBlankModal({ isOpen, card, onConfirm, onCancel }) {
               type="text"
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
-              placeholder="örn: Arka Sokaklar, Brad Pitt, Kemal Sunal..."
-              maxLength={40}
+              placeholder="kelime veya cümlenizi yazınız..."
+              maxLength={45}
               className="form-input"
               style={{ fontSize: '0.95rem', height: '46px', background: '#242424' }}
               autoFocus

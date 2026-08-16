@@ -167,7 +167,7 @@ export class GameEngine {
 
     let card = hand.whiteCards.splice(cardIndex, 1)[0];
     if (customText && typeof customText === 'string' && customText.trim()) {
-      const filled = card.text.replace(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
+      const filled = card.text.replace(/([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
       card = { ...card, filledText: filled, customValue: customText.trim() };
     }
 
@@ -205,11 +205,11 @@ export class GameEngine {
     const selectedCards = hand.whiteCards.filter(c => cardIds.includes(c.id));
     if (selectedCards.length !== 2) return false;
 
-    // Process customTexts for fill-in-the-blank cards
+    // Process customTexts for fill-in-the-blank cards (single substitution)
     const processedCards = selectedCards.map(c => {
       const customVal = customTexts ? customTexts[c.id] : null;
       if (customVal && typeof customVal === 'string' && customVal.trim()) {
-        const filled = c.text.replace(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customVal.trim()}**`);
+        const filled = c.text.replace(/([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i, `**${customVal.trim()}**`);
         return { ...c, filledText: filled, customValue: customVal.trim() };
       }
       return c;
@@ -250,7 +250,7 @@ export class GameEngine {
     // Remove played red card from hand (remaining 2 red cards stay in hand for next rounds!)
     let redCard = hand.redCards.splice(cardIndex, 1)[0];
     if (customText && typeof customText === 'string' && customText.trim()) {
-      const filled = redCard.text.replace(/_{3,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
+      const filled = redCard.text.replace(/([_\s]*_{2,}[_\s]*)|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
       redCard = { ...redCard, filledText: filled, customValue: customText.trim() };
     }
 
@@ -275,6 +275,56 @@ export class GameEngine {
 
     if (this.onStateChange) this.onStateChange();
     return true;
+  }
+
+  removePlayer(leavingPlayerId, players = []) {
+    // Delete disconnected player from candidate table, hands, and scores
+    delete this.candidates[leavingPlayerId];
+    delete this.hands[leavingPlayerId];
+    delete this.scores[leavingPlayerId];
+    delete this.stats[leavingPlayerId];
+
+    // Remove from turn order
+    const turnIdx = this.turnOrder.indexOf(leavingPlayerId);
+    if (turnIdx !== -1) {
+      this.turnOrder.splice(turnIdx, 1);
+    }
+
+    const activePlayers = players.filter(p => p.id !== leavingPlayerId);
+
+    // If leaving player was the single player (bekâr), reassign bekâr and restart round
+    if (this.singlePlayerId === leavingPlayerId) {
+      if (activePlayers.length >= 2) {
+        this.singleIndex = 0;
+        this.startRound(activePlayers);
+        if (this.onStateChange) this.onStateChange();
+        return;
+      }
+    }
+
+    // If it was the leaving player's turn, advance turn to next player
+    if (this.turnPlayerId === leavingPlayerId) {
+      if (this.turnOrder.length > 0) {
+        if (this.turnIndex >= this.turnOrder.length) {
+          this.turnIndex = 0;
+        }
+        this.turnPlayerId = this.turnOrder[this.turnIndex];
+      } else {
+        this.turnPlayerId = this.singlePlayerId;
+      }
+    }
+
+    // Re-link sabotage targets
+    const matchmakers = activePlayers.filter(p => p.id !== this.singlePlayerId);
+    if (matchmakers.length > 0) {
+      this.sabotageAssignments = {};
+      matchmakers.forEach((m, idx) => {
+        const target = matchmakers[(idx + 1) % matchmakers.length];
+        this.sabotageAssignments[m.id] = target.id;
+      });
+    }
+
+    if (this.onStateChange) this.onStateChange();
   }
 
   bekarSelectWinner(singlePlayerId, winningMatchmakerId, players) {

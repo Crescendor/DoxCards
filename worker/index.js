@@ -301,7 +301,9 @@ export class GameRoomDO {
             });
 
             if (this.room.game) {
+              this.room.game.removePlayer(targetPlayerId, this.room.players);
               if (this.room.players.length < 2) {
+                this.room.game.clearTimer();
                 this.room.game = null;
                 this.broadcast('game_reset_to_lobby', {});
               } else {
@@ -312,6 +314,37 @@ export class GameRoomDO {
             this.broadcastRoomUpdate();
             sendAck({ success: true });
           }
+        }
+
+        // Leave Room
+        else if (evt === 'leave_room') {
+          const { playerId: pId } = data;
+          if (!this.room) return;
+
+          this.room.players = this.room.players.filter(p => p.id !== pId);
+          if (this.room.players.length === 0) {
+            if (this.room.game) this.room.game.clearTimer();
+            this.room = null;
+          } else {
+            if (this.room.hostId === pId) {
+              this.room.hostId = this.room.players[0].id;
+              this.room.players[0].isHost = true;
+            }
+
+            if (this.room.game) {
+              this.room.game.removePlayer(pId, this.room.players);
+              if (this.room.players.length < 2) {
+                this.room.game.clearTimer();
+                this.room.game = null;
+                this.broadcast('game_reset_to_lobby', {});
+              } else {
+                this.broadcastGameState();
+              }
+            }
+
+            this.broadcastRoomUpdate();
+          }
+          sendAck({ success: true });
         }
 
         // 10. Stop Game / Reset to Lobby (Host only)
@@ -362,6 +395,18 @@ export class GameRoomDO {
             this.room.hostId = this.room.players[0].id;
             this.room.players[0].isHost = true;
           }
+
+          if (this.room.game) {
+            this.room.game.removePlayer(playerId, this.room.players);
+            if (this.room.players.length < 2) {
+              this.room.game.clearTimer();
+              this.room.game = null;
+              this.broadcast('game_reset_to_lobby', {});
+            } else {
+              this.broadcastGameState();
+            }
+          }
+
           this.broadcastRoomUpdate();
         }
       }

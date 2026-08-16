@@ -118,6 +118,9 @@ export default function App() {
 
   // Leave Room
   const handleLeaveRoom = () => {
+    if (currentRoom) {
+      socket.emit('leave_room', { roomCode: currentRoom.code, playerId: player.id });
+    }
     window.history.pushState({}, '', window.location.pathname);
     window.location.reload();
   };
