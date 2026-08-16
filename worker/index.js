@@ -170,18 +170,26 @@ export class GameRoomDO {
             return;
           }
 
-          if (this.room.players.length < 3) {
-            sendAck({ error: 'Red Flags oynamak için en az 3 oyuncu gereklidir.' });
-            return;
+          let gamePlayers = [...this.room.players];
+          if (gamePlayers.length < 2) {
+            gamePlayers.push({
+              id: 'bot_test_player',
+              name: 'Aday Oyuncu',
+              color: '#10b981',
+              isReady: true,
+              score: 0
+            });
           }
 
-          this.room.game = new GameEngine(this.room.players, this.room.settings);
+          this.room.game = new GameEngine(this.room.code, this.room.settings);
+          this.room.game.startGame(gamePlayers);
           this.room.game.onStateChange = () => {
             this.broadcastGameState();
           };
 
           this.broadcast('game_started', {});
           this.broadcastGameState();
+          this.broadcastRoomUpdate();
           sendAck({ success: true });
         }
 
