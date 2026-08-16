@@ -186,3 +186,73 @@ export async function updateAppConfig(config) {
   }
   return null;
 }
+
+// ----------------- Suggestions API -----------------
+export async function fetchSuggestions(discordId = '') {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/suggestions?discordId=${encodeURIComponent(discordId)}`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.error('Failed to fetch suggestions:', err);
+  }
+  return [];
+}
+
+export async function createSuggestion(suggestionData) {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/suggestions/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(suggestionData)
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('Failed to create suggestion:', err);
+    return { error: 'Öneri kaydedilemedi.' };
+  }
+}
+
+export async function updateSuggestion(suggestionId, updateData) {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/suggestions/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggestionId, ...updateData })
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to update suggestion:', err);
+    return { error: 'Öneri güncellenemedi.' };
+  }
+}
+
+export async function deleteSuggestion(suggestionId) {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/suggestions/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggestionId })
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to delete suggestion:', err);
+    return { error: 'Öneri silinemedi.' };
+  }
+}
+
+export async function reviewSuggestion(reviewData) {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/suggestions/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reviewData)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to review suggestion:', err);
+    return { error: 'Öneri incelenemedi.' };
+  }
+}

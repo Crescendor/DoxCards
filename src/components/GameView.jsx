@@ -119,32 +119,34 @@ export default function GameView({
           alignItems: 'center',
           gap: '8px',
           background: '#262626',
-          border: isMyTurn ? '1px solid rgba(217, 4, 41, 0.6)' : '1px solid rgba(255, 255, 255, 0.08)',
+          border: isSingle
+            ? '1px solid rgba(245, 158, 11, 0.75)'
+            : (isMyTurn ? '1px solid rgba(255, 0, 0, 0.75)' : '1px solid rgba(255, 255, 255, 0.08)'),
           padding: '5px 18px',
           borderRadius: '9999px',
-          boxShadow: isMyTurn ? '0 0 14px rgba(217, 4, 41, 0.3)' : 'none',
+          boxShadow: isSingle
+            ? '0 0 16px rgba(245, 158, 11, 0.4)'
+            : (isMyTurn ? '0 0 16px rgba(255, 0, 0, 0.4)' : 'none'),
           whiteSpace: 'nowrap',
           zIndex: 10
         }}>
-          {isMyTurn ? (
+          {isSingle ? (
+            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Crown size={15} color="#fbbf24" />
+              <span>bekârsın! <span style={{ color: '#fde047', fontWeight: 600 }}>{phase === 'VOTING' || phase === 'REVEAL' ? '(en beğendiğin adayın masasına tıkla)' : '(çöpçatanların kartlarını sunmasını bekle...)'}</span></span>
+            </span>
+          ) : isMyTurn ? (
             <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Target size={15} color="#ef4444" />
+              <Target size={15} color="#FF0000" />
               <span>senin sıran! <span style={{ color: '#f87171', fontWeight: 600 }}>{phase === 'PERKS' ? '(2 beyaz kartını masana sürükle)' : `(kırmızı kartını ${mySabotageTarget?.targetPlayerName || 'rakibin'} masasına sürükle)`}</span></span>
             </span>
           ) : (
             <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {phase === 'VOTING' ? (
-                isSingle ? (
-                  <>
-                    <ArrowRight size={14} color="#f59e0b" />
-                    <span>tüm adayları incele ve kazanana tıkla!</span>
-                  </>
-                ) : (
-                  <>
-                    <Hourglass size={14} color="#f59e0b" />
-                    <span>bekâr ({singlePlayerName}) karar veriyor...</span>
-                  </>
-                )
+              {phase === 'VOTING' || phase === 'REVEAL' ? (
+                <>
+                  <Hourglass size={14} color="#f59e0b" />
+                  <span>bekâr ({singlePlayerName}) karar veriyor...</span>
+                </>
               ) : (
                 <>
                   <Hourglass size={14} color="#94a3b8" />

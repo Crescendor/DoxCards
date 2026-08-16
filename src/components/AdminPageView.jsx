@@ -28,7 +28,12 @@ import {
   Play,
   Square,
   Music,
-  Radio
+  Radio,
+  Lightbulb,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Send
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
@@ -45,6 +50,8 @@ import {
   updateUser,
   fetchAppConfig,
   updateAppConfig,
+  fetchSuggestions,
+  reviewSuggestion,
   DEFAULT_CONFIG
 } from '../services/userService';
 import { isBlankCard } from './FillBlankModal';
@@ -121,6 +128,15 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [newDeckTypeTarget, setNewDeckTypeTarget] = useState('both'); // 'both' | 'perk' | 'redflag'
   const [newDeckIsSecret, setNewDeckIsSecret] = useState(false);
   const [newDeckLockDesc, setNewDeckLockDesc] = useState('');
+  const [newDeckExtraNote, setNewDeckExtraNote] = useState('');
+  const [editingDeckNotes, setEditingDeckNotes] = useState({}); // deckName -> extraNote text
+
+  // Suggestions State
+  const [suggestionsList, setSuggestionsList] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [targetDeckForCard, setTargetDeckForCard] = useState({}); // sugId -> selected target deck name
+  const [cardSuggestionsFilter, setCardSuggestionsFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
+  const [expandedDeckSugId, setExpandedDeckSugId] = useState(null);
 
   // Users Section State
   const [usersList, setUsersList] = useState([]);
@@ -163,6 +179,10 @@ export default function AdminPageView({ onBack, discordUser }) {
 
     fetchAppConfig().then(cfg => {
       if (cfg) setAppConfig(cfg);
+    });
+
+    fetchSuggestions(ADMIN_DISCORD_ID).then(sugs => {
+      if (Array.isArray(sugs)) setSuggestionsList(sugs);
     });
   }, []);
 
@@ -389,12 +409,17 @@ export default function AdminPageView({ onBack, discordUser }) {
     const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
     if (!updatedRaw.Perks) updatedRaw.Perks = {};
     if (!updatedRaw['Red Flags']) updatedRaw['Red Flags'] = {};
+    updatedRaw.deckNotes = updatedRaw.deckNotes || {};
 
     if (newDeckTypeTarget === 'both' || newDeckTypeTarget === 'perk') {
       if (!updatedRaw.Perks[name]) updatedRaw.Perks[name] = [];
     }
     if (newDeckTypeTarget === 'both' || newDeckTypeTarget === 'redflag') {
       if (!updatedRaw['Red Flags'][name]) updatedRaw['Red Flags'][name] = [];
+    }
+
+    if (newDeckExtraNote.trim()) {
+      updatedRaw.deckNotes[name] = newDeckExtraNote.trim();
     }
 
     saveActiveDeck(updatedRaw);
@@ -421,9 +446,107 @@ export default function AdminPageView({ onBack, discordUser }) {
 
     setNewDeckNameInput('');
     setNewDeckLockDesc('');
+    setNewDeckExtraNote('');
     setNewDeckIsSecret(false);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  // Save Deck Extra Note Handler
+  const handleSaveDeckExtraNote = (deckName, note) => {
+    sounds.playClick();
+    const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+    updatedRaw.deckNotes = updatedRaw.deckNotes || {};
+    if (note && note.trim()) {
+      updatedRaw.deckNotes[deckName] = note.trim();
+    } else {
+      delete updatedRaw.deckNotes[deckName];
+    }
+    saveActiveDeck(updatedRaw);
+    setDeckState(parseRawDeck(updatedRaw));
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  // -------------------------------------------------------------------------
+  // SUGGESTIONS HANDLERS
+  // -------------------------------------------------------------------------
+  const loadSuggestions = async () => {
+    setSuggestionsLoading(true);
+    const sugs = await fetchSuggestions(ADMIN_DISCORD_ID);
+    if (Array.isArray(sugs)) setSuggestionsList(sugs);
+    setSuggestionsLoading(false);
+  };
+
+  const handleApproveCardSuggestion = async (sug) => {
+    sounds.playWin();
+    const destDeck = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
+    const res = await reviewSuggestion({
+      suggestionId: sug.id,
+      status: 'approved',
+      targetDeckName: destDeck
+    });
+
+    if (res?.success) {
+      const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+      const sec = sug.cardData?.type === 'perk' ? 'Perks' : 'Red Flags';
+      updatedRaw[sec] = updatedRaw[sec] || {};
+      updatedRaw[sec][destDeck] = updatedRaw[sec][destDeck] || [];
+      updatedRaw[sec][destDeck].push(sug.cardData?.text);
+
+      saveActiveDeck(updatedRaw);
+      setDeckState(parseRawDeck(updatedRaw));
+      loadSuggestions();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    }
+  };
+
+  const handleApproveDeckSuggestion = async (sug) => {
+    sounds.playWin();
+    const deckTitle = sug.deckData?.title?.trim();
+    if (!deckTitle) return;
+
+    const res = await reviewSuggestion({
+      suggestionId: sug.id,
+      status: 'approved',
+      targetDeckName: deckTitle,
+      extraNote: sug.deckData?.extraNote
+    });
+
+    if (res?.success) {
+      const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+      updatedRaw.Perks = updatedRaw.Perks || {};
+      updatedRaw['Red Flags'] = updatedRaw['Red Flags'] || {};
+      updatedRaw.deckNotes = updatedRaw.deckNotes || {};
+
+      updatedRaw.Perks[deckTitle] = sug.deckData?.whiteCards || [];
+      updatedRaw['Red Flags'][deckTitle] = sug.deckData?.redCards || [];
+      if (sug.deckData?.extraNote) {
+        updatedRaw.deckNotes[deckTitle] = sug.deckData.extraNote;
+      }
+
+      saveActiveDeck(updatedRaw);
+      setDeckState(parseRawDeck(updatedRaw));
+
+      const updatedAllDecks = Array.from(new Set([...(appConfig.allDecks || DEFAULT_CONFIG.allDecks), deckTitle]));
+      const updatedConfig = { ...appConfig, allDecks: updatedAllDecks };
+      setAppConfig(updatedConfig);
+      await updateAppConfig(updatedConfig);
+
+      loadSuggestions();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    }
+  };
+
+  const handleRejectSuggestion = async (sugId) => {
+    if (!window.confirm('Bu öneriyi reddetmek istediğinize emin misiniz?')) return;
+    sounds.playClick();
+    const res = await reviewSuggestion({ suggestionId: sugId, status: 'rejected' });
+    if (res?.success) {
+      loadSuggestions();
+    }
   };
 
   // User Management Handlers
@@ -792,6 +915,29 @@ export default function AdminPageView({ onBack, discordUser }) {
             >
               <Volume2 size={18} /> ses ayarları ({(appConfig.customSounds || []).length})
             </button>
+
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('suggestions'); loadSuggestions(); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'suggestions' ? '#FF0000' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'suggestions' ? '1px solid #ff3333' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'suggestions' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Lightbulb size={18} /> öneriler ({suggestionsList.length})
+            </button>
           </nav>
         </div>
 
@@ -1028,6 +1174,28 @@ export default function AdminPageView({ onBack, discordUser }) {
                 }}
               >
                 <FileCode size={18} /> json düzenleyici & içe/dışa aktar
+              </button>
+
+              <button
+                onClick={() => { sounds.playClick(); setMainNav('suggestions'); loadSuggestions(); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 0, 0, 0.12)',
+                  border: '1px solid rgba(255, 0, 0, 0.35)',
+                  color: '#ff6666',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Lightbulb size={18} /> önerilen kart & desteler ({suggestionsList.length})
               </button>
             </div>
 
@@ -1361,6 +1529,17 @@ export default function AdminPageView({ onBack, discordUser }) {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="form-label">deste ek notu (isteğe bağlı - kartların sol altında gösterilir)</label>
+                      <input
+                        type="text"
+                        placeholder="örn: Özel Seri (kartların sol altında: X Deste - &quot;Özel Seri&quot; şeklinde görünür)"
+                        value={newDeckExtraNote}
+                        onChange={(e) => setNewDeckExtraNote(e.target.value)}
+                        className="form-input"
+                      />
+                    </div>
+
                     <button
                       type="submit"
                       className="btn-primary"
@@ -1371,11 +1550,11 @@ export default function AdminPageView({ onBack, discordUser }) {
                   </form>
                 </div>
 
-                {/* 2. MEVCUT DESTELER & İSİM DÜZENLEME */}
+                {/* 2. MEVCUT DESTELER & İSİM DÜZENLEME & EK NOTLAR */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FolderEdit size={16} color="#fbbf24" />
-                    mevcut desteler ve kart sayıları ({combinedDeckList.length})
+                    mevcut desteler, kart sayıları ve ek notlar ({combinedDeckList.length})
                   </h4>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -1385,29 +1564,73 @@ export default function AdminPageView({ onBack, discordUser }) {
                         <Layers size={15} /> beyaz kart desteleri ({perkCategories.length})
                       </h5>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {perkCategories.map(cat => (
-                          <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '9px 12px', borderRadius: '10px' }}>
-                            <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{cat} ({deckState.raw.Perks[cat]?.length || 0} kart)</span>
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button
-                                onClick={() => {
-                                  setRenamingCategory({ section: 'Perks', oldName: cat });
-                                  setNewCategoryNameInput(cat);
-                                }}
-                                className="btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '0.74rem' }}
-                              >
-                                yeniden adlandır
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory('Perks', cat)}
-                                style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
-                              >
-                                <Trash2 size={13} />
-                              </button>
+                        {perkCategories.map(cat => {
+                          const currentNote = deckState.raw?.deckNotes?.[cat] || '';
+                          const noteInput = editingDeckNotes[cat] !== undefined ? editingDeckNotes[cat] : currentNote;
+
+                          return (
+                            <div key={cat} style={{ background: '#1a1a1a', padding: '10px 12px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{cat} ({deckState.raw.Perks[cat]?.length || 0} kart)</span>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button
+                                    onClick={() => {
+                                      setRenamingCategory({ section: 'Perks', oldName: cat });
+                                      setNewCategoryNameInput(cat);
+                                    }}
+                                    className="btn-secondary"
+                                    style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                                  >
+                                    yeniden adlandır
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCategory('Perks', cat)}
+                                    style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Ek Not Input */}
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px' }}>
+                                <span style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>ek not:</span>
+                                <input
+                                  type="text"
+                                  placeholder="kartlarda görünecek ek not (boş bırakılabilir)..."
+                                  value={noteInput}
+                                  onChange={(e) => setEditingDeckNotes(prev => ({ ...prev, [cat]: e.target.value }))}
+                                  style={{
+                                    flex: 1,
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    background: '#111111',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    color: '#ffffff',
+                                    fontSize: '0.76rem'
+                                  }}
+                                />
+                                {noteInput !== currentNote && (
+                                  <button
+                                    onClick={() => handleSaveDeckExtraNote(cat, noteInput)}
+                                    style={{
+                                      background: '#22c55e',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      padding: '4px 8px',
+                                      borderRadius: '6px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    kaydet
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1417,29 +1640,73 @@ export default function AdminPageView({ onBack, discordUser }) {
                         <Layers size={15} /> kırmızı kart desteleri ({redFlagCategories.length})
                       </h5>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {redFlagCategories.map(cat => (
-                          <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '9px 12px', borderRadius: '10px' }}>
-                            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fca5a5' }}>{cat} ({deckState.raw['Red Flags'][cat]?.length || 0} kart)</span>
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button
-                                onClick={() => {
-                                  setRenamingCategory({ section: 'Red Flags', oldName: cat });
-                                  setNewCategoryNameInput(cat);
-                                }}
-                                className="btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '0.74rem' }}
-                              >
-                                yeniden adlandır
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory('Red Flags', cat)}
-                                style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
-                              >
-                                <Trash2 size={13} />
-                              </button>
+                        {redFlagCategories.map(cat => {
+                          const currentNote = deckState.raw?.deckNotes?.[cat] || '';
+                          const noteInput = editingDeckNotes[cat] !== undefined ? editingDeckNotes[cat] : currentNote;
+
+                          return (
+                            <div key={cat} style={{ background: '#1a1a1a', padding: '10px 12px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fca5a5' }}>{cat} ({deckState.raw['Red Flags'][cat]?.length || 0} kart)</span>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button
+                                    onClick={() => {
+                                      setRenamingCategory({ section: 'Red Flags', oldName: cat });
+                                      setNewCategoryNameInput(cat);
+                                    }}
+                                    className="btn-secondary"
+                                    style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                                  >
+                                    yeniden adlandır
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCategory('Red Flags', cat)}
+                                    style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Ek Not Input */}
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px' }}>
+                                <span style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>ek not:</span>
+                                <input
+                                  type="text"
+                                  placeholder="kartlarda görünecek ek not (boş bırakılabilir)..."
+                                  value={noteInput}
+                                  onChange={(e) => setEditingDeckNotes(prev => ({ ...prev, [cat]: e.target.value }))}
+                                  style={{
+                                    flex: 1,
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    background: '#111111',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    color: '#ffffff',
+                                    fontSize: '0.76rem'
+                                  }}
+                                />
+                                {noteInput !== currentNote && (
+                                  <button
+                                    onClick={() => handleSaveDeckExtraNote(cat, noteInput)}
+                                    style={{
+                                      background: '#22c55e',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      padding: '4px 8px',
+                                      borderRadius: '6px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 800,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    kaydet
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -2667,6 +2934,526 @@ export default function AdminPageView({ onBack, discordUser }) {
             >
               <Save size={18} /> {configSaving ? 'kaydediliyor...' : 'genel ses ayarlarını kaydet'}
             </button>
+          </div>
+        )}
+
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION D: ÖNERİLEN KARTLAR VE DESTELER (SUGGESTIONS MANAGEMENT) */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'suggestions' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Header & Refresh */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#1c1c1c',
+              padding: '20px 24px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Lightbulb size={22} color="#FF0000" />
+                  önerilen kartlar ve desteler yönetimi
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.86rem', margin: '4px 0 0 0' }}>
+                  kullanıcıların profillerinden gönderdiği kart ve deste önerilerini inceleyin, tek tuşla istediğiniz desteye ekleyin veya reddedin.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { sounds.playClick(); loadSuggestions(); }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={14} className={suggestionsLoading ? 'spin' : ''} /> yenile
+              </button>
+            </div>
+
+            {/* Filter Tabs */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { id: 'all', label: `tümü (${suggestionsList.length})` },
+                { id: 'pending', label: `inceleniyor (${suggestionsList.filter(s => s.status === 'pending').length})` },
+                { id: 'approved', label: `onaylandı (${suggestionsList.filter(s => s.status === 'approved').length})` },
+                { id: 'rejected', label: `reddedildi (${suggestionsList.filter(s => s.status === 'rejected').length})` }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => { sounds.playClick(); setCardSuggestionsFilter(f.id); }}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    background: cardSuggestionsFilter === f.id ? '#FF0000' : '#1c1c1c',
+                    color: '#ffffff',
+                    border: cardSuggestionsFilter === f.id ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.08)',
+                    fontWeight: 700,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 1. ÖNERİLEN KARTLAR BÖLÜMÜ */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers size={18} color="#ef4444" />
+                önerilen tekil kartlar ({suggestionsList.filter(s => s.type === 'card' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter)).length})
+              </h4>
+
+              {(() => {
+                const cardSugs = suggestionsList.filter(s => s.type === 'card' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter));
+                if (cardSugs.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.88rem' }}>
+                      bu filtrede önerilen kart bulunamadı.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {cardSugs.map((sug) => {
+                      const isPending = sug.status === 'pending';
+                      const isWhite = sug.cardData?.type === 'perk';
+                      const selectedDest = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
+
+                      return (
+                        <div
+                          key={sug.id}
+                          style={{
+                            background: '#242424',
+                            border: isPending ? '1px solid rgba(255, 0, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '14px',
+                            padding: '16px 20px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                            {/* Left: Card Badge + Text */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{
+                                  background: isWhite ? '#ffffff' : '#FF0000',
+                                  color: isWhite ? '#000000' : '#ffffff',
+                                  fontWeight: 800,
+                                  fontSize: '0.72rem',
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  textTransform: 'lowercase'
+                                }}>
+                                  {isWhite ? '⚪ beyaz kart' : '🔴 kırmızı kart'}
+                                </span>
+
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                  önerilen hedef deste: <b style={{ color: '#ffffff' }}>{sug.cardData?.targetDeck || 'Ana Deste'}</b>
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.4 }}>
+                                "{sug.cardData?.text}"
+                              </div>
+                            </div>
+
+                            {/* Author Info (Discord ID & Name) */}
+                            <div style={{
+                              background: '#1a1a1a',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: '10px',
+                              padding: '8px 12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              minWidth: '240px'
+                            }}>
+                              <img
+                                src={sug.author?.avatar || defaultAvatarImg}
+                                alt="avatar"
+                                style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
+                              />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
+                                  {sug.author?.name || sug.author?.username || 'Anonim'}
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontFamily: 'monospace' }}>
+                                  ID: {sug.author?.id || 'Bilinmiyor'}
+                                </span>
+                                {sug.author?.isAnonymous && (
+                                  <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
+                                    🕵️ kullanıcı anonim gönderdi
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Toolbar */}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                            paddingTop: '10px',
+                            gap: '12px'
+                          }}>
+                            {/* Destination Deck Selector */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>eklenecek deste:</span>
+                              <select
+                                value={selectedDest}
+                                onChange={(e) => setTargetDeckForCard(prev => ({ ...prev, [sug.id]: e.target.value }))}
+                                disabled={!isPending}
+                                style={{
+                                  background: '#141414',
+                                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                                  color: '#ffffff',
+                                  borderRadius: '8px',
+                                  padding: '5px 10px',
+                                  fontSize: '0.8rem',
+                                  cursor: isPending ? 'pointer' : 'default'
+                                }}
+                              >
+                                {combinedDeckList.map(d => (
+                                  <option key={d} value={d}>{d}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Buttons / Status */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {isPending ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveCardSuggestion(sug)}
+                                    style={{
+                                      background: '#22c55e',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      padding: '7px 16px',
+                                      borderRadius: '8px',
+                                      fontWeight: 800,
+                                      fontSize: '0.8rem',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px'
+                                    }}
+                                  >
+                                    <Check size={14} /> tek tuşla desteye ekle & onayla
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRejectSuggestion(sug.id)}
+                                    style={{
+                                      background: 'rgba(239, 68, 68, 0.15)',
+                                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                                      color: '#f87171',
+                                      padding: '7px 12px',
+                                      borderRadius: '8px',
+                                      fontWeight: 700,
+                                      fontSize: '0.8rem',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    reddet
+                                  </button>
+                                </>
+                              ) : (
+                                <span style={{
+                                  background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                  border: sug.status === 'approved' ? '1px solid #10b981' : '1px solid #ef4444',
+                                  color: sug.status === 'approved' ? '#34d399' : '#f87171',
+                                  padding: '4px 12px',
+                                  borderRadius: '9999px',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 800,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  {sug.status === 'approved' ? <><CheckCircle2 size={12} /> desteye eklendi</> : <><XCircle size={12} /> reddedildi</>}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 2. ÖNERİLEN DESTELER BÖLÜMÜ */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FolderEdit size={18} color="#3b82f6" />
+                önerilen desteler & paketler ({suggestionsList.filter(s => s.type === 'deck' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter)).length})
+              </h4>
+
+              {(() => {
+                const deckSugs = suggestionsList.filter(s => s.type === 'deck' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter));
+                if (deckSugs.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.88rem' }}>
+                      bu filtrede önerilen deste bulunamadı.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {deckSugs.map((sug) => {
+                      const isPending = sug.status === 'pending';
+                      const isExpanded = expandedDeckSugId === sug.id;
+                      const whiteCount = sug.deckData?.whiteCards?.length || 0;
+                      const redCount = sug.deckData?.redCards?.length || 0;
+
+                      return (
+                        <div
+                          key={sug.id}
+                          style={{
+                            background: '#242424',
+                            border: isPending ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '14px',
+                            padding: '18px 20px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff' }}>
+                                  📦 {sug.deckData?.title}
+                                </span>
+                                {sug.deckData?.extraNote && (
+                                  <span style={{
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    color: '#cbd5e1',
+                                    fontSize: '0.74rem',
+                                    padding: '2px 8px',
+                                    borderRadius: '6px'
+                                  }}>
+                                    ek not: "{sug.deckData.extraNote}"
+                                  </span>
+                                )}
+                              </div>
+
+                              {sug.deckData?.description && (
+                                <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0 }}>
+                                  {sug.deckData.description}
+                                </p>
+                              )}
+
+                              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                                <span style={{ fontSize: '0.78rem', color: '#ffffff', fontWeight: 700 }}>
+                                  ⚪ {whiteCount} Beyaz Kart
+                                </span>
+                                <span style={{ fontSize: '0.78rem', color: '#f87171', fontWeight: 700 }}>
+                                  🔴 {redCount} Kırmızı Kart
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Author Info */}
+                            <div style={{
+                              background: '#1a1a1a',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: '10px',
+                              padding: '8px 12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              minWidth: '240px'
+                            }}>
+                              <img
+                                src={sug.author?.avatar || defaultAvatarImg}
+                                alt="avatar"
+                                style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
+                              />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
+                                  {sug.author?.name || sug.author?.username || 'Anonim'}
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontFamily: 'monospace' }}>
+                                  ID: {sug.author?.id || 'Bilinmiyor'}
+                                </span>
+                                {sug.author?.isAnonymous && (
+                                  <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
+                                    🕵️ kullanıcı anonim önerdi
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expand Card List */}
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedDeckSugId(isExpanded ? null : sug.id)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#3b82f6',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                padding: 0,
+                                textDecoration: 'underline'
+                              }}
+                            >
+                              {isExpanded ? '▲ kart listesini gizle' : `▼ destedeki ${whiteCount + redCount} kartı incele`}
+                            </button>
+
+                            {isExpanded && (
+                              <div style={{
+                                marginTop: '10px',
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '12px',
+                                background: '#181818',
+                                padding: '14px',
+                                borderRadius: '10px',
+                                maxHeight: '240px',
+                                overflowY: 'auto'
+                              }}>
+                                <div>
+                                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '6px' }}>
+                                    ⚪ Beyaz Kartlar ({whiteCount})
+                                  </span>
+                                  <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    {(sug.deckData?.whiteCards || []).map((c, i) => (
+                                      <li key={i}>{c}</li>
+                                    ))}
+                                  </ol>
+                                </div>
+
+                                <div>
+                                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', display: 'block', marginBottom: '6px' }}>
+                                    🔴 Kırmızı Kartlar ({redCount})
+                                  </span>
+                                  <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#fca5a5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    {(sug.deckData?.redCards || []).map((c, i) => (
+                                      <li key={i}>{c}</li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Toolbar */}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                            paddingTop: '10px',
+                            gap: '10px'
+                          }}>
+                            {isPending ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveDeckSuggestion(sug)}
+                                  style={{
+                                    background: '#22c55e',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '7px 18px',
+                                    borderRadius: '8px',
+                                    fontWeight: 800,
+                                    fontSize: '0.82rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                  }}
+                                >
+                                  <Check size={14} /> tek tuşla yeni deste olarak oyuna ekle
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectSuggestion(sug.id)}
+                                  style={{
+                                    background: 'rgba(239, 68, 68, 0.15)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#f87171',
+                                    padding: '7px 14px',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '0.82rem',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  reddet
+                                </button>
+                              </>
+                            ) : (
+                              <span style={{
+                                background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                border: sug.status === 'approved' ? '1px solid #10b981' : '1px solid #ef4444',
+                                color: sug.status === 'approved' ? '#34d399' : '#f87171',
+                                padding: '4px 12px',
+                                borderRadius: '9999px',
+                                fontSize: '0.76rem',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                {sug.status === 'approved' ? <><CheckCircle2 size={12} /> yeni deste olarak eklendi</> : <><XCircle size={12} /> reddedildi</>}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
       </main>

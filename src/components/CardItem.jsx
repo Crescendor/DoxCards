@@ -160,6 +160,40 @@ export default function CardItem({
           ))
         )}
       </div>
+
+      {/* Subtle Deck Name & Extra Note on Bottom-Left */}
+      {(() => {
+        const deckLabel = card.deckName || card.deckTitle || card.category || card.deck || '';
+        const extraNote = card.deckExtraNote || card.extraNote || '';
+        const fullDeckText = extraNote ? `${deckLabel} - "${extraNote}"` : deckLabel;
+        if (!fullDeckText) return null;
+
+        return (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: isSmall ? '10px' : '12px',
+              left: isSmall ? '12px' : '14px',
+              zIndex: 3,
+              fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+              fontWeight: 500,
+              fontSize: isSmall ? '0.62rem' : '0.68rem',
+              lineHeight: 1.2,
+              letterSpacing: '-0.015em',
+              textTransform: 'lowercase',
+              color: isWhite ? 'rgba(0, 0, 0, 0.42)' : 'rgba(255, 255, 255, 0.65)',
+              pointerEvents: 'none',
+              maxWidth: isSmall ? '96px' : '120px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+            title={fullDeckText}
+          >
+            {fullDeckText}
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import SoundSettingsModal from './SoundSettingsModal';
+import SuggestionModal from './SuggestionModal';
 
 export default function Navbar({
   roomCode,
@@ -18,6 +19,7 @@ export default function Navbar({
   const [copied, setCopied] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [soundModalOpen, setSoundModalOpen] = useState(false);
+  const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const handleCopyCode = () => {
@@ -218,6 +220,33 @@ export default function Navbar({
                 <Music size={14} /> özel ses efektlerim
               </button>
 
+              {/* Suggest Card / Deck Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setProfileMenuOpen(false);
+                  setSuggestionModalOpen(true);
+                }}
+                style={{
+                  width: '100%',
+                  background: 'rgba(234, 179, 8, 0.12)',
+                  border: '1px solid rgba(234, 179, 8, 0.35)',
+                  color: '#fde047',
+                  borderRadius: '10px',
+                  padding: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                <Lightbulb size={14} /> kart & deste öner
+              </button>
+
               <button
                 onClick={() => {
                   setProfileMenuOpen(false);
@@ -253,6 +282,13 @@ export default function Navbar({
             onUpdateProfile={(updated) => {
               if (onUpdateProfile) onUpdateProfile(updated);
             }}
+          />
+
+          {/* Card & Deck Suggestion Modal */}
+          <SuggestionModal
+            isOpen={suggestionModalOpen}
+            onClose={() => setSuggestionModalOpen(false)}
+            userProfile={userProfile}
           />
         </div>
       )}

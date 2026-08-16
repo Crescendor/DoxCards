@@ -219,6 +219,189 @@ export class GameRoomDO {
       }
     }
 
+    // Suggestions API Endpoints in Cloudflare DO Storage
+    if (url.pathname.startsWith('/api/suggestions')) {
+      let suggestionsList = [];
+      if (this.state?.storage) {
+        suggestionsList = (await this.state.storage.get('suggestions_list')) || [];
+      }
+
+      // 1. Get Suggestions List
+      if (url.pathname === '/api/suggestions' && request.method === 'GET') {
+        const discordId = url.searchParams.get('discordId');
+        const isMainAdmin = discordId === ADMIN_DISCORD_ID;
+
+        if (isMainAdmin) {
+          // Admin sees all suggestions with full author details
+          return Response.json(suggestionsList, {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } else if (discordId) {
+          // Normal user only sees their own suggestions
+          const mySuggestions = suggestionsList.filter(s => s.author?.id === discordId);
+          return Response.json(mySuggestions, {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        return Response.json([], { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // 2. Create Suggestion (User)
+      if (url.pathname === '/api/suggestions/create' && request.method === 'POST') {
+        const body = await request.json();
+        const { type, author, cardData, deckData } = body;
+
+        if (type === 'deck') {
+          if (!deckData?.title?.trim()) {
+            return Response.json({ error: 'deste adı zorunludur.' }, { status: 400, headers: corsHeaders });
+          }
+          const whiteCount = Array.isArray(deckData.whiteCards) ? deckData.whiteCards.filter(t => t && t.trim()).length : 0;
+          const redCount = Array.isArray(deckData.redCards) ? deckData.redCards.filter(t => t && t.trim()).length : 0;
+
+          if (whiteCount < 10 || redCount < 10) {
+            return Response.json({
+              error: `deste önermek için en az 10 beyaz ve 10 kırmızı kart eklemelisiniz. (şu an: ${whiteCount} beyaz, ${redCount} kırmızı)`
+            }, { status: 400, headers: corsHeaders });
+          }
+        } else if (type === 'card') {
+          if (!cardData?.text?.trim()) {
+            return Response.json({ error: 'kart metni zorunludur.' }, { status: 400, headers: corsHeaders });
+          }
+        }
+
+        const newSuggestion = {
+          id: 'sug_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          type: type || 'card',
+          author: {
+            id: author?.id || 'anon',
+            name: author?.name || 'anonim oyuncu',
+            username: author?.username || '',
+            avatar: author?.avatar || null,
+            isAnonymous: !!author?.isAnonymous
+          },
+          cardData: cardData || null,
+          deckData: deckData || null,
+          status: 'pending', // 'pending' | 'approved' | 'rejected'
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+
+        suggestionsList.unshift(newSuggestion);
+        if (this.state?.storage) {
+          await this.state.storage.put('suggestions_list', suggestionsList);
+        }
+
+        return Response.json({ success: true, suggestion: newSuggestion }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 3. Update Suggestion (User or Admin)
+      if (url.pathname === '/api/suggestions/update' && request.method === 'POST') {
+        const body = await request.json();
+        const { suggestionId, cardData, deckData, isAnonymous } = body;
+        const targetIdx = suggestionsList.findIndex(s => s.id === suggestionId);
+
+        if (targetIdx === -1) {
+          return Response.json({ error: 'öneri bulunamadı.' }, { status: 404, headers: corsHeaders });
+        }
+
+        const sug = suggestionsList[targetIdx];
+        if (cardData) sug.cardData = cardData;
+        if (deckData) sug.deckData = deckData;
+        if (typeof isAnonymous === 'boolean' && sug.author) sug.author.isAnonymous = isAnonymous;
+        sug.updatedAt = Date.now();
+
+        if (this.state?.storage) {
+          await this.state.storage.put('suggestions_list', suggestionsList);
+        }
+
+        return Response.json({ success: true, suggestion: sug }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 4. Delete Suggestion (User or Admin)
+      if (url.pathname === '/api/suggestions/delete' && request.method === 'POST') {
+        const body = await request.json();
+        const { suggestionId } = body;
+        suggestionsList = suggestionsList.filter(s => s.id !== suggestionId);
+
+        if (this.state?.storage) {
+          await this.state.storage.put('suggestions_list', suggestionsList);
+        }
+
+        return Response.json({ success: true }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 5. Review / Approve / Reject (Admin)
+      if (url.pathname === '/api/suggestions/review' && request.method === 'POST') {
+        const body = await request.json();
+        const { suggestionId, status, targetDeckName, extraNote } = body;
+        const targetIdx = suggestionsList.findIndex(s => s.id === suggestionId);
+
+        if (targetIdx === -1) {
+          return Response.json({ error: 'öneri bulunamadı.' }, { status: 404, headers: corsHeaders });
+        }
+
+        const sug = suggestionsList[targetIdx];
+        sug.status = status; // 'approved' | 'rejected' | 'pending'
+        sug.reviewedAt = Date.now();
+
+        if (status === 'approved') {
+          let savedDeck = null;
+          if (this.state?.storage) {
+            savedDeck = (await this.state.storage.get('active_deck')) || rawDeckJson;
+          } else {
+            savedDeck = getActiveRawDeck();
+          }
+
+          savedDeck.Perks = savedDeck.Perks || {};
+          savedDeck['Red Flags'] = savedDeck['Red Flags'] || {};
+          savedDeck.deckNotes = savedDeck.deckNotes || {};
+
+          if (sug.type === 'card' && sug.cardData) {
+            const destName = targetDeckName || sug.cardData.targetDeck || 'Ana Deste';
+            if (sug.cardData.type === 'perk') {
+              savedDeck.Perks[destName] = savedDeck.Perks[destName] || [];
+              savedDeck.Perks[destName].push(sug.cardData.text);
+            } else {
+              savedDeck['Red Flags'][destName] = savedDeck['Red Flags'][destName] || [];
+              savedDeck['Red Flags'][destName].push(sug.cardData.text);
+            }
+            if (extraNote) {
+              savedDeck.deckNotes[destName] = extraNote;
+            }
+          } else if (sug.type === 'deck' && sug.deckData) {
+            const deckName = sug.deckData.title.trim();
+            const cleanWhite = (sug.deckData.whiteCards || []).map(t => t.trim()).filter(Boolean);
+            const cleanRed = (sug.deckData.redCards || []).map(t => t.trim()).filter(Boolean);
+
+            savedDeck.Perks[deckName] = cleanWhite;
+            savedDeck['Red Flags'][deckName] = cleanRed;
+            if (sug.deckData.extraNote || extraNote) {
+              savedDeck.deckNotes[deckName] = extraNote || sug.deckData.extraNote;
+            }
+          }
+
+          if (this.state?.storage) {
+            await this.state.storage.put('active_deck', savedDeck);
+          }
+          updateGlobalDeck(savedDeck);
+        }
+
+        if (this.state?.storage) {
+          await this.state.storage.put('suggestions_list', suggestionsList);
+        }
+
+        return Response.json({ success: true, suggestion: sug }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     if (url.pathname === '/api/deck/reset') {
       if (this.state?.storage) {
         await this.state.storage.delete('active_deck');
@@ -887,8 +1070,8 @@ export default {
       return new Response(null, { status: 101, webSocket: clientWs });
     }
 
-    // 2. Database API Routing (/api/deck, /api/users, /api/config)
-    if (url.pathname.startsWith('/api/deck') || url.pathname.startsWith('/api/users') || url.pathname.startsWith('/api/config')) {
+    // 2. Database API Routing (/api/deck, /api/users, /api/config, /api/suggestions)
+    if (url.pathname.startsWith('/api/deck') || url.pathname.startsWith('/api/users') || url.pathname.startsWith('/api/config') || url.pathname.startsWith('/api/suggestions')) {
       if (env && env.GAME_ROOMS) {
         const id = env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
         const storageObj = env.GAME_ROOMS.get(id);

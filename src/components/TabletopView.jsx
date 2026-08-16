@@ -6,6 +6,7 @@ import { sounds } from '../services/soundEffects';
 import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
+import doxcardsLogoImg from '../assets/doxcards.png';
 
 // Dynamic Fanned Card Backs for matchmaker player desks
 function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
@@ -719,8 +720,29 @@ export default function TabletopView({
         minHeight: 'calc(100vh - 50px)',
         overflowY: 'auto',
         boxSizing: 'border-box',
-        gap: '20px'
+        gap: '16px'
       }}>
+        {/* DoxCards Logo in Table Header Gap */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '2px 0',
+          userSelect: 'none',
+          pointerEvents: 'none'
+        }}>
+          <img
+            src={doxcardsLogoImg}
+            alt="DoxCards"
+            style={{
+              height: '36px',
+              objectFit: 'contain',
+              opacity: 0.9,
+              filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))'
+            }}
+          />
+        </div>
+
         {/* TOP ROW: Up to 3 player desks side-by-side */}
         <div style={{
           display: 'flex',

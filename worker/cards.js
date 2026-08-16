@@ -17,6 +17,7 @@ export function buildCardsFromRaw(jsonData) {
 
   const perks = jsonData?.Perks || jsonData?.perks || {};
   const redFlags = jsonData?.['Red Flags'] || jsonData?.red_flags || jsonData?.redFlags || {};
+  const deckNotes = jsonData?.deckNotes || jsonData?.DeckNotes || {};
 
   Object.entries(perks).forEach(([category, list]) => {
     if (Array.isArray(list)) {
@@ -28,7 +29,9 @@ export function buildCardsFromRaw(jsonData) {
             id: `w_${String(wIndex++).padStart(4, '0')}`,
             text: standardized,
             type: 'perk',
-            category
+            category,
+            deckName: category,
+            deckExtraNote: deckNotes[category] || ''
           });
         }
       });
@@ -45,7 +48,9 @@ export function buildCardsFromRaw(jsonData) {
             id: `r_${String(rIndex++).padStart(4, '0')}`,
             text: standardized,
             type: 'redflag',
-            category
+            category,
+            deckName: category,
+            deckExtraNote: deckNotes[category] || ''
           });
         }
       });
