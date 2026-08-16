@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Crown, Sparkles, Check, Flame, ShieldAlert, Clock, ArrowRight, UserCheck, Layers, ChevronUp, ChevronDown } from 'lucide-react';
 import CardItem from './CardItem';
 import FillBlankModal, { isBlankCard } from './FillBlankModal';
@@ -7,14 +7,14 @@ import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
 
-// Dynamic Fanned Card Backs for any player desk
+// Dynamic Fanned Card Backs for matchmaker player desks
 function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
   const safeRed = Math.max(0, Number(redCount) || 0);
   const safeWhite = Math.max(0, Number(whiteCount) || 0);
   const total = safeRed + safeWhite;
 
   if (total === 0) {
-    return <div style={{ height: '70px', minHeight: '70px' }} />;
+    return <div style={{ height: '76px', minHeight: '76px' }} />;
   }
 
   // Create card array with red cards first, then white cards
@@ -22,8 +22,8 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
   for (let r = 0; r < safeRed; r++) cards.push('red');
   for (let w = 0; w < safeWhite; w++) cards.push('white');
 
-  const cardWidth = 56;
-  const step = Math.min(22, Math.max(12, 170 / Math.max(1, cards.length)));
+  const cardWidth = 64;
+  const step = Math.min(26, Math.max(14, 210 / Math.max(1, cards.length)));
   const totalWidth = (cards.length - 1) * step + cardWidth;
   const centerIdx = (cards.length - 1) / 2;
 
@@ -31,17 +31,17 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
     <div style={{
       position: 'relative',
       width: `${totalWidth}px`,
-      height: '74px',
-      minHeight: '74px',
-      margin: '2px auto 6px auto',
+      height: '82px',
+      minHeight: '82px',
+      margin: '4px auto 8px auto',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
     }}>
       {cards.map((type, i) => {
         const offset = i - centerIdx;
-        const rot = offset * 4.2;
-        const translateY = Math.abs(offset) * 2.8;
+        const rot = offset * 4.4;
+        const translateY = Math.abs(offset) * 3.2;
         const isWhiteBack = type === 'white';
 
         return (
@@ -52,12 +52,12 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
               left: `${i * step}px`,
               width: `${cardWidth}px`,
               aspectRatio: '5 / 7',
-              borderRadius: '10px',
+              borderRadius: '11px',
               overflow: 'hidden',
-              boxShadow: '0 6px 16px rgba(0, 0, 0, 0.75)',
+              boxShadow: '0 6px 18px rgba(0, 0, 0, 0.85)',
               transform: `rotate(${rot}deg) translateY(${translateY}px)`,
               zIndex: i,
-              border: '1px solid rgba(0, 0, 0, 0.25)',
+              border: '1.5px solid rgba(0, 0, 0, 0.35)',
               transition: 'all 0.25s ease'
             }}
           >
@@ -73,7 +73,7 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
   );
 }
 
-// 3 Dashed Table Drop Slots for each matchmaker candidate
+// 3 Large Dashed Table Drop Slots for matchmaker candidate
 function TableSlotsRow({
   candidate,
   isMySlots,
@@ -82,10 +82,7 @@ function TableSlotsRow({
   isMyTurn,
   canDropWhite,
   canDropRed,
-  onDropCard,
-  onSelectWinner,
-  isSingle,
-  isWinner
+  onDropCard
 }) {
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -124,27 +121,25 @@ function TableSlotsRow({
     }
   };
 
-  const isVoting = (phase === 'VOTING' || phase === 'REVEAL') && isSingle;
-
   const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '130px',
-    minWidth: '130px',
-    maxWidth: '130px',
-    height: '184px',
-    minHeight: '184px',
-    maxHeight: '184px',
-    borderRadius: '14px',
+    width: '148px',
+    minWidth: '148px',
+    maxWidth: '148px',
+    height: '208px',
+    minHeight: '208px',
+    maxHeight: '208px',
+    borderRadius: '16px',
     border: hasCard
       ? 'none'
       : (isHovered
           ? '2px dashed #ffffff'
           : (isActionable
-              ? '2px dashed rgba(255, 255, 255, 0.75)'
-              : '2px dashed rgba(255, 255, 255, 0.25)')),
+              ? '2px dashed rgba(255, 255, 255, 0.85)'
+              : '2px dashed rgba(255, 255, 255, 0.22)')),
     background: hasCard
       ? 'transparent'
       : (isHovered
-          ? 'rgba(255, 255, 255, 0.22)'
+          ? 'rgba(255, 255, 255, 0.24)'
           : (isActionable
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(255, 255, 255, 0.03)')),
@@ -156,17 +151,17 @@ function TableSlotsRow({
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 16px rgba(255, 255, 255, 0.4)' : 'none'
+    boxShadow: isHovered ? '0 0 20px rgba(255, 255, 255, 0.5)' : 'none'
   });
 
   const redSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: '130px',
-    minWidth: '130px',
-    maxWidth: '130px',
-    height: '184px',
-    minHeight: '184px',
-    maxHeight: '184px',
-    borderRadius: '14px',
+    width: '148px',
+    minWidth: '148px',
+    maxWidth: '148px',
+    height: '208px',
+    minHeight: '208px',
+    maxHeight: '208px',
+    borderRadius: '16px',
     border: hasCard
       ? 'none'
       : (isHovered
@@ -177,7 +172,7 @@ function TableSlotsRow({
     background: hasCard
       ? 'transparent'
       : (isHovered
-          ? 'rgba(255, 0, 0, 0.3)'
+          ? 'rgba(255, 0, 0, 0.32)'
           : (isActionable
               ? 'rgba(255, 0, 0, 0.12)'
               : 'rgba(255, 0, 0, 0.05)')),
@@ -189,37 +184,29 @@ function TableSlotsRow({
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s ease',
-    boxShadow: isHovered ? '0 0 16px rgba(255, 0, 0, 0.45)' : 'none'
+    boxShadow: isHovered ? '0 0 20px rgba(255, 0, 0, 0.55)' : 'none'
   });
 
   return (
     <div
-      onClick={() => isVoting && onSelectWinner && onSelectWinner(candidate?.matchmakerId)}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
+        gap: '10px',
         width: '100%',
-        maxWidth: '430px',
-        height: '204px',
-        minHeight: '204px',
-        maxHeight: '204px',
+        maxWidth: '490px',
+        height: '224px',
+        minHeight: '224px',
+        maxHeight: '224px',
         margin: '0 auto',
         padding: '8px',
         boxSizing: 'border-box',
-        borderRadius: '16px',
-        background: isWinner
-          ? 'rgba(16, 185, 129, 0.15)'
-          : (isTarget && canDropRed && isMyTurn ? 'rgba(255, 0, 0, 0.2)' : 'rgba(20, 20, 20, 0.85)'),
-        border: isWinner
-          ? '2px solid #10b981'
-          : (isVoting ? '2px dashed #f59e0b' : (isTarget && canDropRed && isMyTurn ? '2px dashed #FF0000' : '1px solid rgba(255, 0, 0, 0.3)')),
-        cursor: isVoting ? 'pointer' : 'default',
+        borderRadius: '18px',
+        background: isTarget && canDropRed && isMyTurn ? 'rgba(255, 0, 0, 0.18)' : 'rgba(15, 15, 15, 0.85)',
+        border: isTarget && canDropRed && isMyTurn ? '2px dashed #FF0000' : '1px solid rgba(255, 0, 0, 0.25)',
         transition: 'all 0.25s ease',
-        boxShadow: isWinner
-          ? '0 0 25px rgba(16, 185, 129, 0.45)'
-          : (isTarget && canDropRed && isMyTurn ? '0 0 24px rgba(255, 0, 0, 0.4)' : '0 6px 20px rgba(0,0,0,0.6)')
+        boxShadow: isTarget && canDropRed && isMyTurn ? '0 0 24px rgba(255, 0, 0, 0.4)' : '0 6px 20px rgba(0,0,0,0.6)'
       }}
     >
       {/* Slot 1: White Perk 1 */}
@@ -232,7 +219,7 @@ function TableSlotsRow({
         {white1 ? (
           <CardItem card={white1} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.8rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '1. beyaz' : ''}
           </span>
         )}
@@ -248,7 +235,7 @@ function TableSlotsRow({
         {white2 ? (
           <CardItem card={white2} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.8rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '2. beyaz' : ''}
           </span>
         )}
@@ -264,7 +251,7 @@ function TableSlotsRow({
         {redFlag ? (
           <CardItem card={redFlag} type="redflag" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.8rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(248, 113, 113, 0.4)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(248, 113, 113, 0.4)', fontWeight: 700 }}>
             {isTarget && canDropRed ? (isMyTurn ? 'kırmızı koy' : 'sabotaj') : ''}
           </span>
         )}
@@ -400,32 +387,14 @@ export default function TabletopView({
 
   const availableWhiteCards = hand.whiteCards || [];
   const availableRedCards = hand.redCards || [];
-
   const myRenderCandidate = myCandidate || {};
   const canDropWhite = phase === 'PERKS' && !isSingle && !myCandidate?.whiteCardsSubmitted;
   const canDropRed = phase === 'SABOTAGE' && !isSingle && !mySabotageTarget?.targetCandidate?.hasRedFlag;
 
-  // Calculate 3 Top + 3 Bottom player desks symmetrically
+  // DETERMINISTIC 3 TOP + 3 BOTTOM SEATING (Identical arrangement for all players in room!)
   const allRoomPlayers = players && players.length > 0 ? players : [player];
-  const otherPlayers = allRoomPlayers.filter(p => p.id !== player.id);
-
-  let topPlayers = [];
-  let bottomPlayers = [];
-
-  if (allRoomPlayers.length <= 3) {
-    topPlayers = otherPlayers;
-    bottomPlayers = [player];
-  } else if (allRoomPlayers.length === 4) {
-    topPlayers = [otherPlayers[0], otherPlayers[1]];
-    bottomPlayers = [otherPlayers[2], player];
-  } else if (allRoomPlayers.length === 5) {
-    topPlayers = [otherPlayers[0], otherPlayers[1], otherPlayers[2]];
-    bottomPlayers = [otherPlayers[3], player];
-  } else {
-    // 6 Players: Exactly 3 on top, 3 on bottom
-    topPlayers = [otherPlayers[0], otherPlayers[1], otherPlayers[2]];
-    bottomPlayers = [otherPlayers[3], player, otherPlayers[4]];
-  }
+  const topPlayers = allRoomPlayers.slice(0, Math.min(3, Math.ceil(allRoomPlayers.length / 2)));
+  const bottomPlayers = allRoomPlayers.slice(Math.min(3, Math.ceil(allRoomPlayers.length / 2)), 6);
 
   // Render a Single Standard Player Desk (Equal uniform size for ALL desks)
   const renderDesk = (deskPlayer) => {
@@ -437,6 +406,9 @@ export default function TabletopView({
     const isTarget = mySabotageTarget?.targetPlayerId === deskPlayer.id;
     const isWinner = roundWinner === deskPlayer.id;
     const candidateObj = candidates[deskPlayer.id] || (isMe ? myRenderCandidate : null);
+
+    // Can Bekâr click this entire desk to pick winner?
+    const canBekarSelectThisDesk = isSingle && !isPlayerSingle && (phase === 'VOTING' || phase === 'REVEAL');
 
     // Get dynamic hand counts from server state
     const pCounts = handCardCounts?.[deskPlayer.id] || (isMe ? {
@@ -450,38 +422,78 @@ export default function TabletopView({
     return (
       <div
         key={deskPlayer.id}
+        onClick={() => {
+          if (canBekarSelectThisDesk && onSelectWinner) {
+            sounds.playWin();
+            onSelectWinner(deskPlayer.id);
+          }
+        }}
         style={{
-          width: '456px',
-          minWidth: '420px',
-          maxWidth: '456px',
-          padding: '12px',
+          flex: '1 1 0',
+          width: '100%',
+          minWidth: '380px',
+          maxWidth: '560px',
+          padding: '14px 16px',
           boxSizing: 'border-box',
           borderRadius: '22px',
-          background: isPlayerTurn
-            ? 'rgba(255, 0, 0, 0.18)'
-            : (isPlayerSingle ? 'rgba(245, 158, 11, 0.08)' : 'rgba(20, 20, 20, 0.75)'),
-          border: isPlayerTurn
-            ? '1.5px solid #FF0000'
-            : (isPlayerSingle ? '1.5px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'),
-          boxShadow: isPlayerTurn
-            ? '0 0 28px rgba(255, 0, 0, 0.45)'
-            : (isPlayerSingle ? '0 0 24px rgba(245, 158, 11, 0.2)' : '0 6px 20px rgba(0, 0, 0, 0.5)'),
-          transition: 'all 0.3s ease',
+          background: isWinner
+            ? 'rgba(16, 185, 129, 0.18)'
+            : (isPlayerTurn
+                ? 'rgba(255, 0, 0, 0.18)'
+                : (isPlayerSingle ? 'rgba(245, 158, 11, 0.08)' : 'rgba(20, 20, 20, 0.78)')),
+          border: isWinner
+            ? '2px solid #10b981'
+            : (canBekarSelectThisDesk
+                ? '2px dashed #f59e0b'
+                : (isPlayerTurn
+                    ? '1.5px solid #FF0000'
+                    : (isPlayerSingle ? '1.5px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'))),
+          boxShadow: isWinner
+            ? '0 0 35px rgba(16, 185, 129, 0.55)'
+            : (canBekarSelectThisDesk
+                ? '0 0 30px rgba(245, 158, 11, 0.45)'
+                : (isPlayerTurn
+                    ? '0 0 28px rgba(255, 0, 0, 0.45)'
+                    : (isPlayerSingle ? '0 0 24px rgba(245, 158, 11, 0.2)' : '0 6px 20px rgba(0, 0, 0, 0.5)'))),
+          cursor: canBekarSelectThisDesk ? 'pointer' : 'default',
+          transition: 'all 0.25s ease',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '6px'
+          gap: '8px',
+          position: 'relative'
         }}
+        title={canBekarSelectThisDesk ? `${deskPlayer.name} adlı adayı kazanan seçmek için tıkla!` : ''}
       >
+        {/* Bekâr Select Candidate Action Banner */}
+        {canBekarSelectThisDesk && (
+          <div style={{
+            position: 'absolute',
+            top: '-12px',
+            background: '#f59e0b',
+            color: '#000000',
+            fontWeight: 900,
+            fontSize: '0.78rem',
+            padding: '3px 14px',
+            borderRadius: '9999px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            boxShadow: '0 4px 14px rgba(245, 158, 11, 0.6)',
+            zIndex: 10
+          }}>
+            <Crown size={13} color="#000000" /> bu adayı seçmek için tıkla
+          </div>
+        )}
+
         {/* Desk Header Info */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          marginBottom: '2px',
-          fontSize: '0.92rem',
-          fontWeight: 600,
+          fontSize: '0.96rem',
+          fontWeight: 700,
           textTransform: 'lowercase',
           width: '100%',
           justifyContent: 'center'
@@ -490,18 +502,18 @@ export default function TabletopView({
             src={deskPlayer.avatar || defaultAvatarImg}
             alt={deskPlayer.name}
             style={{
-              width: '26px',
-              height: '26px',
+              width: '28px',
+              height: '28px',
               borderRadius: '50%',
               objectFit: 'cover',
-              border: isPlayerSingle ? '1.5px solid #fbbf24' : '1.5px solid rgba(255, 255, 255, 0.3)',
+              border: isPlayerSingle ? '2px solid #fbbf24' : '1.5px solid rgba(255, 255, 255, 0.35)',
               background: '#000',
               flexShrink: 0
             }}
           />
 
           <span style={{
-            maxWidth: '170px',
+            maxWidth: '190px',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -513,10 +525,10 @@ export default function TabletopView({
           {isPlayerSingle && (
             <span style={{
               background: 'rgba(245, 158, 11, 0.15)',
-              border: '1px solid rgba(245, 158, 11, 0.4)',
+              border: '1px solid rgba(245, 158, 11, 0.45)',
               color: '#fbbf24',
-              fontSize: '0.72rem',
-              padding: '2px 8px',
+              fontSize: '0.74rem',
+              padding: '2px 9px',
               borderRadius: '9999px',
               fontWeight: 800,
               display: 'inline-flex',
@@ -532,8 +544,8 @@ export default function TabletopView({
             <span style={{
               background: '#FF0000',
               color: '#ffffff',
-              fontSize: '0.72rem',
-              padding: '2px 8px',
+              fontSize: '0.74rem',
+              padding: '2px 9px',
               borderRadius: '9999px',
               fontWeight: 800,
               flexShrink: 0
@@ -544,41 +556,140 @@ export default function TabletopView({
 
           {isTarget && (
             <span style={{
-              background: 'rgba(239, 68, 68, 0.2)',
+              background: 'rgba(239, 68, 68, 0.25)',
               color: '#f87171',
-              fontSize: '0.72rem',
-              padding: '2px 8px',
+              fontSize: '0.74rem',
+              padding: '2px 9px',
               borderRadius: '9999px',
-              fontWeight: 600,
+              fontWeight: 700,
               flexShrink: 0
             }}>
               sabotaj hedefin
             </span>
           )}
 
-          {isWinner && <Crown size={15} color="#10b981" style={{ flexShrink: 0 }} />}
+          {isWinner && (
+            <span style={{
+              background: 'rgba(16, 185, 129, 0.2)',
+              color: '#34d399',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              fontSize: '0.74rem',
+              padding: '2px 9px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              flexShrink: 0
+            }}>
+              <Crown size={13} color="#10b981" /> tur kazananı
+            </span>
+          )}
         </div>
 
-        {/* Fanned Hand Backs (Showing exact dynamic card counts!) */}
-        <DynamicHandFanned
-          redCount={isPlayerSingle ? 0 : pCounts.red}
-          whiteCount={isPlayerSingle ? 1 : pCounts.white}
-        />
+        {/* BEKÂR DESK: Large Prominent Deck Stack & Status (No table drop slots!) */}
+        {isPlayerSingle ? (
+          <div style={{
+            flex: 1,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px 0 10px 0',
+            gap: '12px'
+          }}>
+            {/* Large 3D Layered Deck */}
+            <div style={{
+              position: 'relative',
+              width: '144px',
+              height: '202px',
+              aspectRatio: '5 / 7',
+              margin: '0 auto'
+            }}>
+              {/* Layer 3 */}
+              <div style={{
+                position: 'absolute',
+                inset: '10px -10px -10px 10px',
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 6px 14px rgba(0,0,0,0.5)',
+                opacity: 0.85
+              }} />
+              {/* Layer 2 */}
+              <div style={{
+                position: 'absolute',
+                inset: '5px -5px -5px 5px',
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 6px 14px rgba(0,0,0,0.5)',
+                opacity: 0.95
+              }} />
+              {/* Top Card */}
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(245, 158, 11, 0.35)',
+                border: '2px solid rgba(245, 158, 11, 0.6)',
+                zIndex: 3
+              }}>
+                <img
+                  src={redCardBackImg}
+                  alt="bekar destesi"
+                  style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+                />
+              </div>
+            </div>
 
-        {/* 3 Table Slots */}
-        <TableSlotsRow
-          candidate={candidateObj}
-          isMySlots={isMe}
-          isTarget={isTarget}
-          phase={phase}
-          isMyTurn={isMyTurn}
-          canDropWhite={isMe && canDropWhite}
-          canDropRed={isTarget && canDropRed}
-          onDropCard={handleDropCard}
-          onSelectWinner={onSelectWinner}
-          isSingle={isSingle}
-          isWinner={isWinner}
-        />
+            {/* Bekâr Status Message */}
+            <div style={{
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              color: '#fbbf24',
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              padding: '6px 16px',
+              borderRadius: '9999px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginTop: '4px'
+            }}>
+              <Crown size={14} color="#fbbf24" />
+              <span>
+                {phase === 'VOTING' || phase === 'REVEAL'
+                  ? (isSingle ? 'kazanan adayı seçmek için masasına tıkla!' : 'bekârın seçim yapması bekleniyor...')
+                  : 'bekâr masası - adaylarını bekliyor'}
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* MATCHMAKER DESK: Fanned Hand Backs + 3 Table Slots */
+          <>
+            {/* Dynamic Fanned Hand Backs */}
+            <DynamicHandFanned
+              redCount={pCounts.red}
+              whiteCount={pCounts.white}
+            />
+
+            {/* 3 Table Slots */}
+            <TableSlotsRow
+              candidate={candidateObj}
+              isMySlots={isMe}
+              isTarget={isTarget}
+              phase={phase}
+              isMyTurn={isMyTurn}
+              canDropWhite={isMe && canDropWhite}
+              canDropRed={isTarget && canDropRed}
+              onDropCard={handleDropCard}
+            />
+          </>
+        )}
       </div>
     );
   };
@@ -595,14 +706,14 @@ export default function TabletopView({
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Virtual Table Area: 3 Top Desks + 3 Bottom Desks */}
+      {/* Virtual Table Area: 3 Top Desks + 3 Bottom Desks (Large & Screen Filling) */}
       <div style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '16px 16px 85px 16px',
+        padding: '16px 20px 85px 20px',
         width: '100%',
         maxWidth: '100%',
         minHeight: 'calc(100vh - 50px)',
@@ -615,24 +726,22 @@ export default function TabletopView({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'stretch',
-          gap: '16px',
-          flexWrap: 'nowrap',
+          gap: '20px',
           width: '100%',
-          maxWidth: '1480px',
+          maxWidth: '1780px',
           margin: '0 auto'
         }}>
           {topPlayers.map(p => renderDesk(p))}
         </div>
 
-        {/* BOTTOM ROW: Up to 3 player desks side-by-side (including local player) */}
+        {/* BOTTOM ROW: Up to 3 player desks side-by-side */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'stretch',
-          gap: '16px',
-          flexWrap: 'nowrap',
+          gap: '20px',
           width: '100%',
-          maxWidth: '1480px',
+          maxWidth: '1780px',
           margin: '0 auto'
         }}>
           {bottomPlayers.map(p => renderDesk(p))}
@@ -650,12 +759,12 @@ export default function TabletopView({
             bottom: 0,
             left: '50%',
             transform: `translateX(-50%) translateY(${
-              (isHandDrawerOpen || isDragging) ? '0%' : 'calc(100% - 44px)'
+              (isHandDrawerOpen || isDragging) ? '0%' : 'calc(100% - 46px)'
             })`,
             transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
             zIndex: 85,
-            width: '94%',
-            maxWidth: '1400px',
+            width: '96%',
+            maxWidth: '1500px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -677,12 +786,12 @@ export default function TabletopView({
             onClick={() => setIsHandDrawerOpen(prev => !prev)}
             style={{
               width: '100%',
-              height: '44px',
-              minHeight: '44px',
+              height: '46px',
+              minHeight: '46px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 24px',
+              padding: '0 28px',
               cursor: 'pointer',
               borderBottom: (isHandDrawerOpen || isDragging) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
               userSelect: 'none',
@@ -693,7 +802,7 @@ export default function TabletopView({
           >
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%' }}>
               <span style={{
-                fontSize: '0.88rem',
+                fontSize: '0.9rem',
                 fontWeight: 800,
                 color: '#ffffff',
                 display: 'inline-flex',
@@ -701,22 +810,22 @@ export default function TabletopView({
                 gap: '6px',
                 lineHeight: 1
               }}>
-                <Layers size={16} color="#FF0000" />
+                <Layers size={17} color="#FF0000" />
                 <span>destem</span>
               </span>
 
               <span style={{
-                width: '84px',
-                minWidth: '84px',
-                maxWidth: '84px',
-                height: '24px',
+                width: '88px',
+                minWidth: '88px',
+                maxWidth: '88px',
+                height: '26px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: '#ffffff',
                 color: '#1e1e1e',
                 fontWeight: 800,
-                fontSize: '0.74rem',
+                fontSize: '0.76rem',
                 lineHeight: 1,
                 borderRadius: '9999px',
                 boxSizing: 'border-box',
@@ -727,17 +836,17 @@ export default function TabletopView({
               </span>
 
               <span style={{
-                width: '84px',
-                minWidth: '84px',
-                maxWidth: '84px',
-                height: '24px',
+                width: '88px',
+                minWidth: '88px',
+                maxWidth: '88px',
+                height: '26px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: '#FF0000',
                 color: '#ffffff',
                 fontWeight: 800,
-                fontSize: '0.74rem',
+                fontSize: '0.76rem',
                 lineHeight: 1,
                 borderRadius: '9999px',
                 boxSizing: 'border-box',
@@ -753,18 +862,18 @@ export default function TabletopView({
               alignItems: 'center',
               gap: '6px',
               color: (isHandDrawerOpen || isDragging) ? '#94a3b8' : '#ffffff',
-              fontSize: '0.78rem',
+              fontSize: '0.8rem',
               fontWeight: 700,
               lineHeight: 1
             }}>
               {(isHandDrawerOpen || isDragging) ? (
                 <>
-                  <ChevronDown size={14} />
+                  <ChevronDown size={15} />
                   <span>desteyi gizle</span>
                 </>
               ) : (
                 <>
-                  <ChevronUp size={14} />
+                  <ChevronUp size={15} />
                   <span>kartlarını görmek için üzerine gel</span>
                 </>
               )}
@@ -776,10 +885,10 @@ export default function TabletopView({
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            height: '270px',
+            height: '280px',
             position: 'relative',
             width: '100%',
-            maxWidth: '1200px',
+            maxWidth: '1300px',
             margin: '0 auto',
             paddingTop: '20px'
           }}>
@@ -804,7 +913,7 @@ export default function TabletopView({
                   onClick={() => handleCardClick(card, 'perk')}
                   style={{
                     position: 'absolute',
-                    left: `calc(50% + ${offset * 68}px - 85px)`,
+                    left: `calc(50% + ${offset * 72}px - 90px)`,
                     bottom: 0,
                     zIndex: isHovered ? 50 : 10 + index,
                     transform: isHovered
@@ -845,7 +954,7 @@ export default function TabletopView({
                   onClick={() => handleCardClick(card, 'redflag')}
                   style={{
                     position: 'absolute',
-                    left: `calc(50% + ${offset * 68}px - 85px)`,
+                    left: `calc(50% + ${offset * 72}px - 90px)`,
                     bottom: 0,
                     zIndex: isHovered ? 50 : 25 + index,
                     transform: isHovered
