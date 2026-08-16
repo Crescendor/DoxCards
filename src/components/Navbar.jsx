@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb, Link2 } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import SoundSettingsModal from './SoundSettingsModal';
@@ -17,6 +17,7 @@ export default function Navbar({
   onLogout
 }) {
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [soundModalOpen, setSoundModalOpen] = useState(false);
   const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
@@ -28,6 +29,15 @@ export default function Navbar({
     sounds.playClick();
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyLink = () => {
+    if (!roomCode) return;
+    const shareUrl = `${window.location.origin}/?room=${roomCode.toLowerCase()}`;
+    navigator.clipboard.writeText(shareUrl);
+    sounds.playClick();
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   // Close dropdown on outside click
@@ -360,6 +370,20 @@ export default function Navbar({
             }}
           >
             {copied ? <Check size={16} /> : <Copy size={16} />}
+          </button>
+          <button
+            onClick={handleCopyLink}
+            title="oda davet linkini kopyala"
+            style={{
+              background: 'transparent',
+              color: copiedLink ? '#10b981' : isGameActive ? '#fff' : '#000000',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+              cursor: 'pointer'
+            }}
+          >
+            {copiedLink ? <Check size={16} /> : <Link2 size={16} />}
           </button>
         </div>
       )}

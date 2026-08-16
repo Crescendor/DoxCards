@@ -41,7 +41,15 @@ export default function LandingPage({
   error,
   isLoading
 }) {
-  const urlRoomCode = new URLSearchParams(window.location.search).get('room') || '';
+  const getUrlRoomCode = () => {
+    const params = new URLSearchParams(window.location.search);
+    const qRoom = params.get('room') || params.get('join') || params.get('r');
+    if (qRoom) return qRoom.toLowerCase().trim();
+    const pathMatch = window.location.pathname.match(/^\/(?:room|join)\/([a-zA-Z0-9]{3,8})/i);
+    return pathMatch ? pathMatch[1].toLowerCase().trim() : '';
+  };
+
+  const urlRoomCode = getUrlRoomCode();
   const [viewMode, setViewMode] = useState(urlRoomCode ? 'join' : 'menu'); // 'menu' | 'create' | 'join'
   const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode.toLowerCase());
   const [targetScore, setTargetScore] = useState(6);
@@ -452,6 +460,25 @@ export default function LandingPage({
               </button>
               <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>odaya katıl</h3>
             </div>
+
+            {/* Room Invite Banner */}
+            {urlRoomCode && (
+              <div style={{
+                background: 'rgba(255, 0, 0, 0.14)',
+                border: '1px solid rgba(255, 0, 0, 0.35)',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                textAlign: 'left'
+              }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ff6666' }}>
+                  oda daveti: <span style={{ fontFamily: 'monospace', fontSize: '0.95rem', color: '#ffffff' }}>{urlRoomCode.toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginTop: '2px' }}>
+                  ismini belirleyip doğrudan bu odaya katılabilirsin.
+                </div>
+              </div>
+            )}
 
             {/* If logged in with Discord: choose name source */}
             {discordUser ? (
