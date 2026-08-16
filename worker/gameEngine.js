@@ -1,5 +1,5 @@
 // Game Engine for Red Flags (DoxCards)
-import { getDeck } from './data/cards.js';
+import { getDeck } from './cards.js';
 
 export const PHASES = {
   LOBBY: 'LOBBY',
