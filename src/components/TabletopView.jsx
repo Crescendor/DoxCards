@@ -156,7 +156,7 @@ function TableSlotsRow({
 
   const isVoting = (phase === 'VOTING' || phase === 'REVEAL') && isSingle;
 
-  const slotBoxStyle = (hasCard, isHovered, isActionable, borderColor) => ({
+  const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
     width: '132px',
     minWidth: '132px',
     maxWidth: '132px',
@@ -167,13 +167,17 @@ function TableSlotsRow({
     border: hasCard
       ? 'none'
       : (isHovered
-          ? `2px dashed ${borderColor}`
+          ? '2px dashed #ffffff'
           : (isActionable
-              ? `2px dashed ${borderColor}`
-              : '2px dashed rgba(255,255,255,0.2)')),
-    background: isHovered
-      ? (borderColor === '#ef4444' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(56, 189, 248, 0.18)')
-      : (hasCard ? 'transparent' : 'rgba(0, 0, 0, 0.25)'),
+              ? '2px dashed rgba(255, 255, 255, 0.75)'
+              : '2px dashed rgba(255, 255, 255, 0.25)')),
+    background: hasCard
+      ? 'transparent'
+      : (isHovered
+          ? 'rgba(255, 255, 255, 0.22)'
+          : (isActionable
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(255, 255, 255, 0.03)')),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,7 +185,41 @@ function TableSlotsRow({
     overflow: 'hidden',
     flexShrink: 0,
     position: 'relative',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
+    boxShadow: isHovered ? '0 0 16px rgba(255, 255, 255, 0.35)' : 'none'
+  });
+
+  const redSlotStyle = (hasCard, isHovered, isActionable) => ({
+    width: '132px',
+    minWidth: '132px',
+    maxWidth: '132px',
+    height: '185px',
+    minHeight: '185px',
+    maxHeight: '185px',
+    borderRadius: '14px',
+    border: hasCard
+      ? 'none'
+      : (isHovered
+          ? '2px dashed #ef4444'
+          : (isActionable
+              ? '2px dashed #ef4444'
+              : '2px dashed rgba(217, 4, 41, 0.35)')),
+    background: hasCard
+      ? 'transparent'
+      : (isHovered
+          ? 'rgba(217, 4, 41, 0.3)'
+          : (isActionable
+              ? 'rgba(217, 4, 41, 0.12)'
+              : 'rgba(217, 4, 41, 0.05)')),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    flexShrink: 0,
+    position: 'relative',
+    transition: 'all 0.2s ease',
+    boxShadow: isHovered ? '0 0 18px rgba(217, 4, 41, 0.45)' : 'none'
   });
 
   return (
@@ -204,15 +242,15 @@ function TableSlotsRow({
         borderRadius: '20px',
         background: isWinner
           ? 'rgba(16, 185, 129, 0.15)'
-          : (isTarget && canDropRed && isMyTurn ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.3)'),
+          : (isTarget && canDropRed && isMyTurn ? 'rgba(217, 4, 41, 0.2)' : 'rgba(20, 20, 20, 0.85)'),
         border: isWinner
           ? '2px solid #10b981'
-          : (isVoting ? '2px dashed #f59e0b' : (isTarget && canDropRed && isMyTurn ? '2px dashed #ef4444' : '1px solid rgba(255,255,255,0.1)')),
+          : (isVoting ? '2px dashed #f59e0b' : (isTarget && canDropRed && isMyTurn ? '2px dashed #ef4444' : '1px solid rgba(217, 4, 41, 0.3)')),
         cursor: isVoting ? 'pointer' : 'default',
         transition: 'all 0.25s ease',
         boxShadow: isWinner
           ? '0 0 25px rgba(16, 185, 129, 0.45)'
-          : (isTarget && canDropRed && isMyTurn ? '0 0 20px rgba(239, 68, 68, 0.35)' : 'none')
+          : (isTarget && canDropRed && isMyTurn ? '0 0 24px rgba(217, 4, 41, 0.4)' : '0 6px 20px rgba(0,0,0,0.6)')
       }}
     >
       {/* Slot 1: White Perk 1 */}
@@ -220,12 +258,12 @@ function TableSlotsRow({
         onDragOver={(e) => handleDragOver(e, 0)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 0)}
-        style={slotBoxStyle(!!white1, dragOverIndex === 0, isMySlots && canDropWhite && isMyTurn, '#38bdf8')}
+        style={whiteSlotStyle(!!white1, dragOverIndex === 0, isMySlots && canDropWhite && isMyTurn)}
       >
         {white1 ? (
           <CardItem card={white1} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#38bdf8' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '1. beyaz' : ''}
           </span>
         )}
@@ -236,12 +274,12 @@ function TableSlotsRow({
         onDragOver={(e) => handleDragOver(e, 1)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 1)}
-        style={slotBoxStyle(!!white2, dragOverIndex === 1, isMySlots && canDropWhite && isMyTurn, '#38bdf8')}
+        style={whiteSlotStyle(!!white2, dragOverIndex === 1, isMySlots && canDropWhite && isMyTurn)}
       >
         {white2 ? (
           <CardItem card={white2} type="perk" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#38bdf8' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '2. beyaz' : ''}
           </span>
         )}
@@ -252,12 +290,12 @@ function TableSlotsRow({
         onDragOver={(e) => handleDragOver(e, 2)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, 2)}
-        style={slotBoxStyle(!!redFlag, dragOverIndex === 2, isTarget && canDropRed && isMyTurn, '#ef4444')}
+        style={redSlotStyle(!!redFlag, dragOverIndex === 2, isTarget && canDropRed && isMyTurn)}
       >
         {redFlag ? (
           <CardItem card={redFlag} type="redflag" isSmall={true} />
         ) : (
-          <span style={{ fontSize: '0.84rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.84rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(248, 113, 113, 0.4)', fontWeight: 700 }}>
             {isTarget && canDropRed ? (isMyTurn ? 'kırmızı koy' : 'sabotaj') : ''}
           </span>
         )}
@@ -488,8 +526,9 @@ export default function TabletopView({
                   padding: '14px',
                   boxSizing: 'border-box',
                   borderRadius: '24px',
-                  background: isOppTurn ? 'rgba(56, 189, 248, 0.08)' : 'transparent',
-                  border: isOppTurn ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
+                  background: isOppTurn ? 'rgba(217, 4, 41, 0.12)' : 'rgba(20, 20, 20, 0.6)',
+                  border: isOppTurn ? '1.5px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: isOppTurn ? '0 0 24px rgba(217, 4, 41, 0.3)' : 'none',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   flexDirection: 'column',
@@ -521,12 +560,12 @@ export default function TabletopView({
                   <span>{opp.name}</span>
                   {isOppTurn && (
                     <span style={{
-                      background: '#38bdf8',
-                      color: '#000000',
+                      background: '#d90429',
+                      color: '#ffffff',
                       fontSize: '0.72rem',
                       padding: '2px 8px',
                       borderRadius: '9999px',
-                      fontWeight: 700
+                      fontWeight: 800
                     }}>
                       sıra onda
                     </span>
@@ -608,8 +647,9 @@ export default function TabletopView({
                 margin: '0 auto',
                 padding: '14px',
                 borderRadius: '24px',
-                background: isMyTurn ? 'rgba(56, 189, 248, 0.08)' : 'transparent',
-                border: isMyTurn ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
+                background: isMyTurn ? 'rgba(217, 4, 41, 0.14)' : 'rgba(20, 20, 20, 0.6)',
+                border: isMyTurn ? '1.5px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: isMyTurn ? '0 0 28px rgba(217, 4, 41, 0.4)' : 'none',
                 transition: 'all 0.3s ease'
               }}
             >
@@ -637,12 +677,12 @@ export default function TabletopView({
                 <span>{player.name} (senin masan)</span>
                 {isMyTurn && (
                   <span style={{
-                    background: '#38bdf8',
-                    color: '#000000',
+                    background: '#d90429',
+                    color: '#ffffff',
                     fontSize: '0.72rem',
                     padding: '2px 8px',
                     borderRadius: '9999px',
-                    fontWeight: 700
+                    fontWeight: 800
                   }}>
                     senin sıran
                   </span>
@@ -736,7 +776,7 @@ export default function TabletopView({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              color: (isHandDrawerOpen || isDragging) ? '#94a3b8' : '#38bdf8',
+              color: (isHandDrawerOpen || isDragging) ? '#94a3b8' : '#ffffff',
               fontSize: '0.78rem',
               fontWeight: 700
             }}>
@@ -790,7 +830,7 @@ export default function TabletopView({
                       : `translateY(${translateY}px) rotate(${rot}deg)`,
                     zIndex: isHovered ? 50 : idx + 1,
                     filter: isHovered && canInteract
-                      ? (isPerk ? 'drop-shadow(0 0 20px #38bdf8)' : 'drop-shadow(0 0 22px #ef4444)')
+                      ? (isPerk ? 'drop-shadow(0 0 24px rgba(255, 255, 255, 0.95))' : 'drop-shadow(0 0 26px rgba(217, 4, 41, 0.95))')
                       : 'drop-shadow(0 6px 12px rgba(0,0,0,0.65))'
                   }}
                   title={canInteract ? 'masaya sürükle veya tıkla' : (isMyTurn ? 'bu aşamada kullanılamaz' : 'sıranı bekle')}

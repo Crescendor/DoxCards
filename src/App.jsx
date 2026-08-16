@@ -271,17 +271,19 @@ export default function App() {
         </>
       )}
 
-      {/* Top Navbar */}
-      <Navbar
-        roomCode={currentRoom?.code}
-        isGameActive={isGameActive}
-        onLeave={handleLeaveRoom}
-        onOpenHelp={() => setIsHelpOpen(true)}
-        soundMuted={soundMuted}
-        onToggleSound={handleToggleSound}
-        userProfile={userProfile}
-        onLogout={handleLogout}
-      />
+      {/* Top Navbar (Only outside of active game) */}
+      {!isGameActive && (
+        <Navbar
+          roomCode={currentRoom?.code}
+          isGameActive={isGameActive}
+          onLeave={handleLeaveRoom}
+          onOpenHelp={() => setIsHelpOpen(true)}
+          soundMuted={soundMuted}
+          onToggleSound={handleToggleSound}
+          userProfile={userProfile}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Main View Router */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

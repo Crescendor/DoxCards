@@ -64,15 +64,17 @@ export default function CardItem({
         overflow: 'hidden',
         boxSizing: 'border-box',
         cursor: onClick && !disabled ? 'pointer' : 'default',
-        boxShadow: isWhite
-          ? '0 6px 18px rgba(0, 0, 0, 0.4)'
-          : '0 6px 20px rgba(255, 0, 0, 0.5)',
+        boxShadow: isSelected
+          ? (isWhite ? '0 0 24px rgba(255, 255, 255, 0.9)' : '0 0 24px rgba(217, 4, 41, 0.95)')
+          : (isWhite
+              ? '0 6px 18px rgba(0, 0, 0, 0.4)'
+              : '0 6px 20px rgba(217, 4, 41, 0.45)'),
         userSelect: 'none',
         flexShrink: 0,
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
         transform: isSelected ? 'translateY(-12px)' : 'none',
         outline: isSelected
-          ? (isWhite ? '3px solid #38bdf8' : '3px solid #f59e0b')
+          ? (isWhite ? '3px solid #ffffff' : '3px solid #d90429')
           : 'none',
         background: isWhite ? '#ffffff' : '#ff0000',
         border: '1px solid rgba(0,0,0,0.12)',
