@@ -3071,10 +3071,6 @@ export default function AdminPageView({ onBack, discordUser }) {
                                 }}>
                                   {isWhite ? '⚪ beyaz kart' : '🔴 kırmızı kart'}
                                 </span>
-
-                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                  önerilen hedef deste: <b style={{ color: '#ffffff' }}>{sug.cardData?.targetDeck || 'Ana Deste'}</b>
-                                </span>
                               </div>
 
                               <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.4 }}>
@@ -3265,17 +3261,6 @@ export default function AdminPageView({ onBack, discordUser }) {
                                 <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff' }}>
                                   📦 {sug.deckData?.title}
                                 </span>
-                                {sug.deckData?.extraNote && (
-                                  <span style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    color: '#cbd5e1',
-                                    fontSize: '0.74rem',
-                                    padding: '2px 8px',
-                                    borderRadius: '6px'
-                                  }}>
-                                    ek not: "{sug.deckData.extraNote}"
-                                  </span>
-                                )}
                               </div>
 
                               {sug.deckData?.description && (

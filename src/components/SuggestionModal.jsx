@@ -18,7 +18,6 @@ export default function SuggestionModal({
   const [cardForm, setCardForm] = useState({
     type: 'perk', // 'perk' (white) | 'redflag' (red)
     text: '',
-    targetDeck: 'Ana Deste',
     isAnonymous: false
   });
 
@@ -26,7 +25,6 @@ export default function SuggestionModal({
   const [deckForm, setDeckForm] = useState({
     title: '',
     description: '',
-    extraNote: '',
     whiteCards: ['', '', '', '', '', '', '', '', '', ''], // 10 initial
     redCards: ['', '', '', '', '', '', '', '', '', ''],   // 10 initial
     isAnonymous: false
@@ -73,8 +71,7 @@ export default function SuggestionModal({
       },
       cardData: {
         type: cardForm.type,
-        text: cardForm.text.trim(),
-        targetDeck: cardForm.targetDeck
+        text: cardForm.text.trim()
       }
     };
 
@@ -84,7 +81,7 @@ export default function SuggestionModal({
     if (res?.success) {
       sounds.playWin();
       setMsg({ text: 'Kart öneriniz başarıyla iletildi! İncelendikten sonra onaylanacaktır.', type: 'success' });
-      setCardForm({ type: 'perk', text: '', targetDeck: 'Ana Deste', isAnonymous: false });
+      setCardForm({ type: 'perk', text: '', isAnonymous: false });
       loadMySuggestions();
     } else {
       setMsg({ text: res?.error || 'Kart önerisi gönderilemedi.', type: 'error' });
@@ -125,7 +122,6 @@ export default function SuggestionModal({
       deckData: {
         title: deckForm.title.trim(),
         description: deckForm.description.trim(),
-        extraNote: deckForm.extraNote.trim(),
         whiteCards: cleanWhite,
         redCards: cleanRed
       }
@@ -140,7 +136,6 @@ export default function SuggestionModal({
       setDeckForm({
         title: '',
         description: '',
-        extraNote: '',
         whiteCards: ['', '', '', '', '', '', '', '', '', ''],
         redCards: ['', '', '', '', '', '', '', '', '', ''],
         isAnonymous: false
@@ -400,30 +395,6 @@ export default function SuggestionModal({
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px', color: '#94a3b8' }}>
-                  önerilen hedef deste (isteğe bağlı)
-                </label>
-                <select
-                  value={cardForm.targetDeck}
-                  onChange={(e) => setCardForm(prev => ({ ...prev, targetDeck: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    background: '#141414',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#ffffff',
-                    fontSize: '0.88rem',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  {allDecks.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-
               {/* Anonymous Checkbox */}
               <label style={{
                 display: 'flex',
@@ -483,50 +454,26 @@ export default function SuggestionModal({
                 ⚠️ Deste önerebilmek için en az <b>10 Beyaz Kart</b> ve <b>10 Kırmızı Kart</b> girilmelidir.
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px', color: '#94a3b8' }}>
-                    deste adı *
-                  </label>
-                  <input
-                    type="text"
-                    value={deckForm.title}
-                    onChange={(e) => setDeckForm(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="örn: Geek Paketi"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      background: '#141414',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#ffffff',
-                      fontSize: '0.88rem',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px', color: '#94a3b8' }}>
-                    deste ek notu (kartların altında görünür)
-                  </label>
-                  <input
-                    type="text"
-                    value={deckForm.extraNote}
-                    onChange={(e) => setDeckForm(prev => ({ ...prev, extraNote: e.target.value }))}
-                    placeholder="örn: v1.0 Özel Seri"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      background: '#141414',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#ffffff',
-                      fontSize: '0.88rem',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '6px', color: '#94a3b8' }}>
+                  deste adı *
+                </label>
+                <input
+                  type="text"
+                  value={deckForm.title}
+                  onChange={(e) => setDeckForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="örn: Geek Paketi"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    background: '#141414',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    fontSize: '0.88rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
               </div>
 
               <div>
@@ -849,18 +796,17 @@ export default function SuggestionModal({
                       {sug.type === 'card' ? (
                         <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#ffffff' }}>
                           "{sug.cardData?.text}"
-                          <span style={{ fontSize: '0.74rem', color: '#94a3b8', marginLeft: '8px' }}>
-                            (Hedef: {sug.cardData?.targetDeck || 'Ana Deste'})
-                          </span>
                         </div>
                       ) : (
                         <div>
                           <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff' }}>
-                            {sug.deckData?.title} {sug.deckData?.extraNote && <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>- "{sug.deckData.extraNote}"</span>}
+                            {sug.deckData?.title}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '2px' }}>
-                            {sug.deckData?.description}
-                          </div>
+                          {sug.deckData?.description && (
+                            <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '2px' }}>
+                              {sug.deckData.description}
+                            </div>
+                          )}
                           <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '4px' }}>
                             ⚪ {sug.deckData?.whiteCards?.length || 0} Beyaz Kart, 🔴 {sug.deckData?.redCards?.length || 0} Kırmızı Kart
                           </div>
