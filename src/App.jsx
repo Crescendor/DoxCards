@@ -168,7 +168,18 @@ export default function App() {
     });
   };
 
-  // Submit Perks (Matchmaker 2 White Cards)
+  // Place Single White Card (Instant visibility on table)
+  const handlePlaceWhiteCard = (cardId, customText = null) => {
+    if (!currentRoom) return;
+    socket.emit('place_white_card', {
+      roomCode: currentRoom.code,
+      playerId: player.id,
+      cardId,
+      customText
+    });
+  };
+
+  // Submit Perks (Batch fallback)
   const handleSubmitPerks = (cardIds, customTexts = {}) => {
     if (!currentRoom) return;
     socket.emit('submit_perks', {
@@ -272,6 +283,7 @@ export default function App() {
             room={currentRoom}
             gameState={gameState}
             player={player}
+            onPlaceWhiteCard={handlePlaceWhiteCard}
             onSubmitPerks={handleSubmitPerks}
             onSubmitSabotage={handleSubmitSabotage}
             onSelectWinner={handleSelectWinner}

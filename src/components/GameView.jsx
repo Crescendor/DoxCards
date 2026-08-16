@@ -7,6 +7,7 @@ export default function GameView({
   room,
   gameState,
   player,
+  onPlaceWhiteCard,
   onSubmitPerks,
   onSubmitSabotage,
   onSelectWinner,
@@ -82,6 +83,7 @@ export default function GameView({
         room={room}
         gameState={gameState}
         player={player}
+        onPlaceWhiteCard={onPlaceWhiteCard}
         onSubmitPerks={onSubmitPerks}
         onSubmitSabotage={onSubmitSabotage}
         onSelectWinner={onSelectWinner}

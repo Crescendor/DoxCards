@@ -199,7 +199,22 @@ export class GameRoomDO {
           sendAck({ success: true });
         }
 
-        // 6. Submit Perks (Matchmaker 2 White Cards)
+        // 6. Place Single White Card (Immediate visibility on table for all players)
+        else if (evt === 'place_white_card') {
+          const { playerId: pId, cardId, customText } = data;
+          if (!this.room || !this.room.game) return;
+
+          const res = this.room.game.placeSingleWhiteCard(pId, cardId, customText);
+          if (res?.error) {
+            sendAck({ error: res.error });
+            return;
+          }
+
+          this.broadcastGameState();
+          sendAck({ success: true });
+        }
+
+        // Submit Perks (Batch 2 White Cards fallback)
         else if (evt === 'submit_perks') {
           const { playerId: pId, cardIds, customTexts } = data;
           if (!this.room || !this.room.game) return;

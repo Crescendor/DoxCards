@@ -262,6 +262,7 @@ export default function TabletopView({
   room,
   gameState,
   player,
+  onPlaceWhiteCard,
   onSubmitPerks,
   onSubmitSabotage,
   onSelectWinner
@@ -285,17 +286,10 @@ export default function TabletopView({
   const players = room.players || [];
   const myCandidate = candidates[player.id];
 
-  // Local pending placed white cards & custom blank texts
-  const [localWhitePlaced, setLocalWhitePlaced] = useState([]);
-  const [customTexts, setCustomTexts] = useState({});
+  // Fill blank modal state
   const [fillModalState, setFillModalState] = useState({ isOpen: false, card: null, onConfirm: null });
   const [draggedCard, setDraggedCard] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
-
-  useEffect(() => {
-    setLocalWhitePlaced([]);
-    setCustomTexts({});
-  }, [phase, turnPlayerId]);
 
   // Drag start
   const handleCardDragStart = (e, card, type) => {
@@ -320,36 +314,32 @@ export default function TabletopView({
       targetCard = (hand.redCards || []).find(c => c.id === cardId);
     }
 
-    if (targetCard && isBlankCard(targetCard.text) && !customTexts[cardId]) {
+    if (targetCard && isBlankCard(targetCard.text)) {
       setFillModalState({
         isOpen: true,
         card: targetCard,
         onConfirm: (val) => {
-          const updatedCustomTexts = { ...customTexts, [cardId]: val };
-          setCustomTexts(updatedCustomTexts);
           setFillModalState({ isOpen: false, card: null, onConfirm: null });
-          proceedWithDrop(type, cardId, updatedCustomTexts);
+          proceedWithDrop(type, cardId, val);
         }
       });
       return;
     }
 
-    proceedWithDrop(type, cardId, customTexts);
+    proceedWithDrop(type, cardId, null);
   };
 
-  const proceedWithDrop = (type, cardId, currentCustomTexts) => {
+  const proceedWithDrop = (type, cardId, customVal) => {
     sounds.playCardDeal();
 
     if (type === 'white' && phase === 'PERKS') {
-      const current = localWhitePlaced.filter(id => id !== cardId);
-      const updated = [...current, cardId];
-      setLocalWhitePlaced(updated);
-
-      if (updated.length === 2) {
-        onSubmitPerks(updated, currentCustomTexts);
+      if (onPlaceWhiteCard) {
+        onPlaceWhiteCard(cardId, customVal);
       }
     } else if (type === 'red' && phase === 'SABOTAGE') {
-      onSubmitSabotage(cardId, currentCustomTexts[cardId] || null);
+      if (onSubmitSabotage) {
+        onSubmitSabotage(cardId, customVal);
+      }
     }
   };
 
@@ -357,65 +347,45 @@ export default function TabletopView({
   const handleCardClick = (card, type) => {
     if (!isMyTurn) return;
 
-    if (isBlankCard(card.text) && !customTexts[card.id]) {
+    if (isBlankCard(card.text)) {
       setFillModalState({
         isOpen: true,
         card,
         onConfirm: (val) => {
-          const updatedCustomTexts = { ...customTexts, [card.id]: val };
-          setCustomTexts(updatedCustomTexts);
           setFillModalState({ isOpen: false, card: null, onConfirm: null });
-          proceedWithCardClick(card, type, updatedCustomTexts);
+          proceedWithCardClick(card, type, val);
         }
       });
       return;
     }
 
-    proceedWithCardClick(card, type, customTexts);
+    proceedWithCardClick(card, type, null);
   };
 
-  const proceedWithCardClick = (card, type, currentCustomTexts) => {
+  const proceedWithCardClick = (card, type, customVal) => {
     sounds.playClick();
 
     if (type === 'perk' && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted) {
-      if (localWhitePlaced.includes(card.id)) {
-        setLocalWhitePlaced(localWhitePlaced.filter(id => id !== card.id));
-      } else {
-        const next = localWhitePlaced.length < 2 ? [...localWhitePlaced, card.id] : [localWhitePlaced[0], card.id];
-        setLocalWhitePlaced(next);
-        if (next.length === 2) {
-          sounds.playCardDeal();
-          onSubmitPerks(next, currentCustomTexts);
-        }
+      sounds.playCardDeal();
+      if (onPlaceWhiteCard) {
+        onPlaceWhiteCard(card.id, customVal);
       }
     } else if (type === 'redflag' && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag) {
       sounds.playSabotage();
-      onSubmitSabotage(card.id, currentCustomTexts[card.id] || null);
+      if (onSubmitSabotage) {
+        onSubmitSabotage(card.id, customVal);
+      }
     }
   };
 
-  const availableWhiteCards = (hand.whiteCards || []).filter(c => !localWhitePlaced.includes(c.id));
+  const availableWhiteCards = hand.whiteCards || [];
   const availableRedCards = hand.redCards || [];
 
   const singlePlayer = players.find(p => p.id === singlePlayerId);
   const opponentMatchmakers = players.filter(p => p.id !== singlePlayerId && p.id !== player.id);
 
-  // Placed cards are 100% visible on table!
-  const myRenderCandidate = {
-    ...myCandidate,
-    whiteCards: myCandidate?.whiteCards?.length === 2
-      ? myCandidate.whiteCards
-      : localWhitePlaced.map(id => {
-          const base = (hand.whiteCards || []).find(c => c.id === id);
-          if (base && customTexts[id]) {
-            return {
-              ...base,
-              filledText: base.text.replace(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customTexts[id]}**`)
-            };
-          }
-          return base;
-        }).filter(Boolean)
-  };
+  // Placed cards on table are 100% visible to everyone in real-time from server state!
+  const myRenderCandidate = myCandidate || {};
 
   const canDropWhite = phase === 'PERKS' && !isSingle && !myCandidate?.whiteCardsSubmitted;
   const canDropRed = phase === 'SABOTAGE' && !isSingle && !mySabotageTarget?.targetCandidate?.hasRedFlag;

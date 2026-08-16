@@ -154,6 +154,45 @@ export class GameEngine {
     if (this.onStateChange) this.onStateChange();
   }
 
+  placeSingleWhiteCard(playerId, cardId, customText = null) {
+    if (this.phase !== PHASES.PERKS) return false;
+    if (playerId !== this.turnPlayerId) return false; // Strictly enforce turn order!
+    if (!this.candidates[playerId]) return false;
+
+    const hand = this.hands[playerId];
+    if (!hand) return false;
+
+    const cardIndex = hand.whiteCards.findIndex(c => c.id === cardId);
+    if (cardIndex === -1) return false;
+
+    let card = hand.whiteCards.splice(cardIndex, 1)[0];
+    if (customText && typeof customText === 'string' && customText.trim()) {
+      const filled = card.text.replace(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customText.trim()}**`);
+      card = { ...card, filledText: filled, customValue: customText.trim() };
+    }
+
+    if (!this.candidates[playerId].whiteCards) {
+      this.candidates[playerId].whiteCards = [];
+    }
+    this.candidates[playerId].whiteCards.push(card);
+
+    // If 2 white cards are placed by this matchmaker, advance turn
+    if (this.candidates[playerId].whiteCards.length >= 2) {
+      this.turnIndex++;
+      if (this.turnIndex < this.turnOrder.length) {
+        this.turnPlayerId = this.turnOrder[this.turnIndex];
+      } else {
+        // All matchmakers placed perks -> Advance to SABOTAGE phase
+        this.phase = PHASES.SABOTAGE;
+        this.turnIndex = 0;
+        this.turnPlayerId = this.turnOrder[0] || null;
+      }
+    }
+
+    if (this.onStateChange) this.onStateChange();
+    return true;
+  }
+
   submitPerks(playerId, cardIds, customTexts = {}) {
     if (this.phase !== PHASES.PERKS) return false;
     if (playerId !== this.turnPlayerId) return false; // Strictly enforce turn order!
@@ -170,7 +209,7 @@ export class GameEngine {
     const processedCards = selectedCards.map(c => {
       const customVal = customTexts ? customTexts[c.id] : null;
       if (customVal && typeof customVal === 'string' && customVal.trim()) {
-        const filled = c.text.replace(/_{3,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customVal.trim()}**`);
+        const filled = c.text.replace(/_{2,}|_{1,}\s*_{1,}\s*_{1,}|\[boşluk\]|\{blank\}/i, `**${customVal.trim()}**`);
         return { ...c, filledText: filled, customValue: customVal.trim() };
       }
       return c;

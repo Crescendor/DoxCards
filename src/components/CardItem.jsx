@@ -116,9 +116,14 @@ export default function CardItem({
                 <span
                   key={idx}
                   style={{
-                    color: isWhite ? '#0284c7' : '#fef08a',
+                    color: '#000000',
+                    background: isWhite ? 'rgba(0, 0, 0, 0.07)' : '#ffffff',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
                     textDecoration: 'underline',
-                    fontWeight: 900
+                    fontWeight: 900,
+                    margin: '0 2px',
+                    display: 'inline-block'
                   }}
                 >
                   {val}
