@@ -282,16 +282,17 @@ export default function LobbyView({
 
             <div className="deck-tags-container">
               {(appConfig.allDecks || DEFAULT_CONFIG.allDecks).map(deckName => {
-                const isUnlocked = availableDecksForHost.includes(deckName);
+                const isSelected = selectedDecks.includes(deckName);
+                const isUnlocked = isHost ? availableDecksForHost.includes(deckName) : true;
                 const meta = appConfig.deckMetadata?.[deckName] || { isSecret: false, lockDescription: '' };
 
-                // 1. If not unlocked and marked as secret: hide completely
-                if (!isUnlocked && meta.isSecret) {
+                // 1. If secret and not selected / not accessible, hide completely
+                if (meta.isSecret && !isSelected && (isHost ? !availableDecksForHost.includes(deckName) : true)) {
                   return null;
                 }
 
-                // 2. If not unlocked and not secret: render as locked (silik) with hover tooltip
-                if (!isUnlocked) {
+                // 2. If host and deck is not unlocked: render as locked (silik) with hover tooltip
+                if (isHost && !isUnlocked) {
                   return (
                     <div
                       key={deckName}
@@ -316,16 +317,42 @@ export default function LobbyView({
                   );
                 }
 
-                // 3. Unlocked deck: render normal toggleable pill
-                const isSelected = selectedDecks.includes(deckName);
+                // 3. If non-host player: display exact mirror of host (active if selected, silik if not selected)
+                if (!isHost) {
+                  return (
+                    <div
+                      key={deckName}
+                      className="deck-tooltip-wrapper"
+                      onMouseEnter={() => meta.lockDescription ? setHoveredLockedDeck(deckName) : null}
+                      onMouseLeave={() => setHoveredLockedDeck(null)}
+                    >
+                      <button
+                        type="button"
+                        disabled
+                        className={`deck-tag-btn readonly ${isSelected ? 'active' : ''}`}
+                        title={`${deckName} (${isSelected ? 'oda kurucusu tarafından seçildi' : 'seçilmedi'})`}
+                      >
+                        {isSelected ? <Check size={13} /> : <Plus size={13} />}
+                        {deckName}
+                      </button>
+
+                      {!isSelected && hoveredLockedDeck === deckName && meta.lockDescription && (
+                        <div className="deck-tooltip-box">
+                          {meta.lockDescription}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // 4. Host player: interactive toggleable pill
                 return (
                   <button
                     key={deckName}
                     type="button"
-                    disabled={!isHost}
                     onClick={() => handleToggleDeck(deckName)}
-                    className={`deck-tag-btn ${isSelected ? 'active' : ''} ${!isHost ? 'disabled' : ''}`}
-                    title={isHost ? `${deckName} destesini aç/kapat` : deckName}
+                    className={`deck-tag-btn ${isSelected ? 'active' : ''}`}
+                    title={`${deckName} destesini aç/kapat`}
                   >
                     {isSelected ? <Check size={13} /> : <Plus size={13} />}
                     {deckName}

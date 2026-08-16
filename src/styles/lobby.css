@@ -271,7 +271,7 @@
   box-shadow: 0 0 12px rgba(217, 4, 41, 0.35);
 }
 
-.deck-tag-btn:hover:not(.disabled):not(.locked) {
+.deck-tag-btn:hover:not(.disabled):not(.locked):not(.readonly) {
   border-color: rgba(255, 255, 255, 0.4);
   transform: translateY(-1px);
 }
@@ -279,6 +279,14 @@
 .deck-tag-btn.disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.deck-tag-btn.readonly {
+  cursor: default !important;
+}
+
+.deck-tag-btn.readonly:hover {
+  transform: none !important;
 }
 
 .deck-tag-btn.locked {
