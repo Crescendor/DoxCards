@@ -36,7 +36,7 @@ const RAW_URL = import.meta.env.VITE_SERVER_URL || (
 );
 
 function generateClientRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
   let code = '';
   for (let i = 0; i < 5; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -55,7 +55,7 @@ class UniversalSocket {
     this.messageQueue = [];
 
     if (this.isWs) {
-      this.initWs('GLOBAL');
+      this.initWs('global');
     } else {
       this.io = io(this.baseUrl, {
         autoConnect: true,
@@ -66,7 +66,7 @@ class UniversalSocket {
     }
   }
 
-  initWs(roomCode = 'GLOBAL', onOpenCallback = null) {
+  initWs(roomCode = 'global', onOpenCallback = null) {
     if (this.ws) {
       try {
         this.ws.onclose = null;
@@ -75,21 +75,22 @@ class UniversalSocket {
       } catch (e) {}
     }
 
-    this.currentRoomCode = roomCode;
-    let wsUrl = this.baseUrl;
-    if (wsUrl.startsWith('http://')) wsUrl = wsUrl.replace('http://', 'ws://');
-    if (wsUrl.startsWith('https://')) wsUrl = wsUrl.replace('https://', 'wss://');
-    wsUrl = wsUrl.replace(/\/$/, '') + `/ws?room=${encodeURIComponent(roomCode)}`;
+    const normalizedRoom = (roomCode || 'global').toLowerCase().trim();
+    this.currentRoomCode = normalizedRoom;
+
+    let wsUrl = this.baseUrl
+      .replace(/^http:\/\//i, 'ws://')
+      .replace(/^https:\/\//i, 'wss://');
+
+    if (!wsUrl.endsWith('/ws')) {
+      wsUrl += (wsUrl.includes('?') ? '&' : '?') + `room=${encodeURIComponent(normalizedRoom)}`;
+    }
 
     try {
-      console.log(`[Connecting to Worker WS]: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log(`[Worker WS Connected to room: ${roomCode}]`);
         if (onOpenCallback) onOpenCallback();
-
-        // Flush any queued messages
         while (this.messageQueue.length > 0) {
           const item = this.messageQueue.shift();
           this.ws.send(item);
@@ -103,12 +104,12 @@ class UniversalSocket {
             const cb = this.pendingAcks.get(msg.ackId);
             this.pendingAcks.delete(msg.ackId);
             cb(msg.response);
-          } else if (msg.event) {
-            const handlers = this.listeners.get(msg.event) || [];
+          } else if (msg.event && this.listeners.has(msg.event)) {
+            const handlers = this.listeners.get(msg.event);
             handlers.forEach(fn => fn(msg.data));
           }
         } catch (e) {
-          console.error('Error parsing WS message:', e);
+          console.error('[Worker WS] Message parse error:', e);
         }
       };
 
@@ -157,7 +158,7 @@ class UniversalSocket {
 
     // 1. Create Room: generate code and connect to that DO room
     if (event === 'create_room') {
-      const code = data.roomCode || generateClientRoomCode();
+      const code = (data.roomCode || generateClientRoomCode()).toLowerCase().trim();
       const sendPayload = JSON.stringify({ event, data: { ...data, roomCode: code }, ackId });
 
       this.initWs(code, () => {
@@ -170,7 +171,7 @@ class UniversalSocket {
 
     // 2. Join Room: connect to that DO room and join
     if (event === 'join_room') {
-      const code = (data.roomCode || '').toUpperCase().trim();
+      const code = (data.roomCode || '').toLowerCase().trim();
       const sendPayload = JSON.stringify({ event, data: { ...data, roomCode: code }, ackId });
 
       this.initWs(code, () => {

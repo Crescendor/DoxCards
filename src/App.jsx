@@ -83,7 +83,7 @@ export default function App() {
       } else if (res.room) {
         setCurrentRoom(res.room);
         setGameState(null);
-        window.history.pushState({}, '', `?room=${res.room.code}`);
+        window.history.pushState({}, '', `?room=${res.room.code.toLowerCase()}`);
       }
     });
   };
@@ -95,20 +95,20 @@ export default function App() {
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-      setError('Sunucuya bağlanılamadı. Lütfen oda kodunu ve internet bağlantınızı kontrol edin.');
+      setError('sunucuya bağlanılamadı. lütfen oda kodunu ve internet bağlantınızı kontrol edin.');
     }, 6000);
 
-    socket.emit('join_room', { roomCode, player }, (res) => {
+    socket.emit('join_room', { roomCode: (roomCode || '').toLowerCase().trim(), player }, (res) => {
       clearTimeout(timer);
       setIsLoading(false);
       if (!res) {
-        setError('Sunucudan yanıt alınamadı.');
+        setError('sunucudan yanıt alınamadı.');
       } else if (res.error) {
         setError(res.error);
       } else if (res.room) {
         setCurrentRoom(res.room);
         setGameState(null);
-        window.history.pushState({}, '', `?room=${res.room.code}`);
+        window.history.pushState({}, '', `?room=${res.room.code.toLowerCase()}`);
       }
     });
   };

@@ -41,7 +41,7 @@ export default function LandingPage({
 }) {
   const urlRoomCode = new URLSearchParams(window.location.search).get('room') || '';
   const [viewMode, setViewMode] = useState(urlRoomCode ? 'join' : 'menu'); // 'menu' | 'create' | 'join'
-  const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode.toUpperCase());
+  const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode.toLowerCase());
   const [targetScore, setTargetScore] = useState(3);
   const [discordUser, setDiscordUser] = useState(getDiscordUser());
   const [useDiscordName, setUseDiscordName] = useState(true);
@@ -103,7 +103,7 @@ export default function LandingPage({
     e.preventDefault();
     if (!player.name.trim() || !roomCodeInput.trim()) return;
     sounds.playClick();
-    onJoinRoom(roomCodeInput.trim().toUpperCase());
+    onJoinRoom(roomCodeInput.trim().toLowerCase());
   };
 
   const activeAvatar = player.avatar || discordUser?.avatarUrl || defaultAvatarImg;
@@ -465,8 +465,8 @@ export default function LandingPage({
               <input
                 type="text"
                 value={roomCodeInput}
-                onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
-                placeholder="ÖRN: RF7K2"
+                onChange={(e) => setRoomCodeInput(e.target.value.toLowerCase())}
+                placeholder="örn: rf7k2"
                 maxLength={5}
                 className="form-input room-code-input"
                 required
