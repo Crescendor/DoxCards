@@ -660,9 +660,22 @@ export class GameRoomDO {
           }
         }
 
+        // Update Player Profile (e.g. Custom Sounds, Avatar, Name)
+        else if (evt === 'update_player_profile') {
+          const { playerId: pId, customSounds, avatar, name } = data;
+          if (!this.room) return;
+          const p = this.room.players.find(pl => pl.id === pId);
+          if (p) {
+            if (customSounds !== undefined) p.customSounds = customSounds;
+            if (avatar !== undefined) p.avatar = avatar;
+            if (name) p.name = (name || '').slice(0, 19);
+            this.broadcastRoomUpdate();
+          }
+        }
+
         // 6. Place Single White Card (Immediate visibility on table for all players)
         else if (evt === 'place_white_card') {
-          const { playerId: pId, cardId, customText } = data;
+          const { playerId: pId, cardId, customText, customSounds } = data;
           if (!this.room || !this.room.game) return;
 
           const res = this.room.game.placeSingleWhiteCard(pId, cardId, customText);
@@ -672,11 +685,16 @@ export class GameRoomDO {
           }
 
           const actingPlayer = this.room.players.find(p => p.id === pId);
+          if (customSounds && actingPlayer) {
+            actingPlayer.customSounds = customSounds;
+          }
+          const finalSounds = customSounds || actingPlayer?.customSounds || null;
+
           this.broadcast('play_sound_event', {
             type: 'white_card',
             playerId: pId,
             playerName: actingPlayer?.name || 'oyuncu',
-            customSounds: actingPlayer?.customSounds || null
+            customSounds: finalSounds
           });
 
           this.broadcastGameState();
@@ -686,7 +704,7 @@ export class GameRoomDO {
 
         // Submit Perks (Batch 2 White Cards fallback)
         else if (evt === 'submit_perks') {
-          const { playerId: pId, cardIds, customTexts } = data;
+          const { playerId: pId, cardIds, customTexts, customSounds } = data;
           if (!this.room || !this.room.game) return;
 
           const res = this.room.game.submitPerks(pId, cardIds, customTexts);
@@ -696,11 +714,16 @@ export class GameRoomDO {
           }
 
           const actingPlayer = this.room.players.find(p => p.id === pId);
+          if (customSounds && actingPlayer) {
+            actingPlayer.customSounds = customSounds;
+          }
+          const finalSounds = customSounds || actingPlayer?.customSounds || null;
+
           this.broadcast('play_sound_event', {
             type: 'white_card',
             playerId: pId,
             playerName: actingPlayer?.name || 'oyuncu',
-            customSounds: actingPlayer?.customSounds || null
+            customSounds: finalSounds
           });
 
           this.broadcastGameState();
@@ -710,7 +733,7 @@ export class GameRoomDO {
 
         // 7. Submit Sabotage (Matchmaker 1 Red Flag Card)
         else if (evt === 'submit_sabotage') {
-          const { playerId: pId, cardId, customText } = data;
+          const { playerId: pId, cardId, customText, customSounds } = data;
           if (!this.room || !this.room.game) return;
 
           const res = this.room.game.submitSabotage(pId, cardId, this.room.players, customText);
@@ -720,11 +743,16 @@ export class GameRoomDO {
           }
 
           const actingPlayer = this.room.players.find(p => p.id === pId);
+          if (customSounds && actingPlayer) {
+            actingPlayer.customSounds = customSounds;
+          }
+          const finalSounds = customSounds || actingPlayer?.customSounds || null;
+
           this.broadcast('play_sound_event', {
             type: 'red_card',
             playerId: pId,
             playerName: actingPlayer?.name || 'oyuncu',
-            customSounds: actingPlayer?.customSounds || null
+            customSounds: finalSounds
           });
 
           this.broadcastGameState();
@@ -736,6 +764,7 @@ export class GameRoomDO {
         else if (evt === 'bekar_select_winner' || evt === 'select_winner') {
           const singlePlayerId = data.singlePlayerId || data.playerId;
           const winningMatchmakerId = data.winningMatchmakerId || data.winnerMatchmakerId || data.matchmakerId;
+          const winnerCustomSounds = data.winnerCustomSounds || null;
           if (!this.room || !this.room.game) return;
 
           const res = this.room.game.selectWinner(singlePlayerId, winningMatchmakerId, this.room.players);
@@ -745,11 +774,16 @@ export class GameRoomDO {
           }
 
           const winnerPlayer = this.room.players.find(p => p.id === winningMatchmakerId);
+          if (winnerCustomSounds && winnerPlayer) {
+            winnerPlayer.customSounds = winnerCustomSounds;
+          }
+          const finalSounds = winnerCustomSounds || winnerPlayer?.customSounds || null;
+
           this.broadcast('play_sound_event', {
             type: 'game_win',
             playerId: winningMatchmakerId,
             playerName: winnerPlayer?.name || 'kazanan',
-            customSounds: winnerPlayer?.customSounds || null
+            customSounds: finalSounds
           });
 
           this.broadcastGameState();

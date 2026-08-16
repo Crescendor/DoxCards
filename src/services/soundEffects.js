@@ -207,6 +207,19 @@ class SoundEngine {
     osc.stop(now + 0.12);
   }
 
+  extractYouTubeId(url) {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url.trim();
+  }
+
+  setCustomSounds(list) {
+    if (Array.isArray(list)) {
+      this.customSoundsList = list;
+    }
+  }
+
   // Play YouTube Clip Audio with Start / End seconds
   playYouTubeAudio(ytId, startSec = 0, endSec = 0) {
     if (this.muted || this.customMuted || !ytId) return;
@@ -217,12 +230,13 @@ class SoundEngine {
         ytContainer = document.createElement('div');
         ytContainer.id = 'doxcards-yt-audio-container';
         ytContainer.style.position = 'fixed';
-        ytContainer.style.top = '-9999px';
-        ytContainer.style.left = '-9999px';
-        ytContainer.style.width = '1px';
-        ytContainer.style.height = '1px';
-        ytContainer.style.opacity = '0';
+        ytContainer.style.bottom = '0px';
+        ytContainer.style.right = '0px';
+        ytContainer.style.width = '200px';
+        ytContainer.style.height = '200px';
+        ytContainer.style.opacity = '0.001';
         ytContainer.style.pointerEvents = 'none';
+        ytContainer.style.zIndex = '-9999';
         document.body.appendChild(ytContainer);
       }
 
@@ -232,10 +246,11 @@ class SoundEngine {
 
       // Create iframe embed with autoplay
       const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&start=${Math.floor(start)}&end=${Math.ceil(end)}&controls=0&disablekb=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
-      iframe.allow = 'autoplay';
-      iframe.style.width = '1px';
-      iframe.style.height = '1px';
+      iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&playsinline=1&controls=0&disablekb=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&start=${Math.floor(start)}&end=${Math.ceil(end)}`;
+      iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
 
       ytContainer.innerHTML = '';
       ytContainer.appendChild(iframe);
@@ -253,8 +268,9 @@ class SoundEngine {
   playCustomAudio(soundItem) {
     if (this.muted || this.customMuted || !soundItem) return;
 
-    if (soundItem.type === 'youtube' && soundItem.ytId) {
-      this.playYouTubeAudio(soundItem.ytId, soundItem.startSec, soundItem.endSec);
+    const ytId = soundItem.ytId || (soundItem.type === 'youtube' ? this.extractYouTubeId(soundItem.url) : '');
+    if ((soundItem.type === 'youtube' || ytId) && ytId) {
+      this.playYouTubeAudio(ytId, soundItem.startSec, soundItem.endSec);
       return;
     }
 
@@ -268,11 +284,28 @@ class SoundEngine {
       const start = Number(soundItem.startSec) || 0;
       const end = Number(soundItem.endSec) || 0;
 
-      if (start > 0) {
-        audio.currentTime = start;
-      }
+      let isPlaying = false;
+      const handleCanPlay = () => {
+        if (!isPlaying) {
+          isPlaying = true;
+          if (start > 0) {
+            try { audio.currentTime = start; } catch(e) {}
+          }
+          audio.play().catch(() => {});
+        }
+      };
 
-      audio.play().catch(() => {});
+      audio.addEventListener('canplay', handleCanPlay, { once: true });
+      audio.addEventListener('loadedmetadata', () => {
+        if (start > 0) {
+          try { audio.currentTime = start; } catch(e) {}
+        }
+      }, { once: true });
+
+      if (start > 0) {
+        try { audio.currentTime = start; } catch(e) {}
+      }
+      audio.play().then(() => { isPlaying = true; }).catch(() => {});
 
       if (end > start) {
         const durationMs = (end - start) * 1000;
@@ -292,6 +325,10 @@ class SoundEngine {
   playTriggerSound(triggerCategory, playerObj = null, customSoundsList = []) {
     if (this.muted) return;
 
+    const activeSounds = (Array.isArray(customSoundsList) && customSoundsList.length > 0)
+      ? customSoundsList
+      : (this.customSoundsList || []);
+
     // 1. Check if the player has a custom sound chosen in profile
     const customSoundId = playerObj?.customSounds?.[
       triggerCategory === 'white_card' ? 'whiteCardSoundId' :
@@ -299,8 +336,8 @@ class SoundEngine {
       triggerCategory === 'game_win' ? 'gameWinSoundId' : ''
     ];
 
-    if (customSoundId && Array.isArray(customSoundsList)) {
-      const matched = customSoundsList.find(s => s.id === customSoundId);
+    if (customSoundId && Array.isArray(activeSounds)) {
+      const matched = activeSounds.find(s => s.id === customSoundId);
       if (matched) {
         this.playCustomAudio(matched);
         return;
@@ -308,9 +345,9 @@ class SoundEngine {
     }
 
     // 2. Check if there is an admin default sound for this category
-    if (Array.isArray(customSoundsList)) {
-      const defaultSound = customSoundsList.find(s => s.category === triggerCategory && s.isDefault);
-      if (defaultSound) {
+    if (Array.isArray(activeSounds)) {
+      const defaultSound = activeSounds.find(s => s.category === triggerCategory && s.isDefault);
+      if (defaultSound && (defaultSound.url || defaultSound.ytId)) {
         this.playCustomAudio(defaultSound);
         return;
       }

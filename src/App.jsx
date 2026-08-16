@@ -26,7 +26,10 @@ export default function App() {
   // Sync Discord user profile & App Config on mount
   useEffect(() => {
     fetchAppConfig().then(cfg => {
-      if (cfg) setAppConfig(cfg);
+      if (cfg) {
+        setAppConfig(cfg);
+        if (cfg.customSounds) sounds.setCustomSounds(cfg.customSounds);
+      }
     });
 
     const dUser = getDiscordUser();
@@ -248,36 +251,42 @@ export default function App() {
   // Place Single White Card (Instant visibility on table)
   const handlePlaceWhiteCard = (cardId, customText = null) => {
     if (!currentRoom) return;
-    sounds.playTriggerSound('white_card', userProfile || player, appConfig?.customSounds || []);
+    const activeCustomSounds = userProfile?.customSounds || player?.customSounds || null;
+    sounds.playTriggerSound('white_card', { customSounds: activeCustomSounds }, appConfig?.customSounds || []);
     socket.emit('place_white_card', {
       roomCode: currentRoom.code,
       playerId: player.id,
       cardId,
-      customText
+      customText,
+      customSounds: activeCustomSounds
     });
   };
 
   // Submit Perks (Batch fallback)
   const handleSubmitPerks = (cardIds, customTexts = {}) => {
     if (!currentRoom) return;
-    sounds.playTriggerSound('white_card', userProfile || player, appConfig?.customSounds || []);
+    const activeCustomSounds = userProfile?.customSounds || player?.customSounds || null;
+    sounds.playTriggerSound('white_card', { customSounds: activeCustomSounds }, appConfig?.customSounds || []);
     socket.emit('submit_perks', {
       roomCode: currentRoom.code,
       playerId: player.id,
       cardIds,
-      customTexts
+      customTexts,
+      customSounds: activeCustomSounds
     });
   };
 
   // Submit Sabotage (Matchmaker 1 Red Flag Card)
   const handleSubmitSabotage = (cardId, customText = null) => {
     if (!currentRoom) return;
-    sounds.playTriggerSound('red_card', userProfile || player, appConfig?.customSounds || []);
+    const activeCustomSounds = userProfile?.customSounds || player?.customSounds || null;
+    sounds.playTriggerSound('red_card', { customSounds: activeCustomSounds }, appConfig?.customSounds || []);
     socket.emit('submit_sabotage', {
       roomCode: currentRoom.code,
       playerId: player.id,
       cardId,
-      customText
+      customText,
+      customSounds: activeCustomSounds
     });
   };
 
@@ -285,12 +294,14 @@ export default function App() {
   const handleSelectWinner = (winnerMatchmakerId) => {
     if (!currentRoom) return;
     const winningPlayer = currentRoom?.players?.find(p => p.id === winnerMatchmakerId);
-    sounds.playTriggerSound('game_win', winningPlayer || userProfile || player, appConfig?.customSounds || []);
+    const winCustomSounds = winningPlayer?.customSounds || null;
+    sounds.playTriggerSound('game_win', { customSounds: winCustomSounds }, appConfig?.customSounds || []);
     socket.emit('select_winner', {
       roomCode: currentRoom.code,
       playerId: player.id,
       singlePlayerId: player.id,
-      winningMatchmakerId: winnerMatchmakerId
+      winningMatchmakerId: winnerMatchmakerId,
+      winnerCustomSounds: winCustomSounds
     });
   };
 

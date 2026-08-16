@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Volume2, Play, Square, Save, X, Sparkles, Crown, ShieldCheck } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import { fetchAppConfig, updateUser, saveLocalUserProfile } from '../services/userService';
+import { socket } from '../services/socket';
 
 export default function SoundSettingsModal({
   isOpen,
@@ -22,6 +23,7 @@ export default function SoundSettingsModal({
       fetchAppConfig().then(cfg => {
         if (cfg && Array.isArray(cfg.customSounds)) {
           setAppSounds(cfg.customSounds);
+          sounds.setCustomSounds(cfg.customSounds);
         }
       });
       setSelectedWhiteSound(userProfile?.customSounds?.whiteCardSoundId || '');
@@ -64,6 +66,13 @@ export default function SoundSettingsModal({
     };
     saveLocalUserProfile(optimisticUser);
     if (onUpdateProfile) onUpdateProfile(optimisticUser);
+
+    if (socket) {
+      socket.emit('update_player_profile', {
+        playerId: userProfile.id,
+        customSounds: customSounds
+      });
+    }
 
     const updated = await updateUser(userProfile.id, {
       customSounds: customSounds
