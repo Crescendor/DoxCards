@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
+import { ADMIN_DISCORD_ID } from './AdminPageView';
+import { getDiscordUser } from '../services/discordAuth';
 
 const MAX_SLOTS = 6;
 
@@ -18,6 +20,7 @@ export default function LobbyView({
   const [isReadyHovered, setIsReadyHovered] = useState(false);
   const isHost = room.hostId === player.id;
   const players = room.players || [];
+  const discordUser = getDiscordUser();
 
   const handleCopyLink = () => {
     sounds.playClick();
@@ -129,15 +132,36 @@ export default function LobbyView({
                         {slotPlayer.name} {isMe && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>(sen)</span>}
                       </div>
 
-                      {slotPlayer.isHost ? (
-                        <span className="badge-host">
-                          <Crown size={11} /> oda kurucusu
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          çöpçatan
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                        {/* Admin Badge */}
+                        {(slotPlayer.discordId === ADMIN_DISCORD_ID || slotPlayer.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && (
+                          <span style={{
+                            background: 'rgba(239, 68, 68, 0.2)',
+                            border: '1px solid rgba(239, 68, 68, 0.5)',
+                            color: '#f87171',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            padding: '1px 7px',
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            lineHeight: 1.4
+                          }}>
+                            <ShieldCheck size={11} /> admin
+                          </span>
+                        )}
+
+                        {slotPlayer.isHost ? (
+                          <span className="badge-host">
+                            <Crown size={11} /> oda kurucusu
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            çöpçatan
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

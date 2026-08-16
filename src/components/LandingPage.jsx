@@ -56,7 +56,13 @@ export default function LandingPage({
         onUpdatePlayer({
           ...player,
           name: user.displayName.toLowerCase(),
-          avatar: user.avatarUrl
+          avatar: user.avatarUrl,
+          discordId: user.id
+        });
+      } else if (discordUser && !player.discordId) {
+        onUpdatePlayer({
+          ...player,
+          discordId: discordUser.id
         });
       }
     });
@@ -253,7 +259,7 @@ export default function LandingPage({
                   fontWeight: 700
                 }}
               >
-                <ShieldCheck size={16} /> admin paneli (tam ekran)
+                <ShieldCheck size={16} /> admin paneli
               </button>
             )}
 

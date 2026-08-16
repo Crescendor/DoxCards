@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Copy, Check, Crown, UserX, ChevronLeft, LogOut, RotateCcw } from 'lucide-react';
+import { Copy, Check, Crown, UserX, ChevronLeft, LogOut, RotateCcw, ShieldCheck } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
+import { ADMIN_DISCORD_ID } from './AdminPageView';
+import { getDiscordUser } from '../services/discordAuth';
 
 export default function RightSidebarDrawer({
   room,
@@ -15,6 +17,7 @@ export default function RightSidebarDrawer({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const discordUser = getDiscordUser();
 
   const roomCode = room?.code || '';
   const players = room?.players || [];
@@ -213,6 +216,22 @@ export default function RightSidebarDrawer({
                     <span style={{ fontWeight: 600, fontSize: '0.86rem', textTransform: 'lowercase' }}>
                       {p.name} {isMe ? '(sen)' : ''}
                     </span>
+                    {(p.discordId === ADMIN_DISCORD_ID || p.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && (
+                      <span style={{
+                        background: 'rgba(239, 68, 68, 0.2)',
+                        border: '1px solid rgba(239, 68, 68, 0.5)',
+                        color: '#f87171',
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px'
+                      }}>
+                        <ShieldCheck size={9} /> admin
+                      </span>
+                    )}
                     {p.isHost && <Crown size={14} color="#fbbf24" title="Oda Kurucusu" />}
                     {isSingle && !p.isHost && <span style={{ fontSize: '0.7rem' }}>👑</span>}
                   </div>
