@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Target, Hourglass, ArrowRight, ChevronRight } from 'lucide-react';
+import { Target, Hourglass, ArrowRight, ChevronRight, Crown } from 'lucide-react';
 import TabletopView from './TabletopView';
 import GameOverModal from './GameOverModal';
 import { sounds } from '../services/soundEffects';
@@ -79,7 +79,7 @@ export default function GameView({
         zIndex: 100,
         boxShadow: '0 4px 16px rgba(0, 0, 0, 0.7)'
       }}>
-        {/* Left: Round, Target Score & Phase */}
+        {/* Left: Round Count / Round Limit & Phase */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{
             background: '#FF0000',
@@ -90,11 +90,7 @@ export default function GameView({
             borderRadius: '9999px',
             textTransform: 'lowercase'
           }}>
-            tur #{currentRound || 1}
-          </span>
-
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-            hedef: <b style={{ color: '#ffffff' }}>{targetScore} puan</b>
+            tur #{currentRound || 1} / {gameState?.roundLimit || gameState?.targetScore || 6}
           </span>
 
           <span style={{

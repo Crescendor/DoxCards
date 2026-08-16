@@ -86,7 +86,7 @@ export default function Navbar({
             />
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.82rem', fontWeight: 700, textTransform: 'lowercase' }}>
                   {userProfile.displayName || userProfile.username}
                 </span>
@@ -106,19 +106,19 @@ export default function Navbar({
                     <Sparkles size={9} /> Premium
                   </span>
                 )}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  color: '#fbbf24',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px'
-                }}>
-                  <Star size={10} fill="#fbbf24" color="#fbbf24" /> {userProfile.totalScore || 0} p
-                </span>
+                {(userProfile.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(t => (
+                  <span key={t} style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#e2e8f0',
+                    padding: '1px 5px',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    borderRadius: '4px'
+                  }}>
+                    {t}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -131,7 +131,7 @@ export default function Navbar({
               position: 'absolute',
               top: 'calc(100% + 8px)',
               right: 0,
-              width: '260px',
+              width: '270px',
               background: '#1c1c1c',
               border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '16px',
@@ -158,18 +158,41 @@ export default function Navbar({
                 </div>
               </div>
 
+              {/* Roles & Tags Section */}
               <div style={{
                 background: '#242424',
                 padding: '10px 12px',
                 borderRadius: '10px',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+                flexDirection: 'column',
+                gap: '6px'
               }}>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>toplam kazanılan puan:</span>
-                <span style={{ fontSize: '1rem', fontWeight: 900, color: '#fbbf24' }}>
-                  ⭐ {userProfile.totalScore || 0} p
-                </span>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8' }}>rollerim & taglerim:</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {userProfile.tags && userProfile.tags.length > 0 ? (
+                    userProfile.tags.map(t => (
+                      <span key={t} className={t === 'admin' ? 'badge-admin' : t === 'VIP' ? 'badge-vip' : t === 'Premium' ? 'badge-premium' : ''} style={{
+                        background: t === 'admin' || t === 'VIP' || t === 'Premium' ? undefined : 'rgba(255, 255, 255, 0.1)',
+                        color: t === 'admin' || t === 'VIP' || t === 'Premium' ? undefined : '#e2e8f0',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        padding: '2px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {t === 'admin' && <ShieldCheck size={10} />}
+                        {t === 'VIP' && <Crown size={10} />}
+                        {t === 'Premium' && <Sparkles size={10} />}
+                        {t}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>özel tag bulunmuyor</span>
+                  )}
+                </div>
               </div>
 
               <div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers, Lock, Hourglass } from 'lucide-react';
+import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers, Lock, Hourglass, Sparkles } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 import { ADMIN_DISCORD_ID } from './AdminPageView';
@@ -187,7 +187,7 @@ export default function LobbyView({
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        {isBot ? (
+                        {isBot && (
                           <span style={{
                             background: 'rgba(234, 179, 8, 0.15)',
                             border: '1px solid rgba(234, 179, 8, 0.45)',
@@ -204,24 +204,56 @@ export default function LobbyView({
                           }}>
                             🤖 bot
                           </span>
-                        ) : (slotPlayer.discordId === ADMIN_DISCORD_ID || slotPlayer.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) ? (
-                          <span style={{
-                            background: 'rgba(239, 68, 68, 0.15)',
-                            border: '1px solid rgba(239, 68, 68, 0.45)',
-                            color: '#f87171',
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            height: '22px',
-                            padding: '0 8px',
-                            borderRadius: '9999px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            boxSizing: 'border-box'
-                          }}>
+                        )}
+
+                        {/* Render all custom & predefined tags */}
+                        {Array.isArray(slotPlayer.tags) && slotPlayer.tags.map(t => {
+                          if (t === 'admin') {
+                            return (
+                              <span key={t} className="badge-admin" style={{ height: '22px', padding: '0 8px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <ShieldCheck size={11} /> admin
+                              </span>
+                            );
+                          }
+                          if (t === 'VIP') {
+                            return (
+                              <span key={t} className="badge-vip" style={{ height: '22px', padding: '0 8px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <Crown size={11} /> VIP
+                              </span>
+                            );
+                          }
+                          if (t === 'Premium') {
+                            return (
+                              <span key={t} className="badge-premium" style={{ height: '22px', padding: '0 8px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <Sparkles size={11} /> Premium
+                              </span>
+                            );
+                          }
+                          return (
+                            <span key={t} style={{
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              color: '#e2e8f0',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              height: '22px',
+                              padding: '0 8px',
+                              borderRadius: '9999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {t}
+                            </span>
+                          );
+                        })}
+
+                        {/* Admin fallback badge if ID matches and tag not already mapped */}
+                        {!slotPlayer.tags?.includes('admin') && (slotPlayer.discordId === ADMIN_DISCORD_ID || slotPlayer.id === ADMIN_DISCORD_ID || (isMe && discordUser?.id === ADMIN_DISCORD_ID)) && !isBot && (
+                          <span className="badge-admin" style={{ height: '22px', padding: '0 8px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <ShieldCheck size={11} /> admin
                           </span>
-                        ) : null}
+                        )}
 
                         {slotPlayer.isHost ? (
                           <span style={{
@@ -361,16 +393,16 @@ export default function LobbyView({
           </h3>
 
           <div>
-            <label className="form-label">hedef puan</label>
+            <label className="form-label">tur limiti</label>
             <select
-              value={room.settings?.targetScore || 3}
-              onChange={(e) => isHost && onUpdateSettings({ targetScore: Number(e.target.value) })}
+              value={room.settings?.roundLimit || (room.settings?.targetScore ? (room.settings.targetScore <= 3 ? 6 : room.settings.targetScore <= 5 ? 12 : 18) : 6)}
+              onChange={(e) => isHost && onUpdateSettings({ roundLimit: Number(e.target.value), targetScore: Number(e.target.value) })}
               disabled={!isHost}
               className="select-box"
             >
-              <option value={3}>3 puan (hızlı)</option>
-              <option value={5}>5 puan (standart)</option>
-              <option value={7}>7 puan (uzun)</option>
+              <option value={6}>6 tur (hızlı)</option>
+              <option value={12}>12 tur (standart)</option>
+              <option value={18}>18 tur (uzun)</option>
             </select>
           </div>
 

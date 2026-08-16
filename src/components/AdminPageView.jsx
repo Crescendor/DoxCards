@@ -2266,40 +2266,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                           </div>
                         </div>
 
-                        {/* User Total Score Input */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{
-                            background: '#242424',
-                            border: '1px solid rgba(251, 191, 36, 0.3)',
-                            padding: '6px 14px',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}>
-                            <Star size={16} fill="#fbbf24" color="#fbbf24" />
-                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>toplam puan:</span>
-                            <input
-                              type="number"
-                              value={user.totalScore !== undefined ? user.totalScore : 0}
-                              onChange={(e) => {
-                                const val = Number(e.target.value);
-                                setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, totalScore: val } : u));
-                              }}
-                              style={{
-                                width: '60px',
-                                background: '#181818',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                color: '#fbbf24',
-                                fontWeight: 800,
-                                fontSize: '0.92rem',
-                                borderRadius: '6px',
-                                padding: '3px 6px',
-                                textAlign: 'center'
-                              }}
-                            />
-                          </div>
-
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <button
                             onClick={() => handleSaveUser(user)}
                             disabled={isSaving}

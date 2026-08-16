@@ -14,7 +14,8 @@ export const PHASES = {
 export class GameEngine {
   constructor(roomCode, settings = {}) {
     this.roomCode = roomCode;
-    this.targetScore = settings.targetScore || 3;
+    this.roundLimit = Number(settings.roundLimit) || (settings.targetScore && settings.targetScore > 7 ? Number(settings.targetScore) : (settings.targetScore <= 3 ? 6 : settings.targetScore <= 5 ? 12 : 18)) || 6;
+    this.targetScore = this.roundLimit;
     this.deckType = settings.deckType || 'all';
     this.selectedDecks = settings.selectedDecks || null;
 
@@ -347,7 +348,7 @@ export class GameEngine {
       this.stats[winningMatchmakerId].wins++;
     }
 
-    const wonGame = this.scores[winningMatchmakerId] >= this.targetScore;
+    const wonGame = this.currentRound >= this.roundLimit;
     if (wonGame) {
       this.phase = PHASES.GAME_OVER;
     } else {
@@ -413,7 +414,8 @@ export class GameEngine {
     return {
       phase: this.phase,
       currentRound: this.currentRound,
-      targetScore: this.targetScore,
+      roundLimit: this.roundLimit,
+      targetScore: this.roundLimit,
       singlePlayerId: this.singlePlayerId,
       singlePlayerName: singlePlayer ? singlePlayer.name : '',
       isSingle: forPlayerId === this.singlePlayerId,

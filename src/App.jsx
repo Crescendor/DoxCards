@@ -106,17 +106,28 @@ export default function App() {
     };
   }, [currentRoom, appConfig]);
 
+  // Get enriched player with live profile data & tags
+  const getEnrichedPlayer = () => ({
+    ...player,
+    tags: userProfile?.tags || (userProfile?.id === '269639754675519489' ? ['admin'] : (player.tags || [])),
+    discordId: userProfile?.id || player.discordId,
+    avatar: userProfile?.avatar || player.avatar,
+    customSounds: userProfile?.customSounds || player.customSounds || null
+  });
+
   // Create Room
   const handleCreateRoom = (settings) => {
     setError(null);
     setIsLoading(true);
+
+    const activePlayer = getEnrichedPlayer();
 
     const timer = setTimeout(() => {
       setIsLoading(false);
       setError('Sunucuya bağlanılamadı. Lütfen WebSocket sunucusunun aktif olduğunu kontrol edin.');
     }, 6000);
 
-    socket.emit('create_room', { player, settings }, (res) => {
+    socket.emit('create_room', { player: activePlayer, settings }, (res) => {
       clearTimeout(timer);
       setIsLoading(false);
       if (!res) {
@@ -136,12 +147,14 @@ export default function App() {
     setError(null);
     setIsLoading(true);
 
+    const activePlayer = getEnrichedPlayer();
+
     const timer = setTimeout(() => {
       setIsLoading(false);
       setError('sunucuya bağlanılamadı. lütfen oda kodunu ve internet bağlantınızı kontrol edin.');
     }, 6000);
 
-    socket.emit('join_room', { roomCode: (roomCode || '').toLowerCase().trim(), player }, (res) => {
+    socket.emit('join_room', { roomCode: (roomCode || '').toLowerCase().trim(), player: activePlayer }, (res) => {
       clearTimeout(timer);
       setIsLoading(false);
       if (!res) {
