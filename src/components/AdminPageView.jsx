@@ -118,6 +118,7 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [usersSearch, setUsersSearch] = useState('');
   const [editingUserTags, setEditingUserTags] = useState({}); // userId -> custom tag input text
   const [userSavingId, setUserSavingId] = useState(null);
+  const [isUsersRefreshing, setIsUsersRefreshing] = useState(false);
 
   // Global Config Section State
   const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
