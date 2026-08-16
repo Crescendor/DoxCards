@@ -338,7 +338,7 @@ export default function AdminPageView({ onBack, discordUser }) {
 
   // Delete Entire Category
   const handleDeleteCategory = (section, categoryName) => {
-    if (window.confirm(`"${categoryName}" kategorisini ve içerisindeki tüm kartları silmek istediğinize emin misiniz?`)) {
+    if (window.confirm(`"${categoryName}" destesini ve içerisindeki tüm kartları silmek istediğinize emin misiniz?`)) {
       sounds.playClick();
       const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
       if (updatedRaw[section] && updatedRaw[section][categoryName]) {
@@ -707,7 +707,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
               }}>
                 <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 600, marginBottom: '4px' }}>
-                  kategori sayısı
+                  toplam deste sayısı
                 </div>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fbbf24' }}>
                   {allCategories.length}
@@ -765,7 +765,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                   transition: 'background 0.2s'
                 }}
               >
-                <FolderEdit size={18} /> kategorileri düzenle ({allCategories.length})
+                <FolderEdit size={18} /> desteleri düzenle ({allCategories.length})
               </button>
 
               <button
@@ -861,7 +861,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                     className="select-box"
                     style={{ width: '220px' }}
                   >
-                    <option value="all">tüm kategoriler ({allCategories.length})</option>
+                    <option value="all">tüm desteler ({allCategories.length})</option>
                     {allCategories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -1041,7 +1041,7 @@ export default function AdminPageView({ onBack, discordUser }) {
               </div>
             )}
 
-            {/* TAB 2: KATEGORİ DÜZENLEME */}
+            {/* TAB 2: DESTE DÜZENLEME */}
             {activeTab === 'categories' && (
               <div style={{
                 background: '#1c1c1c',
@@ -1054,18 +1054,18 @@ export default function AdminPageView({ onBack, discordUser }) {
               }}>
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>
-                    kategori yönetimi ve isim düzenleme
+                    deste yönetimi ve isim düzenleme
                   </h3>
                   <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
-                    destedeki kategorileri yeniden adlandırabilir veya tamamen silebilirsiniz.
+                    oyundaki desteleri ve paketleri yeniden adlandırabilir veya tamamen silebilirsiniz.
                   </p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  {/* Perks Categories */}
+                  {/* Perks Decks */}
                   <div style={{ background: '#242424', padding: '20px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <h4 style={{ color: '#ffffff', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Layers size={16} /> beyaz kart kategorileri ({perkCategories.length})
+                      <Layers size={16} /> beyaz kart desteleri ({perkCategories.length})
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {perkCategories.map(cat => (
@@ -1094,10 +1094,10 @@ export default function AdminPageView({ onBack, discordUser }) {
                     </div>
                   </div>
 
-                  {/* Red Flags Categories */}
+                  {/* Red Flags Decks */}
                   <div style={{ background: '#242424', padding: '20px', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                     <h4 style={{ color: '#f87171', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Layers size={16} /> kırmızı kart kategorileri ({redFlagCategories.length})
+                      <Layers size={16} /> kırmızı kart desteleri ({redFlagCategories.length})
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {redFlagCategories.map(cat => (
@@ -1139,7 +1139,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                     gap: '12px'
                   }}>
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                      "{renamingCategory.oldName}" kategorisinin yeni adını girin:
+                      "{renamingCategory.oldName}" destesinin yeni adını girin:
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <input
@@ -1217,7 +1217,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                   </div>
 
                   <div>
-                    <label className="form-label">kategori seç veya yeni oluştur</label>
+                    <label className="form-label">deste seç veya yeni oluştur</label>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <select
                         value={newCategory}
@@ -1231,7 +1231,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                       </select>
                       <input
                         type="text"
-                        placeholder="veya yeni kategori adı..."
+                        placeholder="veya yeni deste adı..."
                         value={customCategoryInput}
                         onChange={(e) => setCustomCategoryInput(e.target.value)}
                         className="form-input"
