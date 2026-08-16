@@ -28,7 +28,7 @@ export function saveLocalPlayer(player) {
 const RAW_URL = import.meta.env.VITE_SERVER_URL || (
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:3001'
-    : `${window.location.protocol}//${window.location.hostname}:3001`
+    : 'https://doxcards-server.burakpioneers.workers.dev'
 );
 
 // Hybrid Socket Adapter supporting both Cloudflare Worker WebSockets and Socket.IO
