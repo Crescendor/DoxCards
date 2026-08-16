@@ -8,10 +8,12 @@ import Navbar from './components/Navbar';
 import HowToPlayModal from './components/HowToPlayModal';
 import RightSidebarDrawer from './components/RightSidebarDrawer';
 import AdminPageView from './components/AdminPageView';
-import { getDiscordUser } from './services/discordAuth';
+import { getDiscordUser, logoutDiscord } from './services/discordAuth';
+import { syncUserProfile, getLocalUserProfile } from './services/userService';
 
 export default function App() {
   const [player, setPlayer] = useState(getLocalPlayer());
+  const [userProfile, setUserProfile] = useState(getLocalUserProfile());
   const [currentRoom, setCurrentRoom] = useState(null);
   const [gameState, setGameState] = useState(null);
   const [soundMuted, setSoundMuted] = useState(false);
@@ -20,10 +22,31 @@ export default function App() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Sync Discord user profile on mount
+  useEffect(() => {
+    const dUser = getDiscordUser();
+    if (dUser) {
+      syncUserProfile(dUser).then(profile => {
+        if (profile) setUserProfile(profile);
+      });
+    }
+  }, []);
+
   // Update persistent player
   const handleUpdatePlayer = (updated) => {
     setPlayer(updated);
     saveLocalPlayer(updated);
+  };
+
+  const handleLogout = () => {
+    logoutDiscord();
+    setUserProfile(null);
+    handleUpdatePlayer({
+      ...player,
+      avatar: null,
+      discordId: null
+    });
+    window.location.reload();
   };
 
   // Toggle Mute
@@ -254,6 +277,8 @@ export default function App() {
         onOpenHelp={() => setIsHelpOpen(true)}
         soundMuted={soundMuted}
         onToggleSound={handleToggleSound}
+        userProfile={userProfile}
+        onLogout={handleLogout}
       />
 
       {/* Main View Router */}

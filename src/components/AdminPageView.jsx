@@ -16,9 +16,17 @@ import {
   FolderEdit,
   PenTool,
   Sparkles,
-  Tag
+  Tag,
+  Users,
+  Sliders,
+  Crown,
+  Star,
+  UserCheck,
+  X,
+  RefreshCw
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
+import defaultAvatarImg from '../assets/default_avatar.png';
 import {
   getActiveDeck,
   saveActiveDeck,
@@ -27,6 +35,13 @@ import {
   parseRawDeck,
   DEFAULT_RAW_CARDS
 } from '../data/cardsData';
+import {
+  fetchAllUsers,
+  updateUser,
+  fetchAppConfig,
+  updateAppConfig,
+  DEFAULT_CONFIG
+} from '../services/userService';
 import { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
 
@@ -68,25 +83,18 @@ export default function AdminPageView({ onBack, discordUser }) {
     );
   }
 
-  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'add' | 'categories' | 'json'
+  // Main Section: 'cards' | 'users' | 'permissions'
+  const [mainNav, setMainNav] = useState('cards');
+
+  // Sub-tab inside Cards & Decks section: 'list' | 'add' | 'categories' | 'json'
+  const [activeTab, setActiveTab] = useState('list');
   const [deckState, setDeckState] = useState(getActiveDeck());
   const [jsonText, setJsonText] = useState(JSON.stringify(deckState.raw, null, 2));
   const [jsonError, setJsonError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
 
-  // Sync with live Cloudflare Database on mount
-  useEffect(() => {
-    setIsCloudSyncing(true);
-    syncDeckFromCloudflare().then(liveDeck => {
-      if (liveDeck && liveDeck.allCards.length > 0) {
-        setDeckState(liveDeck);
-      }
-      setIsCloudSyncing(false);
-    }).catch(() => setIsCloudSyncing(false));
-  }, []);
-
-  // Filter & Search state
+  // Filter & Search state in cards tab
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all'); // 'all' | 'perk' | 'redflag'
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -104,6 +112,35 @@ export default function AdminPageView({ onBack, discordUser }) {
   // Category Renaming State
   const [renamingCategory, setRenamingCategory] = useState(null); // { type: 'Perks'|'Red Flags', oldName: '' }
   const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
+
+  // Users Section State
+  const [usersList, setUsersList] = useState([]);
+  const [usersSearch, setUsersSearch] = useState('');
+  const [editingUserTags, setEditingUserTags] = useState({}); // userId -> custom tag input text
+  const [userSavingId, setUserSavingId] = useState(null);
+
+  // Global Config Section State
+  const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
+  const [configSaving, setConfigSaving] = useState(false);
+
+  // Sync deck & users from Cloudflare Database on mount
+  useEffect(() => {
+    setIsCloudSyncing(true);
+    syncDeckFromCloudflare().then(liveDeck => {
+      if (liveDeck && liveDeck.allCards.length > 0) {
+        setDeckState(liveDeck);
+      }
+      setIsCloudSyncing(false);
+    }).catch(() => setIsCloudSyncing(false));
+
+    fetchAllUsers().then(users => {
+      if (Array.isArray(users)) setUsersList(users);
+    });
+
+    fetchAppConfig().then(cfg => {
+      if (cfg) setAppConfig(cfg);
+    });
+  }, []);
 
   // Update JSON text when deckState changes
   useEffect(() => {
@@ -123,151 +160,139 @@ export default function AdminPageView({ onBack, discordUser }) {
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  // Handle Save JSON
+  // Save JSON
   const handleSaveJson = () => {
-    sounds.playClick();
-    setJsonError(null);
     try {
+      sounds.playClick();
       const parsed = JSON.parse(jsonText);
-      const parsedDeck = parseRawDeck(parsed);
-      if (parsedDeck.allCards.length === 0) {
-        throw new Error("JSON içerisinde 'perks'/'Perks' veya 'red_flags'/'Red Flags' kartları bulunmalıdır.");
+      const validated = parseRawDeck(parsed);
+      if (!validated.whiteCards.length || !validated.redCards.length) {
+        setJsonError('JSON geçerli bir kart destesi içermelidir (Perks ve Red Flags kategorileri gerekli).');
+        return;
       }
-      saveActiveDeck(parsedDeck.raw);
-      setDeckState(parsedDeck);
-      setJsonText(JSON.stringify(parsedDeck.raw, null, 2));
+      saveActiveDeck(validated.raw);
+      setDeckState(validated);
+      setJsonError(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
-    } catch (err) {
-      setJsonError(err.message || 'Geçersiz JSON formatı!');
+    } catch (e) {
+      setJsonError(`Geçersiz JSON formatı: ${e.message}`);
     }
   };
 
-  // Handle File Upload (.json)
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Reset to default
+  const handleResetToDefault = () => {
+    if (window.confirm('Tüm kartları orijinal varsayılan Türkçe desteye sıfırlamak istediğinize emin misiniz?')) {
+      sounds.playClick();
+      resetActiveDeck();
+      const def = parseRawDeck(DEFAULT_RAW_CARDS);
+      setDeckState(def);
+      setJsonText(JSON.stringify(def.raw, null, 2));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    }
+  };
 
+  // Export JSON file
+  const handleExportJson = () => {
+    sounds.playClick();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(deckState.raw, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "Red_Flags_Turkish_Custom.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Import JSON file
+  const handleImportJsonFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
     sounds.playClick();
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const text = event.target.result;
-        const parsed = JSON.parse(text);
-        const parsedDeck = parseRawDeck(parsed);
-        if (parsedDeck.allCards.length === 0) {
-          alert("Yüklenen JSON içerisinde 'perks'/'Perks' veya 'red_flags'/'Red Flags' kartları bulunamadı!");
+        const content = event.target.result;
+        const parsed = JSON.parse(content);
+        const validated = parseRawDeck(parsed);
+        if (!validated.whiteCards.length || !validated.redCards.length) {
+          alert('Yüklenen dosya geçerli kartlar içermiyor.');
           return;
         }
-        setJsonText(JSON.stringify(parsedDeck.raw, null, 2));
-        saveActiveDeck(parsedDeck.raw);
-        setDeckState(parsedDeck);
+        saveActiveDeck(validated.raw);
+        setDeckState(validated);
+        setJsonText(JSON.stringify(validated.raw, null, 2));
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
       } catch (err) {
-        alert('Yüklenen dosya geçerli bir JSON formatında değil!');
+        alert(`Dosya okuma hatası: ${err.message}`);
       }
     };
     reader.readAsText(file);
   };
 
-  // Handle Download JSON
-  const handleDownloadJson = () => {
-    sounds.playClick();
-    const blob = new Blob([jsonText], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Red_Flags_Turkish_Complete.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Handle Reset to Default
-  const handleResetToDefault = () => {
-    if (window.confirm('Tüm özel kart değişikliklerini sıfırlayıp orijinal Red Flags veritabanına dönmek istediğinize emin misiniz?')) {
-      sounds.playClick();
-      resetActiveDeck();
-      setDeckState(parseRawDeck(DEFAULT_RAW_CARDS));
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
-    }
-  };
-
-  // Delete Card
+  // Delete single card
   const handleDeleteCard = (card) => {
     if (window.confirm(`"${card.text}" kartını silmek istediğinize emin misiniz?`)) {
       sounds.playClick();
-      const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
       const section = card.type === 'perk' ? 'Perks' : 'Red Flags';
+      const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
 
       if (updatedRaw[section] && updatedRaw[section][card.category]) {
         updatedRaw[section][card.category] = updatedRaw[section][card.category].filter(
-          t => (t || '').trim().toLowerCase() !== card.text.toLowerCase()
+          txt => txt.trim() !== card.text.trim()
         );
         saveActiveDeck(updatedRaw);
         setDeckState(parseRawDeck(updatedRaw));
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
       }
     }
   };
 
-  // Start Inline Edit
+  // Start inline editing
   const handleStartEdit = (card) => {
+    sounds.playClick();
     setEditingCardId(card.id);
     setEditingText(card.text);
   };
 
-  // Insert Standard [boşluk] Tag into Inline Edit Field
-  const handleInsertBlankToEdit = () => {
-    sounds.playClick();
-    setEditingText(prev => (prev ? prev.trim() + ' [boşluk] ' : '[boşluk] '));
-  };
-
-  // Save Inline Edit
+  // Save inline edit
   const handleSaveEdit = (card) => {
     if (!editingText.trim()) return;
     sounds.playClick();
-
-    const formattedText = editingText
-      .replace(/([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/gi, ' [boşluk] ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
     const section = card.type === 'perk' ? 'Perks' : 'Red Flags';
+    const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
 
     if (updatedRaw[section] && updatedRaw[section][card.category]) {
-      const idx = updatedRaw[section][card.category].findIndex(
-        t => (t || '').trim().toLowerCase() === card.text.toLowerCase()
-      );
+      const list = updatedRaw[section][card.category];
+      const idx = list.findIndex(txt => txt.trim() === card.text.trim());
       if (idx !== -1) {
-        updatedRaw[section][card.category][idx] = formattedText;
+        list[idx] = editingText.trim();
         saveActiveDeck(updatedRaw);
         setDeckState(parseRawDeck(updatedRaw));
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
       }
     }
     setEditingCardId(null);
   };
 
-  // Add Single Card Submit
+  // Add new card
   const handleAddCardSubmit = (e) => {
     e.preventDefault();
     if (!newText.trim()) return;
 
     sounds.playClick();
-    const formattedText = newText
-      .replace(/([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/gi, ' [boşluk] ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const section = newType === 'perk' ? 'Perks' : 'Red Flags';
+    const finalCategory = customCategoryInput.trim() ? customCategoryInput.trim() : newCategory;
 
     const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
-    const section = newType === 'perk' ? 'Perks' : 'Red Flags';
-    const targetCategory = customCategoryInput.trim() || newCategory;
-
     if (!updatedRaw[section]) updatedRaw[section] = {};
-    if (!updatedRaw[section][targetCategory]) updatedRaw[section][targetCategory] = [];
+    if (!updatedRaw[section][finalCategory]) updatedRaw[section][finalCategory] = [];
 
-    updatedRaw[section][targetCategory].push(formattedText);
+    updatedRaw[section][finalCategory].push(newText.trim());
 
     saveActiveDeck(updatedRaw);
     setDeckState(parseRawDeck(updatedRaw));
@@ -326,931 +351,1387 @@ export default function AdminPageView({ onBack, discordUser }) {
     }
   };
 
+  // User Management Handlers
+  const handleToggleUserTag = (user, tagToToggle) => {
+    sounds.playClick();
+    const currentTags = user.tags || [];
+    let updatedTags;
+    if (currentTags.includes(tagToToggle)) {
+      updatedTags = currentTags.filter(t => t !== tagToToggle);
+    } else {
+      updatedTags = [...currentTags, tagToToggle];
+    }
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, tags: updatedTags } : u));
+  };
+
+  const handleAddCustomTag = (userId) => {
+    const inputVal = (editingUserTags[userId] || '').trim();
+    if (!inputVal) return;
+    sounds.playClick();
+    setUsersList(prev => prev.map(u => {
+      if (u.id === userId) {
+        const currentTags = u.tags || [];
+        if (!currentTags.includes(inputVal)) {
+          return { ...u, tags: [...currentTags, inputVal] };
+        }
+      }
+      return u;
+    }));
+    setEditingUserTags(prev => ({ ...prev, [userId]: '' }));
+  };
+
+  const handleToggleUserDeck = (user, deckName) => {
+    sounds.playClick();
+    const currentDecks = user.unlockedDecks || [];
+    let updatedDecks;
+    if (currentDecks.includes(deckName)) {
+      updatedDecks = currentDecks.filter(d => d !== deckName);
+    } else {
+      updatedDecks = [...currentDecks, deckName];
+    }
+    setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, unlockedDecks: updatedDecks } : u));
+  };
+
+  const handleGrantAllDecksToUser = (userId) => {
+    sounds.playClick();
+    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, unlockedDecks: [...DEFAULT_CONFIG.allDecks] } : u));
+  };
+
+  const handleResetUserDecks = (userId) => {
+    sounds.playClick();
+    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, unlockedDecks: [...appConfig.discordDecks] } : u));
+  };
+
+  const handleSaveUser = async (user) => {
+    setUserSavingId(user.id);
+    sounds.playClick();
+    const updated = await updateUser(user.id, {
+      tags: user.tags,
+      unlockedDecks: user.unlockedDecks,
+      totalScore: Number(user.totalScore) || 0
+    });
+    setUserSavingId(null);
+    if (updated) {
+      setUsersList(prev => prev.map(u => u.id === user.id ? updated : u));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    }
+  };
+
+  // Global Config Handlers
+  const handleToggleDefaultGuestDeck = (deckName) => {
+    sounds.playClick();
+    const current = appConfig.guestDecks || [];
+    const updated = current.includes(deckName)
+      ? (current.length > 1 ? current.filter(d => d !== deckName) : current)
+      : [...current, deckName];
+    setAppConfig(prev => ({ ...prev, guestDecks: updated }));
+  };
+
+  const handleToggleDefaultDiscordDeck = (deckName) => {
+    sounds.playClick();
+    const current = appConfig.discordDecks || [];
+    const updated = current.includes(deckName)
+      ? (current.length > 1 ? current.filter(d => d !== deckName) : current)
+      : [...current, deckName];
+    setAppConfig(prev => ({ ...prev, discordDecks: updated }));
+  };
+
+  const handleSaveConfig = async () => {
+    setConfigSaving(true);
+    sounds.playClick();
+    const res = await updateAppConfig(appConfig);
+    setConfigSaving(false);
+    if (res) {
+      setAppConfig(res);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    }
+  };
+
+  // Filtered users
+  const filteredUsers = usersList.filter(u => {
+    const q = usersSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (u.username || '').toLowerCase().includes(q) ||
+           (u.displayName || '').toLowerCase().includes(q) ||
+           (u.id || '').includes(q);
+  });
+
   return (
     <div style={{
       minHeight: '100vh',
       background: '#121212',
       color: '#ffffff',
       display: 'flex',
-      flexDirection: 'column',
-      fontFamily: "'Plus Jakarta Sans', sans-serif"
+      flexDirection: 'row'
     }}>
-      {/* Top Admin Navbar */}
-      <header style={{
-        background: '#1a1a1a',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        padding: '14px 28px',
+      {/* ========================================================================= */}
+      {/* 1. LEFT RED VERTICAL NAVBAR */}
+      {/* ========================================================================= */}
+      <aside style={{
+        width: '260px',
+        minWidth: '260px',
+        background: '#161616',
+        borderRight: '1px solid rgba(217, 4, 41, 0.3)',
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
+        padding: '24px 16px',
+        boxShadow: '4px 0 24px rgba(0, 0, 0, 0.5)',
+        zIndex: 20
       }}>
-        {/* Left: Back button & Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Logo & Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 8px' }}>
+            <img src={doxcardsLogo} alt="dox" style={{ height: '32px', width: 'auto' }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                doxcards
+              </span>
+              <span style={{
+                background: '#d90429',
+                color: '#ffffff',
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                padding: '1px 6px',
+                borderRadius: '4px',
+                width: 'fit-content',
+                textTransform: 'uppercase'
+              }}>
+                admin paneli
+              </span>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('cards'); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'cards' ? '#d90429' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'cards' ? '1px solid #ef4444' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'cards' ? '0 4px 14px rgba(217, 4, 41, 0.4)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Layers size={18} /> kartlar ve desteler
+            </button>
+
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('users'); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'users' ? '#d90429' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'users' ? '1px solid #ef4444' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'users' ? '0 4px 14px rgba(217, 4, 41, 0.4)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Users size={18} /> kullanıcılar ({usersList.length})
+            </button>
+
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('permissions'); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'permissions' ? '#d90429' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'permissions' ? '1px solid #ef4444' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'permissions' ? '0 4px 14px rgba(217, 4, 41, 0.4)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Sliders size={18} /> deste izinleri
+            </button>
+          </nav>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '16px' }}>
+          {/* Cloud DB Status */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: '#202020',
+            padding: '8px 10px',
+            borderRadius: '8px',
+            fontSize: '0.75rem',
+            color: '#94a3b8'
+          }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
+            <span>cloudflare db bağlı</span>
+          </div>
+
+          {/* Return to Game Button */}
           <button
             onClick={onBack}
             className="btn-secondary"
-            style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{
+              width: '100%',
+              padding: '10px',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
           >
             <ArrowLeft size={16} /> oyuna dön
           </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src={doxcardsLogo} alt="dox" style={{ height: '28px', width: 'auto' }} />
-            <span style={{
-              background: '#ef4444',
-              color: '#ffffff',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              padding: '2px 8px',
-              borderRadius: '9999px'
-            }}>
-              admin paneli
-            </span>
-          </div>
         </div>
+      </aside>
 
-        {/* Right: Admin Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
-            yönetici: <b style={{ color: '#ffffff' }}>{discordUser.displayName}</b> ({discordUser.id})
-          </span>
-          <span style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: '#22c55e',
-            boxShadow: '0 0 8px #22c55e'
-          }} />
-        </div>
-      </header>
-
-      {/* Main Admin Page Container */}
+      {/* ========================================================================= */}
+      {/* 2. MAIN CONTENT AREA */}
+      {/* ========================================================================= */}
       <main style={{
         flex: 1,
-        maxWidth: '1280px',
-        width: '100%',
-        margin: '0 auto',
-        padding: '28px 20px',
+        height: '100vh',
+        overflowY: 'auto',
+        padding: '32px 36px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px'
+        gap: '24px'
       }}>
-        {/* Stats Dashboard Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '16px'
-        }}>
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '18px 20px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-          }}>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, marginBottom: '4px' }}>
-              toplam kart
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{deckState.allCards.length}</div>
-          </div>
-
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(56, 189, 248, 0.2)',
-            borderRadius: '16px',
-            padding: '18px 20px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-          }}>
-            <div style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 600, marginBottom: '4px' }}>
-              beyaz kartlar (perks)
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#38bdf8' }}>
-              {deckState.whiteCards.length}
-            </div>
-          </div>
-
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '16px',
-            padding: '18px 20px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-          }}>
-            <div style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: 600, marginBottom: '4px' }}>
-              kırmızı kartlar (red flags)
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f87171' }}>
-              {deckState.redCards.length}
-            </div>
-          </div>
-
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(251, 191, 36, 0.2)',
-            borderRadius: '16px',
-            padding: '18px 20px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-          }}>
-            <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 600, marginBottom: '4px' }}>
-              kategori sayısı
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fbbf24' }}>
-              {allCategories.length}
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Selector Bar */}
-        <div style={{
-          display: 'flex',
-          gap: '10px',
-          background: '#1c1c1c',
-          padding: '6px',
-          borderRadius: '14px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
-        }}>
-          <button
-            onClick={() => setActiveTab('list')}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '10px',
-              background: activeTab === 'list' ? '#d90429' : 'transparent',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.92rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <Layers size={18} /> kart yönetimi ({filteredCards.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('categories')}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '10px',
-              background: activeTab === 'categories' ? '#d90429' : 'transparent',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.92rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <FolderEdit size={18} /> kategorileri düzenle ({allCategories.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('add')}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '10px',
-              background: activeTab === 'add' ? '#d90429' : 'transparent',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.92rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <Plus size={18} /> yeni kart ekle
-          </button>
-
-          <button
-            onClick={() => setActiveTab('json')}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '10px',
-              background: activeTab === 'json' ? '#d90429' : 'transparent',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.92rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <FileCode size={18} /> json düzenleyici & içe/dışa aktar
-          </button>
-        </div>
-
-        {/* Feedback Alert */}
+        {/* Global Feedback Alert */}
         {saveSuccess && (
           <div style={{
             background: 'rgba(16, 185, 129, 0.2)',
             border: '1px solid #10b981',
             color: '#34d399',
-            padding: '12px 18px',
+            padding: '14px 20px',
             borderRadius: '12px',
-            fontSize: '0.88rem',
+            fontSize: '0.9rem',
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
-            <Check size={18} /> değişiklikler Cloudflare veritabanına başarıyla kaydedildi ve tüm odalarda aktif!
+            <Check size={18} /> değişiklikler Cloudflare veritabanına başarıyla kaydedildi!
           </div>
         )}
 
-        {/* TAB 1: CARDS LIST (FULL SCREEN) */}
-        {activeTab === 'list' && (
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '18px',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
-          }}>
-            {/* Filter controls */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '260px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Search size={18} style={{ position: 'absolute', left: '14px', color: '#94a3b8' }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="kart metninde ara..."
-                  className="form-input"
-                  style={{ paddingLeft: '40px', height: '44px', background: '#242424' }}
-                />
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION A: KARTLAR VE DESTELER (WITH HORIZONTAL TABS FROM IMAGE 2) */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'cards' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Stats Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '16px'
+            }}>
+              <div style={{
+                background: '#1c1c1c',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '16px',
+                padding: '18px 20px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, marginBottom: '4px' }}>
+                  toplam kart
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff' }}>
+                  {deckState.allCards.length}
+                </div>
               </div>
 
-              {/* Type Filter */}
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="form-input"
-                style={{ width: '180px', height: '44px', background: '#242424' }}
-              >
-                <option value="all">tüm türler</option>
-                <option value="perk">🤍 beyaz (perk)</option>
-                <option value="redflag">🚩 kırmızı (red flag)</option>
-              </select>
+              <div style={{
+                background: '#1c1c1c',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '16px',
+                padding: '18px 20px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, marginBottom: '4px' }}>
+                  beyaz kartlar (perks)
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff' }}>
+                  {deckState.whiteCards.length}
+                </div>
+              </div>
 
-              {/* Category Filter */}
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="form-input"
-                style={{ width: '220px', height: '44px', background: '#242424' }}
-              >
-                <option value="all">tüm kategoriler</option>
-                {allCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <div style={{
+                background: '#1c1c1c',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '16px',
+                padding: '18px 20px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: 600, marginBottom: '4px' }}>
+                  kırmızı kartlar (red flags)
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f87171' }}>
+                  {deckState.redCards.length}
+                </div>
+              </div>
+
+              <div style={{
+                background: '#1c1c1c',
+                border: '1px solid rgba(251, 191, 36, 0.2)',
+                borderRadius: '16px',
+                padding: '18px 20px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 600, marginBottom: '4px' }}>
+                  kategori sayısı
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fbbf24' }}>
+                  {allCategories.length}
+                </div>
+              </div>
             </div>
 
-            {/* Cards Grid / Table */}
+            {/* Horizontal Sub-Tabs (Image 2 style) */}
             <div style={{
               display: 'flex',
-              flexDirection: 'column',
               gap: '10px',
-              maxHeight: '650px',
-              overflowY: 'auto',
-              paddingRight: '6px'
+              background: '#1c1c1c',
+              padding: '6px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
-              {filteredCards.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
-                  eşleşen kart bulunamadı.
+              <button
+                onClick={() => { sounds.playClick(); setActiveTab('list'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: activeTab === 'list' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <Layers size={18} /> kart yönetimi ({deckState.allCards.length})
+              </button>
+
+              <button
+                onClick={() => { sounds.playClick(); setActiveTab('categories'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: activeTab === 'categories' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <FolderEdit size={18} /> kategorileri düzenle ({allCategories.length})
+              </button>
+
+              <button
+                onClick={() => { sounds.playClick(); setActiveTab('add'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: activeTab === 'add' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <Plus size={18} /> yeni kart ekle
+              </button>
+
+              <button
+                onClick={() => { sounds.playClick(); setActiveTab('json'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: activeTab === 'json' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <FileCode size={18} /> json düzenleyici & içe/dışa aktar
+              </button>
+            </div>
+
+            {/* TAB 1: KART LİSTESİ & DÜZENLEME */}
+            {activeTab === 'list' && (
+              <div style={{
+                background: '#1c1c1c',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                {/* Search & Filter Bar */}
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{
+                    flex: 1,
+                    minWidth: '260px',
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '14px' }} />
+                    <input
+                      type="text"
+                      placeholder="kart metninde ara..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="form-input"
+                      style={{ paddingLeft: '42px' }}
+                    />
+                  </div>
+
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="select-box"
+                    style={{ width: '180px' }}
+                  >
+                    <option value="all">tüm kart tipleri</option>
+                    <option value="perk">beyaz (perk)</option>
+                    <option value="redflag">kırmızı (red flag)</option>
+                  </select>
+
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="select-box"
+                    style={{ width: '220px' }}
+                  >
+                    <option value="all">tüm kategoriler ({allCategories.length})</option>
+                    {allCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
-              ) : (
-                filteredCards.map((card) => {
-                  const isPerk = card.type === 'perk';
-                  const isEditing = editingCardId === card.id;
-                  const hasBlank = isBlankCard(card.text);
 
-                  return (
-                    <div
-                      key={card.id}
-                      style={{
-                        background: '#242424',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '12px',
-                        padding: '12px 18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '16px',
-                        transition: 'background 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, flexWrap: 'wrap' }}>
-                        <span style={{
-                          background: isPerk ? '#ffffff' : '#d90429',
-                          color: isPerk ? '#000000' : '#ffffff',
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          padding: '3px 10px',
-                          borderRadius: '9999px',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {isPerk ? 'beyaz' : 'kırmızı'}
-                        </span>
+                {/* Cards List Grid */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  maxHeight: '600px',
+                  overflowY: 'auto',
+                  paddingRight: '6px'
+                }}>
+                  {filteredCards.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                      eşleşen kart bulunamadı.
+                    </div>
+                  ) : (
+                    filteredCards.map((card) => {
+                      const isEditing = editingCardId === card.id;
+                      const isBlank = isBlankCard(card.text);
 
-                        <span style={{
-                          background: 'rgba(255,255,255,0.08)',
-                          color: '#fbbf24',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 10px',
-                          borderRadius: '8px',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {card.category}
-                        </span>
-
-                        {hasBlank && (
-                          <span style={{
-                            background: 'rgba(56, 189, 248, 0.15)',
-                            border: '1px solid rgba(56, 189, 248, 0.4)',
-                            color: '#38bdf8',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                            display: 'inline-flex',
+                      return (
+                        <div
+                          key={card.id}
+                          style={{
+                            background: '#242424',
+                            border: card.type === 'perk'
+                              ? '1px solid rgba(255, 255, 255, 0.15)'
+                              : '1px solid rgba(239, 68, 68, 0.35)',
+                            borderRadius: '12px',
+                            padding: '14px 18px',
+                            display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            <PenTool size={11} /> boşluklu kart
-                          </span>
-                        )}
+                            justifyContent: 'space-between',
+                            gap: '16px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                            <span style={{
+                              background: card.type === 'perk' ? '#ffffff' : '#d90429',
+                              color: card.type === 'perk' ? '#000000' : '#ffffff',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em'
+                            }}>
+                              {card.type === 'perk' ? 'perk' : 'red flag'}
+                            </span>
 
-                        {isEditing ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '320px' }}>
-                            <input
-                              type="text"
-                              value={editingText}
-                              onChange={(e) => setEditingText(e.target.value)}
-                              className="form-input"
-                              style={{ height: '38px', fontSize: '0.92rem', flex: 1 }}
-                              autoFocus
-                            />
-                            <button
-                              type="button"
-                              onClick={handleInsertBlankToEdit}
-                              style={{
-                                background: 'rgba(56, 189, 248, 0.15)',
-                                border: '1px solid rgba(56, 189, 248, 0.4)',
-                                color: '#38bdf8',
-                                padding: '6px 10px',
-                                borderRadius: '8px',
-                                fontSize: '0.78rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
+                            <span style={{
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              color: '#94a3b8',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              padding: '3px 8px',
+                              borderRadius: '6px'
+                            }}>
+                              {card.category}
+                            </span>
+
+                            {isBlank && (
+                              <span style={{
+                                background: 'rgba(251, 191, 36, 0.15)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                padding: '2px 7px',
+                                borderRadius: '6px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                whiteSpace: 'nowrap'
-                              }}
-                              title="Standart [boşluk] tagi ekle"
-                            >
-                              <PenTool size={12} /> + [boşluk] ekle
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '0.92rem', fontWeight: 500, color: '#f1f5f9', flex: 1 }}>
-                            {card.text.split(/(\[boşluk\])/gi).map((part, pIdx) => {
-                              if (part.toLowerCase() === '[boşluk]') {
-                                return (
-                                  <span
-                                    key={pIdx}
-                                    style={{
-                                      background: 'rgba(56, 189, 248, 0.15)',
-                                      color: '#38bdf8',
-                                      border: '1px dashed #38bdf8',
-                                      padding: '1px 6px',
-                                      borderRadius: '4px',
-                                      fontWeight: 800,
-                                      margin: '0 3px',
-                                      display: 'inline-block'
-                                    }}
-                                  >
-                                    [boşluk]
-                                  </span>
-                                );
-                              }
-                              return part;
-                            })}
-                          </span>
-                        )}
-                      </div>
+                                gap: '3px'
+                              }}>
+                                <Tag size={10} /> boşluklu kart
+                              </span>
+                            )}
 
-                      {/* Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {isEditing ? (
-                          <button
-                            onClick={() => handleSaveEdit(card)}
-                            style={{
-                              background: '#10b981',
-                              color: '#fff',
-                              border: 'none',
-                              padding: '7px 14px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              fontSize: '0.8rem',
-                              fontWeight: 700
-                            }}
-                          >
-                            <Save size={14} /> kaydet
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleStartEdit(card)}
-                            className="btn-icon"
-                            style={{ width: '34px', height: '34px', background: 'rgba(255,255,255,0.06)' }}
-                            title="kartı düzenle"
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() => handleDeleteCard(card)}
-                          className="btn-icon"
-                          style={{ width: '34px', height: '34px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
-                          title="kartı sil"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: CATEGORIES MANAGEMENT */}
-        {activeTab === 'categories' && (
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '18px',
-            padding: '30px',
-            boxShadow: '0 12px 36px rgba(0,0,0,0.5)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px'
-          }}>
-            <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FolderEdit size={20} color="#fbbf24" /> kategori isimlerini düzenleme & yönetme
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>
-                kategorilerin isimlerini değiştirdiğinizde, o kategorideki tüm kartlar otomatik olarak yeni kategori ismine güncellenir.
-              </p>
-            </div>
-
-            {/* Perks Categories Section */}
-            <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#38bdf8', marginBottom: '12px' }}>
-                🤍 beyaz kart (perks) kategorileri
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px' }}>
-                {perkCategories.map(catName => {
-                  const count = (deckState.raw.Perks[catName] || []).length;
-                  const isRenaming = renamingCategory?.section === 'Perks' && renamingCategory?.oldName === catName;
-
-                  return (
-                    <div
-                      key={catName}
-                      style={{
-                        background: '#242424',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '12px',
-                        padding: '14px 16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '10px'
-                      }}
-                    >
-                      {isRenaming ? (
-                        <form onSubmit={handleRenameCategorySubmit} style={{ display: 'flex', gap: '8px', flex: 1 }}>
-                          <input
-                            type="text"
-                            value={newCategoryNameInput}
-                            onChange={(e) => setNewCategoryNameInput(e.target.value)}
-                            className="form-input"
-                            style={{ height: '36px', fontSize: '0.88rem' }}
-                            autoFocus
-                            required
-                          />
-                          <button
-                            type="submit"
-                            style={{
-                              background: '#10b981',
-                              color: '#fff',
-                              border: 'none',
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            kaydet
-                          </button>
-                        </form>
-                      ) : (
-                        <>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>{catName}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{count} kart</div>
+                            {isEditing ? (
+                              <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
+                                <input
+                                  type="text"
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  className="form-input"
+                                  style={{ padding: '8px 12px', fontSize: '0.9rem' }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingText(prev => (prev ? prev.trim() + ' [boşluk] ' : '[boşluk] '))}
+                                  style={{
+                                    background: 'rgba(251, 191, 36, 0.15)',
+                                    border: '1px solid #fbbf24',
+                                    color: '#fbbf24',
+                                    padding: '6px 10px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  + [boşluk]
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{
+                                fontSize: '0.92rem',
+                                fontWeight: 600,
+                                color: '#ffffff',
+                                flex: 1
+                              }}>
+                                {card.text}
+                              </span>
+                            )}
                           </div>
 
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={() => {
-                                setRenamingCategory({ section: 'Perks', oldName: catName });
-                                setNewCategoryNameInput(catName);
-                              }}
-                              className="btn-icon"
-                              style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.08)' }}
-                              title="Kategori ismini değiştir"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteCategory('Perks', catName)}
-                              className="btn-icon"
-                              style={{ width: '32px', height: '32px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
-                              title="Kategoriyi sil"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {isEditing ? (
+                              <>
+                                <button
+                                  onClick={() => handleSaveEdit(card)}
+                                  className="btn-primary"
+                                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                                >
+                                  <Save size={14} /> kaydet
+                                </button>
+                                <button
+                                  onClick={() => setEditingCardId(null)}
+                                  className="btn-secondary"
+                                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                                >
+                                  iptal
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleStartEdit(card)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#94a3b8',
+                                    cursor: 'pointer',
+                                    padding: '6px'
+                                  }}
+                                  title="kartı düzenle"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCard(card)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#ef4444',
+                                    cursor: 'pointer',
+                                    padding: '6px'
+                                  }}
+                                  title="kartı sil"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
+                            )}
                           </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Red Flags Categories Section */}
-            <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f87171', marginBottom: '12px' }}>
-                🚩 kırmızı kart (red flags) kategorileri
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px' }}>
-                {redFlagCategories.map(catName => {
-                  const count = (deckState.raw['Red Flags'][catName] || []).length;
-                  const isRenaming = renamingCategory?.section === 'Red Flags' && renamingCategory?.oldName === catName;
-
-                  return (
-                    <div
-                      key={catName}
-                      style={{
-                        background: '#242424',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '12px',
-                        padding: '14px 16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '10px'
-                      }}
-                    >
-                      {isRenaming ? (
-                        <form onSubmit={handleRenameCategorySubmit} style={{ display: 'flex', gap: '8px', flex: 1 }}>
-                          <input
-                            type="text"
-                            value={newCategoryNameInput}
-                            onChange={(e) => setNewCategoryNameInput(e.target.value)}
-                            className="form-input"
-                            style={{ height: '36px', fontSize: '0.88rem' }}
-                            autoFocus
-                            required
-                          />
-                          <button
-                            type="submit"
-                            style={{
-                              background: '#10b981',
-                              color: '#fff',
-                              border: 'none',
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            kaydet
-                          </button>
-                        </form>
-                      ) : (
-                        <>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>{catName}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{count} kart</div>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={() => {
-                                setRenamingCategory({ section: 'Red Flags', oldName: catName });
-                                setNewCategoryNameInput(catName);
-                              }}
-                              className="btn-icon"
-                              style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.08)' }}
-                              title="Kategori ismini değiştir"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteCategory('Red Flags', catName)}
-                              className="btn-icon"
-                              style={{ width: '32px', height: '32px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
-                              title="Kategoriyi sil"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: ADD CARD (FULL SCREEN FORM) */}
-        {activeTab === 'add' && (
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '18px',
-            padding: '30px',
-            boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
-          }}>
-            <form onSubmit={handleAddCardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            {/* TAB 2: KATEGORİ DÜZENLEME */}
+            {activeTab === 'categories' && (
+              <div style={{
+                background: '#1c1c1c',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '24px'
+              }}>
                 <div>
-                  <label className="form-label">kart türü</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setNewType('perk')}
-                      style={{
-                        flex: 1,
-                        padding: '14px',
-                        borderRadius: '12px',
-                        background: newType === 'perk' ? '#ffffff' : '#242424',
-                        color: newType === 'perk' ? '#000000' : '#ffffff',
-                        border: newType === 'perk' ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
-                        fontWeight: 800,
-                        fontSize: '0.95rem'
-                      }}
-                    >
-                      🤍 beyaz kart (perk)
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>
+                    kategori yönetimi ve isim düzenleme
+                  </h3>
+                  <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                    destedeki kategorileri yeniden adlandırabilir veya tamamen silebilirsiniz.
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  {/* Perks Categories */}
+                  <div style={{ background: '#242424', padding: '20px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <h4 style={{ color: '#ffffff', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={16} /> beyaz kart kategorileri ({perkCategories.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {perkCategories.map(cat => (
+                        <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '10px 14px', borderRadius: '10px' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{cat} ({deckState.raw.Perks[cat]?.length || 0} kart)</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => {
+                                setRenamingCategory({ section: 'Perks', oldName: cat });
+                                setNewCategoryNameInput(cat);
+                              }}
+                              className="btn-secondary"
+                              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            >
+                              yeniden adlandır
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory('Perks', cat)}
+                              style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Red Flags Categories */}
+                  <div style={{ background: '#242424', padding: '20px', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    <h4 style={{ color: '#f87171', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={16} /> kırmızı kart kategorileri ({redFlagCategories.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {redFlagCategories.map(cat => (
+                        <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1a1a1a', padding: '10px 14px', borderRadius: '10px' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fca5a5' }}>{cat} ({deckState.raw['Red Flags'][cat]?.length || 0} kart)</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => {
+                                setRenamingCategory({ section: 'Red Flags', oldName: cat });
+                                setNewCategoryNameInput(cat);
+                              }}
+                              className="btn-secondary"
+                              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            >
+                              yeniden adlandır
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory('Red Flags', cat)}
+                              style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rename Modal */}
+                {renamingCategory && (
+                  <form onSubmit={handleRenameCategorySubmit} style={{
+                    background: '#2d2d2d',
+                    padding: '20px',
+                    borderRadius: '14px',
+                    border: '1px solid #d90429',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                      "{renamingCategory.oldName}" kategorisinin yeni adını girin:
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        value={newCategoryNameInput}
+                        onChange={(e) => setNewCategoryNameInput(e.target.value)}
+                        className="form-input"
+                        autoFocus
+                      />
+                      <button type="submit" className="btn-primary" style={{ padding: '10px 20px', whiteSpace: 'nowrap' }}>
+                        kaydet
+                      </button>
+                      <button type="button" onClick={() => setRenamingCategory(null)} className="btn-secondary">
+                        iptal
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: YENİ KART EKLE */}
+            {activeTab === 'add' && (
+              <div style={{
+                background: '#1c1c1c',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '28px',
+                maxWidth: '700px'
+              }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '8px' }}>yeni kart ekle</h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.88rem', marginBottom: '24px' }}>
+                  oyuna yeni bir perk veya red flag kartı ekleyin. Boşluklu kart yapmak için <b>[boşluk]</b> butonunu kullanabilirsiniz.
+                </p>
+
+                <form onSubmit={handleAddCardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <div>
+                    <label className="form-label">kart tipi</label>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setNewType('perk')}
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          borderRadius: '10px',
+                          background: newType === 'perk' ? '#ffffff' : '#262626',
+                          color: newType === 'perk' ? '#000000' : '#ffffff',
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          cursor: 'pointer',
+                          border: 'none'
+                        }}
+                      >
+                        beyaz kart (perk)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewType('redflag')}
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          borderRadius: '10px',
+                          background: newType === 'redflag' ? '#d90429' : '#262626',
+                          color: '#ffffff',
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          cursor: 'pointer',
+                          border: 'none'
+                        }}
+                      >
+                        kırmızı kart (red flag)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="form-label">kategori seç veya yeni oluştur</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <select
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        className="select-box"
+                        style={{ flex: 1 }}
+                      >
+                        {allCategories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="veya yeni kategori adı..."
+                        value={customCategoryInput}
+                        onChange={(e) => setCustomCategoryInput(e.target.value)}
+                        className="form-input"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>kart metni</label>
+                      <button
+                        type="button"
+                        onClick={handleInsertBlankPlaceholder}
+                        style={{
+                          background: 'rgba(251, 191, 36, 0.15)',
+                          border: '1px solid #fbbf24',
+                          color: '#fbbf24',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + [boşluk] ekle
+                      </button>
+                    </div>
+                    <textarea
+                      rows={3}
+                      placeholder="örneğin: her zaman [boşluk] gibi kokuyor"
+                      value={newText}
+                      onChange={(e) => setNewText(e.target.value)}
+                      className="form-input"
+                      style={{ resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <button type="submit" className="btn-primary" style={{ padding: '14px', marginTop: '10px' }}>
+                    <Plus size={18} /> kartı ekle
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 4: JSON DÜZENLEYİCİ & İÇE/DIŞA AKTAR */}
+            {activeTab === 'json' && (
+              <div style={{
+                background: '#1c1c1c',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>ham json verisi & dosya işlemleri</h3>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                      kartları doğrudan json formatında düzenleyebilir, dışa aktarabilir veya kendi dosyanızı yükleyebilirsiniz.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={handleExportJson} className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.82rem' }}>
+                      <Download size={15} /> json indir
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewType('redflag')}
-                      style={{
-                        flex: 1,
-                        padding: '14px',
-                        borderRadius: '12px',
-                        background: newType === 'redflag' ? '#d90429' : '#242424',
-                        color: '#ffffff',
-                        border: newType === 'redflag' ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
-                        fontWeight: 800,
-                        fontSize: '0.95rem'
-                      }}
-                    >
-                      🚩 kırmızı kart (red flag)
+
+                    <label className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Upload size={15} /> json yükle
+                      <input type="file" accept=".json" onChange={handleImportJsonFile} style={{ display: 'none' }} />
+                    </label>
+
+                    <button onClick={handleResetToDefault} style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 14px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <RotateCcw size={15} /> orijinal desteye sıfırla
                     </button>
                   </div>
                 </div>
 
-                <div>
-                  <label className="form-label">kategori seçimi</label>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="form-input"
-                    style={{ marginBottom: '10px', height: '48px', background: '#242424' }}
-                  >
-                    {(newType === 'perk' ? perkCategories : redFlagCategories).map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                    <option value="__NEW__">+ yeni kategori adı yaz</option>
-                  </select>
-
-                  {newCategory === '__NEW__' && (
-                    <input
-                      type="text"
-                      value={customCategoryInput}
-                      onChange={(e) => setCustomCategoryInput(e.target.value)}
-                      placeholder="yeni kategori adı giriniz..."
-                      className="form-input"
-                      style={{ background: '#242424' }}
-                      required
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label className="form-label" style={{ margin: 0 }}>kart metni (türkçe)</label>
-
-                  {/* Insert Blank Tag Button */}
-                  <button
-                    type="button"
-                    onClick={handleInsertBlankPlaceholder}
-                    style={{
-                      background: 'rgba(56, 189, 248, 0.15)',
-                      border: '1px solid rgba(56, 189, 248, 0.4)',
-                      color: '#38bdf8',
-                      padding: '5px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
-                  >
-                    <PenTool size={13} /> + [boşluk] ekle
-                  </button>
-                </div>
+                {jsonError && (
+                  <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#f87171', padding: '12px 16px', borderRadius: '10px', fontSize: '0.88rem' }}>
+                    {jsonError}
+                  </div>
+                )}
 
                 <textarea
-                  value={newText}
-                  onChange={(e) => setNewText(e.target.value)}
-                  placeholder="kartın üzerindeki metni buraya yazınız... (örn: Hayatı, [boşluk] 'nin dayandığı gerçek hikaye)"
-                  className="form-input"
-                  style={{ height: '140px', resize: 'vertical', fontSize: '0.96rem', background: '#242424' }}
-                  required
+                  rows={20}
+                  value={jsonText}
+                  onChange={(e) => setJsonText(e.target.value)}
+                  style={{
+                    width: '100%',
+                    fontFamily: 'monospace',
+                    fontSize: '0.88rem',
+                    background: '#141414',
+                    color: '#a5f3fc',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    lineHeight: '1.5'
+                  }}
                 />
 
-                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '6px' }}>
-                  💡 <b>ipucu:</b> kart metnine <code>[boşluk]</code> eklediğinizde, oyuncular bu kartı masaya atarken ekranda bir modal açılır ve o turluk istedikleri kelimeyi girerek kartı tamamlarlar.
-                </div>
+                <button onClick={handleSaveJson} className="btn-primary" style={{ padding: '14px', alignSelf: 'flex-start' }}>
+                  <Save size={18} /> json değişikliklerini kaydet
+                </button>
               </div>
-
-              <button
-                type="submit"
-                className="btn-primary"
-                style={{ padding: '16px', fontSize: '1rem', alignSelf: 'flex-end', minWidth: '240px' }}
-              >
-                <Plus size={18} /> yeni kartı veritabanına ekle
-              </button>
-            </form>
+            )}
           </div>
         )}
 
-        {/* TAB 4: RAW JSON EDITOR (FULL SCREEN) */}
-        {activeTab === 'json' && (
-          <div style={{
-            background: '#1c1c1c',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '18px',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
-          }}>
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION B: KULLANICILAR (DISCORD USERS, TAGS & DECK PERMISSIONS) */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'users' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <span style={{ fontSize: '0.88rem', color: '#94a3b8', fontWeight: 600 }}>
-                doğrudan raw json metnini düzenleyebilir, dosya yükleyebilir veya dışa aktarabilirsiniz.
-              </span>
+              <div>
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+                  kayıtlı discord kullanıcıları ({usersList.length})
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
+                  discord ile giriş yapan oyuncuları görüntüleyin, özel etiketler (Admin, VIP, Premium) atayın ve hangi destelere erişebileceklerini belirleyin.
+                </p>
+              </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <label
-                  style={{
-                    background: '#242424',
-                    color: '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Upload size={15} /> json yükle
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadJson}
-                  style={{
-                    background: '#242424',
-                    color: '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Download size={15} /> json indir
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleResetToDefault}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    color: '#f87171',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <RotateCcw size={15} /> sıfırla
-                </button>
+              <div style={{ position: 'relative', minWidth: '280px' }}>
+                <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '13px' }} />
+                <input
+                  type="text"
+                  placeholder="kullanıcı adı veya id ara..."
+                  value={usersSearch}
+                  onChange={(e) => setUsersSearch(e.target.value)}
+                  className="form-input"
+                  style={{ paddingLeft: '38px', padding: '10px 14px 10px 38px' }}
+                />
               </div>
             </div>
 
-            {jsonError && (
+            {/* Users List */}
+            {filteredUsers.length === 0 ? (
               <div style={{
-                background: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid #ef4444',
-                color: '#fca5a5',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                fontSize: '0.85rem',
-                fontWeight: 700
+                background: '#1c1c1c',
+                borderRadius: '16px',
+                padding: '40px',
+                textAlign: 'center',
+                color: '#94a3b8',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
-                hata: {jsonError}
+                {usersList.length === 0 ? 'henüz discord ile giriş yapmış kullanıcı bulunmuyor.' : 'arama ile eşleşen kullanıcı bulunamadı.'}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {filteredUsers.map(user => {
+                  const isMainAdminUser = user.id === ADMIN_DISCORD_ID;
+                  const isSaving = userSavingId === user.id;
+
+                  return (
+                    <div
+                      key={user.id}
+                      style={{
+                        background: '#1c1c1c',
+                        border: isMainAdminUser ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '16px',
+                        padding: '20px 24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '18px',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                      }}
+                    >
+                      {/* User Top Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <img
+                            src={user.avatar || defaultAvatarImg}
+                            alt={user.displayName}
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: isMainAdminUser ? '2px solid #ef4444' : '2px solid rgba(255, 255, 255, 0.2)'
+                            }}
+                          />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
+                                {user.displayName || user.username}
+                              </span>
+                              {isMainAdminUser && (
+                                <span className="badge-admin">
+                                  <ShieldCheck size={11} /> ana yönetici
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              discord id: <b style={{ color: '#cbd5e1' }}>{user.id}</b>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* User Total Score Input */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div style={{
+                            background: '#242424',
+                            border: '1px solid rgba(251, 191, 36, 0.3)',
+                            padding: '6px 14px',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            <Star size={16} fill="#fbbf24" color="#fbbf24" />
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>toplam puan:</span>
+                            <input
+                              type="number"
+                              value={user.totalScore !== undefined ? user.totalScore : 0}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setUsersList(prev => prev.map(u => u.id === user.id ? { ...u, totalScore: val } : u));
+                              }}
+                              style={{
+                                width: '60px',
+                                background: '#181818',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                color: '#fbbf24',
+                                fontWeight: 800,
+                                fontSize: '0.92rem',
+                                borderRadius: '6px',
+                                padding: '3px 6px',
+                                textAlign: 'center'
+                              }}
+                            />
+                          </div>
+
+                          <button
+                            onClick={() => handleSaveUser(user)}
+                            disabled={isSaving}
+                            className="btn-primary"
+                            style={{ padding: '8px 18px', fontSize: '0.85rem' }}
+                          >
+                            <Save size={15} /> {isSaving ? 'kaydediliyor...' : 'kaydet'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Middle: Tags Section */}
+                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '14px' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px' }}>
+                          özel etiketler (taglar):
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {/* Quick Tag Toggles */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserTag(user, 'admin')}
+                            className={user.tags?.includes('admin') ? 'badge-admin' : 'deck-tag-btn'}
+                            style={{ cursor: 'pointer', padding: '4px 10px' }}
+                          >
+                            <ShieldCheck size={12} /> admin
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserTag(user, 'VIP')}
+                            className={user.tags?.includes('VIP') ? 'badge-vip' : 'deck-tag-btn'}
+                            style={{ cursor: 'pointer', padding: '4px 10px' }}
+                          >
+                            <Crown size={12} /> VIP
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserTag(user, 'Premium')}
+                            className={user.tags?.includes('Premium') ? 'badge-premium' : 'deck-tag-btn'}
+                            style={{ cursor: 'pointer', padding: '4px 10px' }}
+                          >
+                            <Sparkles size={12} /> Premium
+                          </button>
+
+                          {/* Render other custom tags */}
+                          {(user.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(customTag => (
+                            <span key={customTag} style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              border: '1px solid rgba(255, 255, 255, 0.25)',
+                              color: '#ffffff',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              padding: '3px 8px',
+                              borderRadius: '9999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {customTag}
+                              <X
+                                size={12}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => handleToggleUserTag(user, customTag)}
+                              />
+                            </span>
+                          ))}
+
+                          {/* Add Custom Tag Input */}
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              placeholder="özel etiket adı..."
+                              value={editingUserTags[user.id] || ''}
+                              onChange={(e) => setEditingUserTags(prev => ({ ...prev, [user.id]: e.target.value }))}
+                              style={{
+                                background: '#242424',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                borderRadius: '6px',
+                                color: '#ffffff',
+                                fontSize: '0.78rem',
+                                padding: '4px 8px',
+                                width: '120px'
+                              }}
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTag(user.id)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddCustomTag(user.id)}
+                              className="btn-secondary"
+                              style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            >
+                              + ekle
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom: Unlocked Decks Section */}
+                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#94a3b8' }}>
+                            kullanıcının sahip olduğu desteler ({user.unlockedDecks?.length || 0} aktif):
+                          </span>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleGrantAllDecksToUser(user.id)}
+                              style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              tümünü aç
+                            </button>
+                            <span style={{ color: '#475569' }}>|</span>
+                            <button
+                              type="button"
+                              onClick={() => handleResetUserDecks(user.id)}
+                              style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              varsayılana dön
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="deck-tags-container">
+                          {DEFAULT_CONFIG.allDecks.map(deckName => {
+                            const isUnlocked = (user.unlockedDecks || []).includes(deckName);
+                            return (
+                              <button
+                                key={deckName}
+                                type="button"
+                                onClick={() => handleToggleUserDeck(user, deckName)}
+                                className={`deck-tag-btn ${isUnlocked ? 'active' : ''}`}
+                                style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                              >
+                                {isUnlocked ? <Check size={12} /> : <Plus size={12} />}
+                                {deckName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
+          </div>
+        )}
 
-            <textarea
-              value={jsonText}
-              onChange={(e) => setJsonText(e.target.value)}
-              className="form-input"
-              style={{
-                fontFamily: 'monospace',
-                fontSize: '0.86rem',
-                height: '480px',
-                resize: 'vertical',
-                background: '#121212',
-                lineHeight: '1.45',
-                padding: '16px'
-              }}
-            />
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION C: DESTE İZİNLERİ (GLOBAL DECK DEFAULTS) */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'permissions' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+                genel deste izin kuralları
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
+                giriş yapmayan misafirlerin ve yeni discord girişi yapan standart kullanıcıların varsayılan olarak hangi destelere sahip olacağını ayarlayın.
+              </p>
+            </div>
+
+            {/* Rule 1: Guest Users */}
+            <div style={{
+              background: '#1c1c1c',
+              borderRadius: '16px',
+              padding: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{
+                  background: '#262626',
+                  color: '#94a3b8',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '0.8rem'
+                }}>
+                  misafir (giriş yapmayan)
+                </span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+                  varsayılan açık desteler
+                </span>
+              </div>
+              <p style={{ color: '#94a3b8', fontSize: '0.82rem' }}>
+                discord ile giriş yapmadan doğrudan lobi açan oyuncuların seçebileceği desteler:
+              </p>
+
+              <div className="deck-tags-container">
+                {DEFAULT_CONFIG.allDecks.map(deckName => {
+                  const isActive = (appConfig.guestDecks || []).includes(deckName);
+                  return (
+                    <button
+                      key={deckName}
+                      type="button"
+                      onClick={() => handleToggleDefaultGuestDeck(deckName)}
+                      className={`deck-tag-btn ${isActive ? 'active' : ''}`}
+                    >
+                      {isActive ? <Check size={13} /> : <Plus size={13} />}
+                      {deckName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Rule 2: Registered Discord Users */}
+            <div style={{
+              background: '#1c1c1c',
+              borderRadius: '16px',
+              padding: '24px',
+              border: '1px solid rgba(88, 101, 242, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{
+                  background: '#5865F2',
+                  color: '#ffffff',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '0.8rem'
+                }}>
+                  discord kullanıcıları
+                </span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+                  ilk girişte tanımlanan standart desteler
+                </span>
+              </div>
+              <p style={{ color: '#94a3b8', fontSize: '0.82rem' }}>
+                discord ile giriş yapan tüm standart kullanıcıların profillerine başlangıçta otomatik tanımlanacak desteler:
+              </p>
+
+              <div className="deck-tags-container">
+                {DEFAULT_CONFIG.allDecks.map(deckName => {
+                  const isActive = (appConfig.discordDecks || []).includes(deckName);
+                  return (
+                    <button
+                      key={deckName}
+                      type="button"
+                      onClick={() => handleToggleDefaultDiscordDeck(deckName)}
+                      className={`deck-tag-btn ${isActive ? 'active' : ''}`}
+                    >
+                      {isActive ? <Check size={13} /> : <Plus size={13} />}
+                      {deckName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <button
-              onClick={handleSaveJson}
+              onClick={handleSaveConfig}
+              disabled={configSaving}
               className="btn-primary"
-              style={{ width: '100%', padding: '16px', fontSize: '0.98rem' }}
+              style={{ padding: '14px 24px', alignSelf: 'flex-start' }}
             >
-              <Save size={18} /> json değişikliklerini kaydet ve aktif et
+              <Save size={18} /> {configSaving ? 'kaydediliyor...' : 'genel izinleri kaydet'}
             </button>
           </div>
         )}

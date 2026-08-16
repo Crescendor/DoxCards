@@ -82,12 +82,19 @@ export function shuffleArray(array) {
 }
 
 // Get shuffled full match deck
-export function getDeck(deckType = 'all', customRawDeck = null) {
+export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = null) {
   const parsed = customRawDeck ? buildCardsFromRaw(customRawDeck) : activeParsed;
   let selectedWhite = [...parsed.whiteCards];
   let selectedRed = [...parsed.redCards];
 
-  if (deckType !== 'all') {
+  if (Array.isArray(selectedDecks) && selectedDecks.length > 0) {
+    const lowerDecks = selectedDecks.map(d => (d || '').toLowerCase().trim());
+    const filteredWhite = selectedWhite.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
+    const filteredRed = selectedRed.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
+
+    if (filteredWhite.length >= 10) selectedWhite = filteredWhite;
+    if (filteredRed.length >= 10) selectedRed = filteredRed;
+  } else if (deckType !== 'all') {
     const filteredWhite = selectedWhite.filter(c => c.category?.toLowerCase().includes(deckType.toLowerCase()));
     const filteredRed = selectedRed.filter(c => c.category?.toLowerCase().includes(deckType.toLowerCase()));
     if (filteredWhite.length >= 20) selectedWhite = filteredWhite;

@@ -16,6 +16,7 @@ export class GameEngine {
     this.roomCode = roomCode;
     this.targetScore = settings.targetScore || 3;
     this.deckType = settings.deckType || 'all';
+    this.selectedDecks = settings.selectedDecks || null;
 
     this.phase = PHASES.LOBBY;
     this.currentRound = 0;
@@ -46,7 +47,7 @@ export class GameEngine {
   }
 
   initDecks() {
-    this.deck = getDeck(this.deckType);
+    this.deck = getDeck(this.deckType, null, this.selectedDecks);
     this.usedCardIds = new Set();
   }
 

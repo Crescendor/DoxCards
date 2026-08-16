@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX } from 'lucide-react';
+import { Users, Crown, Copy, Check, Play, Settings2, ShieldCheck, Share2, UserX, Plus, Layers } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 import { ADMIN_DISCORD_ID } from './AdminPageView';
 import { getDiscordUser } from '../services/discordAuth';
+import { getLocalUserProfile, DEFAULT_CONFIG } from '../services/userService';
 
 const MAX_SLOTS = 6;
 
@@ -21,6 +22,30 @@ export default function LobbyView({
   const isHost = room.hostId === player.id;
   const players = room.players || [];
   const discordUser = getDiscordUser();
+  const userProfile = getLocalUserProfile();
+
+  const isMainAdmin = discordUser?.id === ADMIN_DISCORD_ID;
+  const availableDecksForHost = isMainAdmin
+    ? DEFAULT_CONFIG.allDecks
+    : (discordUser ? (userProfile?.unlockedDecks || DEFAULT_CONFIG.discordDecks) : DEFAULT_CONFIG.guestDecks);
+
+  const selectedDecks = room.settings?.selectedDecks || availableDecksForHost;
+
+  const handleToggleDeck = (deckName) => {
+    if (!isHost) return;
+    sounds.playClick();
+    let updated;
+    if (selectedDecks.includes(deckName)) {
+      if (selectedDecks.length === 1) {
+        alert('En az bir deste seçili olmalıdır!');
+        return;
+      }
+      updated = selectedDecks.filter(d => d !== deckName);
+    } else {
+      updated = [...selectedDecks, deckName];
+    }
+    onUpdateSettings({ selectedDecks: updated });
+  };
 
   const handleCopyLink = () => {
     sounds.playClick();
@@ -233,6 +258,37 @@ export default function LobbyView({
               <option value={5}>5 puan (standart)</option>
               <option value={7}>7 puan (uzun)</option>
             </select>
+          </div>
+
+          {/* Clickable Deck Selector by Room Host */}
+          <div style={{ marginTop: '16px' }}>
+            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Layers size={13} color="#ef4444" /> oyun desteleri {isHost ? '(ekle/çıkar)' : ''}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                {selectedDecks.length} aktif deste
+              </span>
+            </label>
+
+            <div className="deck-tags-container">
+              {availableDecksForHost.map(deckName => {
+                const isSelected = selectedDecks.includes(deckName);
+                return (
+                  <button
+                    key={deckName}
+                    type="button"
+                    disabled={!isHost}
+                    onClick={() => handleToggleDeck(deckName)}
+                    className={`deck-tag-btn ${isSelected ? 'active' : ''} ${!isHost ? 'disabled' : ''}`}
+                    title={isHost ? `${deckName} destesini aç/kapat` : deckName}
+                  >
+                    {isSelected ? <Check size={13} /> : <Plus size={13} />}
+                    {deckName}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

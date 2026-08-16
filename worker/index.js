@@ -15,6 +15,20 @@ function generateRoomCode() {
 // Global In-Memory Fallback Map (for non-DO environments)
 const globalRooms = new Map();
 
+const DEFAULT_CONFIG = {
+  guestDecks: ['Ana Deste'],
+  discordDecks: ['Ana Deste', 'Ek Paket'],
+  allDecks: [
+    'Ana Deste',
+    'Ek Paket',
+    'Nerd Paket',
+    'Fenasal Nerd Paket',
+    'Sekso Paket',
+    'Kara Paket',
+    'Zifiri Paket'
+  ]
+};
+
 // Durable Object class for 100% synchronized stateful multiplayer rooms
 export class GameRoomDO {
   constructor(state, env) {
@@ -35,6 +49,135 @@ export class GameRoomDO {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
+    }
+
+    // Config API (/api/config)
+    if (url.pathname === '/api/config' || url.pathname === '/api/config/') {
+      if (request.method === 'GET') {
+        let config = null;
+        if (this.state?.storage) {
+          config = await this.state.storage.get('app_config');
+        }
+        return Response.json(config || DEFAULT_CONFIG, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      if (request.method === 'POST') {
+        const body = await request.json();
+        const currentConfig = (this.state?.storage ? await this.state.storage.get('app_config') : null) || DEFAULT_CONFIG;
+        const newConfig = { ...currentConfig, ...body };
+        if (this.state?.storage) {
+          await this.state.storage.put('app_config', newConfig);
+        }
+        return Response.json({ success: true, config: newConfig }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // Users Database API (/api/users)
+    if (url.pathname.startsWith('/api/users')) {
+      let usersMap = {};
+      if (this.state?.storage) {
+        usersMap = (await this.state.storage.get('users_map')) || {};
+      }
+
+      // 1. Get all users
+      if (url.pathname === '/api/users' || url.pathname === '/api/users/') {
+        return Response.json(Object.values(usersMap), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 2. Sync user on login
+      if (url.pathname === '/api/users/sync' && request.method === 'POST') {
+        const data = await request.json();
+        const { id, username, displayName, avatar } = data;
+        if (!id) return Response.json({ error: 'ID required' }, { status: 400, headers: corsHeaders });
+
+        let config = DEFAULT_CONFIG;
+        if (this.state?.storage) {
+          config = (await this.state.storage.get('app_config')) || DEFAULT_CONFIG;
+        }
+
+        const isMainAdmin = id === '269639754675519489';
+        let user = usersMap[id];
+
+        if (user) {
+          user.username = username || user.username;
+          user.displayName = displayName || user.displayName;
+          if (avatar) user.avatar = avatar;
+          if (isMainAdmin && !user.tags.includes('admin')) {
+            user.tags = ['admin', ...user.tags];
+          }
+          user.updatedAt = Date.now();
+        } else {
+          user = {
+            id,
+            username: username || displayName || 'oyuncu',
+            displayName: displayName || username || 'oyuncu',
+            avatar: avatar || null,
+            totalScore: 0,
+            tags: isMainAdmin ? ['admin'] : [],
+            unlockedDecks: isMainAdmin ? [...config.allDecks] : [...config.discordDecks],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+        }
+
+        usersMap[id] = user;
+        if (this.state?.storage) {
+          await this.state.storage.put('users_map', usersMap);
+        }
+
+        return Response.json({ success: true, user }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 3. Update user profile by Admin
+      if (url.pathname === '/api/users/update' && request.method === 'POST') {
+        const body = await request.json();
+        const { userId, tags, unlockedDecks, totalScore } = body;
+        if (!userId || !usersMap[userId]) {
+          return Response.json({ error: 'User not found' }, { status: 404, headers: corsHeaders });
+        }
+
+        const user = usersMap[userId];
+        if (Array.isArray(tags)) user.tags = tags;
+        if (Array.isArray(unlockedDecks)) user.unlockedDecks = unlockedDecks;
+        if (typeof totalScore === 'number') user.totalScore = totalScore;
+        user.updatedAt = Date.now();
+
+        usersMap[userId] = user;
+        if (this.state?.storage) {
+          await this.state.storage.put('users_map', usersMap);
+        }
+
+        return Response.json({ success: true, user }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 4. Add score after game
+      if (url.pathname === '/api/users/add-score' && request.method === 'POST') {
+        const body = await request.json();
+        const { scores } = body; // { [discordId]: points }
+        if (scores && typeof scores === 'object') {
+          Object.entries(scores).forEach(([dId, pts]) => {
+            if (usersMap[dId]) {
+              usersMap[dId].totalScore = (usersMap[dId].totalScore || 0) + (Number(pts) || 0);
+              usersMap[dId].updatedAt = Date.now();
+            }
+          });
+          if (this.state?.storage) {
+            await this.state.storage.put('users_map', usersMap);
+          }
+        }
+        return Response.json({ success: true }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     // Deck Database API Endpoints in Cloudflare DO Storage
@@ -310,7 +453,24 @@ export class GameRoomDO {
 
           this.broadcastGameState();
 
-          if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
+          if (this.room.game.phase === PHASES.GAME_OVER) {
+            // Persist scores to registered users in Cloudflare DB
+            if (this.state?.storage && this.room.players) {
+              this.state.storage.get('users_map').then(usersMap => {
+                if (usersMap) {
+                  this.room.players.forEach(p => {
+                    const dId = p.discordId || p.id;
+                    const pScore = this.room.game.scores[p.id] || 0;
+                    if (usersMap[dId] && pScore > 0) {
+                      usersMap[dId].totalScore = (usersMap[dId].totalScore || 0) + pScore;
+                      usersMap[dId].updatedAt = Date.now();
+                    }
+                  });
+                  this.state.storage.put('users_map', usersMap);
+                }
+              }).catch(() => {});
+            }
+          } else if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
             setTimeout(() => {
               if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
                 this.room.game.nextRound(this.room.players);
@@ -554,24 +714,30 @@ export default {
       return new Response(null, { status: 101, webSocket: clientWs });
     }
 
-    // 2. Deck Database API (/api/deck)
-    if (url.pathname.startsWith('/api/deck')) {
+    // 2. Database API Routing (/api/deck, /api/users, /api/config)
+    if (url.pathname.startsWith('/api/deck') || url.pathname.startsWith('/api/users') || url.pathname.startsWith('/api/config')) {
       if (env && env.GAME_ROOMS) {
         const id = env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
         const storageObj = env.GAME_ROOMS.get(id);
         return storageObj.fetch(request);
       }
 
-      // In-Memory Fallback
+      // In-Memory Fallback for decks
       if (url.pathname === '/api/deck/reset') {
         updateGlobalDeck(rawDeckJson);
         return Response.json({ success: true, message: 'Veritabanı sıfırlandı!' }, { headers: corsHeaders });
       }
-      if (request.method === 'POST') {
+      if (url.pathname.startsWith('/api/deck') && request.method === 'POST') {
         const body = await request.json();
         const newDeck = body.deck || body;
         updateGlobalDeck(newDeck);
         return Response.json({ success: true, message: 'Veritabanına kaydedildi!' }, { headers: corsHeaders });
+      }
+      if (url.pathname.startsWith('/api/config')) {
+        return Response.json(DEFAULT_CONFIG, { headers: corsHeaders });
+      }
+      if (url.pathname.startsWith('/api/users')) {
+        return Response.json([], { headers: corsHeaders });
       }
       return Response.json(getActiveRawDeck(), { headers: corsHeaders });
     }
