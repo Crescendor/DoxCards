@@ -848,7 +848,7 @@ export default function AdminPageView({ onBack, discordUser }) {
           {/* Navigation Links */}
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
-              onClick={() => { sounds.playClick(); setMainNav('cards'); }}
+              onClick={() => { sounds.playClick(); setMainNav('cards'); if (activeTab === 'suggestions') setActiveTab('list'); }}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -856,14 +856,14 @@ export default function AdminPageView({ onBack, discordUser }) {
                 gap: '12px',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                background: mainNav === 'cards' ? '#FF0000' : 'transparent',
+                background: (mainNav === 'cards' && activeTab !== 'suggestions') ? '#FF0000' : 'transparent',
                 color: '#ffffff',
-                border: mainNav === 'cards' ? '1px solid #ff3333' : '1px solid transparent',
+                border: (mainNav === 'cards' && activeTab !== 'suggestions') ? '1px solid #ff3333' : '1px solid transparent',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: mainNav === 'cards' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                boxShadow: (mainNav === 'cards' && activeTab !== 'suggestions') ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
                 textAlign: 'left'
               }}
             >
@@ -917,7 +917,7 @@ export default function AdminPageView({ onBack, discordUser }) {
             </button>
 
             <button
-              onClick={() => { sounds.playClick(); setMainNav('suggestions'); loadSuggestions(); }}
+              onClick={() => { sounds.playClick(); setMainNav('cards'); setActiveTab('suggestions'); loadSuggestions(); }}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -925,14 +925,14 @@ export default function AdminPageView({ onBack, discordUser }) {
                 gap: '12px',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                background: mainNav === 'suggestions' ? '#FF0000' : 'transparent',
+                background: (mainNav === 'cards' && activeTab === 'suggestions') ? '#FF0000' : 'transparent',
                 color: '#ffffff',
-                border: mainNav === 'suggestions' ? '1px solid #ff3333' : '1px solid transparent',
+                border: (mainNav === 'cards' && activeTab === 'suggestions') ? '1px solid #ff3333' : '1px solid transparent',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: mainNav === 'suggestions' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                boxShadow: (mainNav === 'cards' && activeTab === 'suggestions') ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
                 textAlign: 'left'
               }}
             >
@@ -984,28 +984,38 @@ export default function AdminPageView({ onBack, discordUser }) {
         flex: 1,
         height: '100vh',
         overflowY: 'auto',
-        padding: '32px 36px',
+        scrollbarGutter: 'stable',
+        padding: '32px 40px 60px 40px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px'
+        alignItems: 'center',
+        boxSizing: 'border-box'
       }}>
-        {/* Global Feedback Alert */}
-        {saveSuccess && (
-          <div style={{
-            background: 'rgba(16, 185, 129, 0.2)',
-            border: '1px solid #10b981',
-            color: '#34d399',
-            padding: '14px 20px',
-            borderRadius: '12px',
-            fontSize: '0.9rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <Check size={18} /> değişiklikler Cloudflare veritabanına başarıyla kaydedildi!
-          </div>
-        )}
+        <div style={{
+          width: '100%',
+          maxWidth: '1380px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+          boxSizing: 'border-box'
+        }}>
+          {/* Global Feedback Alert */}
+          {saveSuccess && (
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.2)',
+              border: '1px solid #10b981',
+              color: '#34d399',
+              padding: '14px 20px',
+              borderRadius: '12px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Check size={18} /> değişiklikler Cloudflare veritabanına başarıyla kaydedildi!
+            </div>
+          )}
 
         {/* ----------------------------------------------------------------------- */}
         {/* SECTION A: KARTLAR VE DESTELER (WITH HORIZONTAL TABS FROM IMAGE 2) */}
@@ -1177,14 +1187,13 @@ export default function AdminPageView({ onBack, discordUser }) {
               </button>
 
               <button
-                onClick={() => { sounds.playClick(); setMainNav('suggestions'); loadSuggestions(); }}
+                onClick={() => { sounds.playClick(); setActiveTab('suggestions'); loadSuggestions(); }}
                 style={{
                   flex: 1,
                   padding: '12px 18px',
                   borderRadius: '10px',
-                  background: 'rgba(255, 0, 0, 0.12)',
-                  border: '1px solid rgba(255, 0, 0, 0.35)',
-                  color: '#ff6666',
+                  background: activeTab === 'suggestions' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
                   fontWeight: 700,
                   fontSize: '0.92rem',
                   display: 'flex',
@@ -1192,7 +1201,8 @@ export default function AdminPageView({ onBack, discordUser }) {
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  border: 'none',
+                  transition: 'background 0.2s'
                 }}
               >
                 <Lightbulb size={18} /> önerilen kart & desteler ({suggestionsList.length})
@@ -2147,6 +2157,509 @@ export default function AdminPageView({ onBack, discordUser }) {
                 </button>
               </div>
             )}
+
+            {/* TAB 5: ÖNERİLEN KARTLAR VE DESTELER */}
+            {activeTab === 'suggestions' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Header & Refresh */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: '#1c1c1c',
+                  padding: '20px 24px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Lightbulb size={22} color="#FF0000" />
+                      önerilen kartlar ve desteler yönetimi
+                    </h3>
+                    <p style={{ color: '#94a3b8', fontSize: '0.86rem', margin: '4px 0 0 0' }}>
+                      kullanıcıların profillerinden gönderdiği kart ve deste önerilerini inceleyin, tek tuşla istediğiniz desteye ekleyin veya reddedin.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { sounds.playClick(); loadSuggestions(); }}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#ffffff',
+                      padding: '8px 14px',
+                      borderRadius: '10px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <RefreshCw size={14} className={suggestionsLoading ? 'spin' : ''} /> yenile
+                  </button>
+                </div>
+
+                {/* Filter Tabs */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[
+                    { id: 'all', label: `tümü (${suggestionsList.length})` },
+                    { id: 'pending', label: `inceleniyor (${suggestionsList.filter(s => s.status === 'pending').length})` },
+                    { id: 'approved', label: `onaylandı (${suggestionsList.filter(s => s.status === 'approved').length})` },
+                    { id: 'rejected', label: `reddedildi (${suggestionsList.filter(s => s.status === 'rejected').length})` }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => { sounds.playClick(); setCardSuggestionsFilter(f.id); }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        background: cardSuggestionsFilter === f.id ? '#FF0000' : '#1c1c1c',
+                        color: '#ffffff',
+                        border: cardSuggestionsFilter === f.id ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.08)',
+                        fontWeight: 700,
+                        fontSize: '0.84rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 1. ÖNERİLEN KARTLAR BÖLÜMÜ */}
+                <div style={{
+                  background: '#1c1c1c',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}>
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Layers size={18} color="#ef4444" />
+                    önerilen tekil kartlar ({suggestionsList.filter(s => s.type === 'card' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter)).length})
+                  </h4>
+
+                  {(() => {
+                    const cardSugs = suggestionsList.filter(s => s.type === 'card' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter));
+                    if (cardSugs.length === 0) {
+                      return (
+                        <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.88rem' }}>
+                          bu filtrede önerilen kart bulunamadı.
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {cardSugs.map((sug) => {
+                          const isPending = sug.status === 'pending';
+                          const isWhite = sug.cardData?.type === 'perk';
+                          const selectedDest = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
+
+                          return (
+                            <div
+                              key={sug.id}
+                              style={{
+                                background: '#242424',
+                                border: isPending ? '1px solid rgba(255, 0, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                borderRadius: '14px',
+                                padding: '16px 20px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                                {/* Left: Card Badge + Text */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{
+                                      background: isWhite ? '#ffffff' : '#FF0000',
+                                      color: isWhite ? '#000000' : '#ffffff',
+                                      fontWeight: 800,
+                                      fontSize: '0.72rem',
+                                      padding: '2px 8px',
+                                      borderRadius: '6px',
+                                      textTransform: 'lowercase'
+                                    }}>
+                                      {isWhite ? '⚪ beyaz kart' : '🔴 kırmızı kart'}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.4 }}>
+                                    "{sug.cardData?.text}"
+                                  </div>
+                                </div>
+
+                                {/* Author Info (Discord ID & Name) */}
+                                <div style={{
+                                  background: '#1a1a1a',
+                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  borderRadius: '10px',
+                                  padding: '8px 12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  minWidth: '240px'
+                                }}>
+                                  <img
+                                    src={sug.author?.avatar || defaultAvatarImg}
+                                    alt="avatar"
+                                    style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
+                                  />
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
+                                      {sug.author?.name || sug.author?.username || 'Anonim'}
+                                    </span>
+                                    <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontFamily: 'monospace' }}>
+                                      ID: {sug.author?.id || 'Bilinmiyor'}
+                                    </span>
+                                    {sug.author?.isAnonymous && (
+                                      <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
+                                        🕵️ kullanıcı anonim gönderdi
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Action Toolbar */}
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                                paddingTop: '10px',
+                                gap: '12px'
+                              }}>
+                                {/* Destination Deck Selector */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>eklenecek deste:</span>
+                                  <select
+                                    value={selectedDest}
+                                    onChange={(e) => setTargetDeckForCard(prev => ({ ...prev, [sug.id]: e.target.value }))}
+                                    disabled={!isPending}
+                                    style={{
+                                      background: '#141414',
+                                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                                      color: '#ffffff',
+                                      borderRadius: '8px',
+                                      padding: '5px 10px',
+                                      fontSize: '0.8rem',
+                                      cursor: isPending ? 'pointer' : 'default'
+                                    }}
+                                  >
+                                    {combinedDeckList.map(d => (
+                                      <option key={d} value={d}>{d}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* Buttons / Status */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  {isPending ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApproveCardSuggestion(sug)}
+                                        style={{
+                                          background: '#22c55e',
+                                          color: '#ffffff',
+                                          border: 'none',
+                                          padding: '7px 16px',
+                                          borderRadius: '8px',
+                                          fontWeight: 800,
+                                          fontSize: '0.8rem',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '6px'
+                                        }}
+                                      >
+                                        <Check size={14} /> tek tuşla desteye ekle & onayla
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRejectSuggestion(sug.id)}
+                                        style={{
+                                          background: 'rgba(239, 68, 68, 0.15)',
+                                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                                          color: '#f87171',
+                                          padding: '7px 12px',
+                                          borderRadius: '8px',
+                                          fontWeight: 700,
+                                          fontSize: '0.8rem',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        reddet
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <span style={{
+                                      background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                      border: sug.status === 'approved' ? '1px solid #10b981' : '1px solid #ef4444',
+                                      color: sug.status === 'approved' ? '#34d399' : '#f87171',
+                                      padding: '4px 12px',
+                                      borderRadius: '9999px',
+                                      fontSize: '0.76rem',
+                                      fontWeight: 800,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}>
+                                      {sug.status === 'approved' ? <><CheckCircle2 size={12} /> desteye eklendi</> : <><XCircle size={12} /> reddedildi</>}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* 2. ÖNERİLEN DESTELER BÖLÜMÜ */}
+                <div style={{
+                  background: '#1c1c1c',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}>
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FolderEdit size={18} color="#3b82f6" />
+                    önerilen desteler & paketler ({suggestionsList.filter(s => s.type === 'deck' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter)).length})
+                  </h4>
+
+                  {(() => {
+                    const deckSugs = suggestionsList.filter(s => s.type === 'deck' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter));
+                    if (deckSugs.length === 0) {
+                      return (
+                        <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.88rem' }}>
+                          bu filtrede önerilen deste bulunamadı.
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {deckSugs.map((sug) => {
+                          const isPending = sug.status === 'pending';
+                          const isExpanded = expandedDeckSugId === sug.id;
+                          const whiteCount = sug.deckData?.whiteCards?.length || 0;
+                          const redCount = sug.deckData?.redCards?.length || 0;
+
+                          return (
+                            <div
+                              key={sug.id}
+                              style={{
+                                background: '#242424',
+                                border: isPending ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                borderRadius: '14px',
+                                padding: '18px 20px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff' }}>
+                                      📦 {sug.deckData?.title}
+                                    </span>
+                                  </div>
+
+                                  {sug.deckData?.description && (
+                                    <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0 }}>
+                                      {sug.deckData.description}
+                                    </p>
+                                  )}
+
+                                  <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                                    <span style={{ fontSize: '0.78rem', color: '#ffffff', fontWeight: 700 }}>
+                                      ⚪ {whiteCount} Beyaz Kart
+                                    </span>
+                                    <span style={{ fontSize: '0.78rem', color: '#f87171', fontWeight: 700 }}>
+                                      🔴 {redCount} Kırmızı Kart
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Author Info */}
+                                <div style={{
+                                  background: '#1a1a1a',
+                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  borderRadius: '10px',
+                                  padding: '8px 12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  minWidth: '240px'
+                                }}>
+                                  <img
+                                    src={sug.author?.avatar || defaultAvatarImg}
+                                    alt="avatar"
+                                    style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
+                                  />
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
+                                      {sug.author?.name || sug.author?.username || 'Anonim'}
+                                    </span>
+                                    <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontFamily: 'monospace' }}>
+                                      ID: {sug.author?.id || 'Bilinmiyor'}
+                                    </span>
+                                    {sug.author?.isAnonymous && (
+                                      <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
+                                        🕵️ kullanıcı anonim önerdi
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Expand Card List */}
+                              <div>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedDeckSugId(isExpanded ? null : sug.id)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#3b82f6',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    textDecoration: 'underline'
+                                  }}
+                                >
+                                  {isExpanded ? '▲ kart listesini gizle' : `▼ destedeki ${whiteCount + redCount} kartı incele`}
+                                </button>
+
+                                {isExpanded && (
+                                  <div style={{
+                                    marginTop: '10px',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '12px',
+                                    background: '#181818',
+                                    padding: '14px',
+                                    borderRadius: '10px',
+                                    maxHeight: '240px',
+                                    overflowY: 'auto'
+                                  }}>
+                                    <div>
+                                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '6px' }}>
+                                        ⚪ Beyaz Kartlar ({whiteCount})
+                                      </span>
+                                      <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                        {(sug.deckData?.whiteCards || []).map((c, i) => (
+                                          <li key={i}>{c}</li>
+                                        ))}
+                                      </ol>
+                                    </div>
+
+                                    <div>
+                                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', display: 'block', marginBottom: '6px' }}>
+                                        🔴 Kırmızı Kartlar ({redCount})
+                                      </span>
+                                      <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#fca5a5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                        {(sug.deckData?.redCards || []).map((c, i) => (
+                                          <li key={i}>{c}</li>
+                                        ))}
+                                      </ol>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Action Toolbar */}
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                                paddingTop: '10px',
+                                gap: '10px'
+                              }}>
+                                {isPending ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApproveDeckSuggestion(sug)}
+                                      style={{
+                                        background: '#22c55e',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        padding: '7px 18px',
+                                        borderRadius: '8px',
+                                        fontWeight: 800,
+                                        fontSize: '0.82rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                      }}
+                                    >
+                                      <Check size={14} /> tek tuşla yeni deste olarak oyuna ekle
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRejectSuggestion(sug.id)}
+                                      style={{
+                                        background: 'rgba(239, 68, 68, 0.15)',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        color: '#f87171',
+                                        padding: '7px 14px',
+                                        borderRadius: '8px',
+                                        fontWeight: 700,
+                                        fontSize: '0.82rem',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      reddet
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span style={{
+                                    background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                    border: sug.status === 'approved' ? '1px solid #10b981' : '1px solid #ef4444',
+                                    color: sug.status === 'approved' ? '#34d399' : '#f87171',
+                                    padding: '4px 12px',
+                                    borderRadius: '9999px',
+                                    fontSize: '0.76rem',
+                                    fontWeight: 800,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}>
+                                    {sug.status === 'approved' ? <><CheckCircle2 size={12} /> yeni deste olarak eklendi</> : <><XCircle size={12} /> reddedildi</>}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -2500,129 +3013,114 @@ export default function AdminPageView({ onBack, discordUser }) {
                       type="button"
                       onClick={() => { sounds.playClick(); setNewSoundSourceType('local'); }}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: '10px',
                         background: newSoundSourceType === 'local' ? '#FF0000' : '#262626',
                         color: '#ffffff',
-                        border: newSoundSourceType === 'local' ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.1)',
                         fontWeight: 700,
-                        fontSize: '0.82rem',
-                        cursor: 'pointer'
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                     >
-                      📁 yerel dosya yükle (.mp3, .wav)
+                      📁 yerel ses dosyası (mp3/wav)
                     </button>
                     <button
                       type="button"
                       onClick={() => { sounds.playClick(); setNewSoundSourceType('youtube'); }}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: '10px',
                         background: newSoundSourceType === 'youtube' ? '#FF0000' : '#262626',
                         color: '#ffffff',
-                        border: newSoundSourceType === 'youtube' ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.1)',
                         fontWeight: 700,
-                        fontSize: '0.82rem',
-                        cursor: 'pointer'
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                     >
-                      🎬 youtube videosu & kırpma
+                      🎬 youtube video linki
                     </button>
                     <button
                       type="button"
                       onClick={() => { sounds.playClick(); setNewSoundSourceType('url'); }}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: '10px',
                         background: newSoundSourceType === 'url' ? '#FF0000' : '#262626',
                         color: '#ffffff',
-                        border: newSoundSourceType === 'url' ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.1)',
                         fontWeight: 700,
-                        fontSize: '0.82rem',
-                        cursor: 'pointer'
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                     >
                       🔗 doğrudan ses url'si
                     </button>
                   </div>
 
-                  {/* Local File Upload Input */}
                   {newSoundSourceType === 'local' && (
-                    <div style={{
-                      background: '#242424',
-                      border: '1px dashed rgba(255, 255, 255, 0.2)',
-                      borderRadius: '10px',
-                      padding: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '14px'
-                    }}>
-                      <label style={{
-                        background: '#333333',
-                        color: '#ffffff',
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}>
-                        <Upload size={14} /> dosya seç...
-                        <input
-                          type="file"
-                          accept="audio/*"
-                          onChange={handleSoundFileUpload}
-                          style={{ display: 'none' }}
-                        />
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <label className="btn-secondary" style={{ padding: '10px 16px', fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Upload size={15} /> dosya seç (.mp3, .wav, .ogg)
+                        <input type="file" accept="audio/*" onChange={handleSoundFileUpload} style={{ display: 'none' }} />
                       </label>
-                      <span style={{ fontSize: '0.84rem', color: audioFileName ? '#22c55e' : '#94a3b8' }}>
-                        {audioFileName ? `seçilen dosya: ${audioFileName}` : 'bilgisayarınızdan bir ses dosyası seçin (.mp3, .wav, .ogg)'}
-                      </span>
+                      {audioFileName && (
+                        <span style={{ fontSize: '0.82rem', color: '#34d399', fontWeight: 700 }}>
+                          ✓ {audioFileName} seçildi
+                        </span>
+                      )}
                     </div>
                   )}
 
-                  {/* YouTube Video URL Input */}
                   {newSoundSourceType === 'youtube' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <input
-                        type="text"
-                        placeholder="https://www.youtube.com/watch?v=... veya https://youtu.be/..."
-                        value={newSoundYtUrl}
-                        onChange={(e) => setNewSoundYtUrl(e.target.value)}
-                        className="form-input"
-                      />
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        youtube videosunun linkini girip aşağıdaki başlangıç ve bitiş saniyelerini ayarlayın.
-                      </span>
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="https://www.youtube.com/watch?v=... veya https://youtu.be/..."
+                      value={newSoundYtUrl}
+                      onChange={(e) => setNewSoundYtUrl(e.target.value)}
+                      className="form-input"
+                      required
+                    />
                   )}
 
-                  {/* Direct URL Input */}
                   {newSoundSourceType === 'url' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <input
-                        type="text"
-                        placeholder="https://example.com/audio/effect.mp3"
-                        value={newSoundUrl}
-                        onChange={(e) => setNewSoundUrl(e.target.value)}
-                        className="form-input"
-                      />
-                    </div>
+                    <input
+                      type="url"
+                      placeholder="https://site.com/ses.mp3"
+                      value={newSoundUrl}
+                      onChange={(e) => setNewSoundUrl(e.target.value)}
+                      className="form-input"
+                      required
+                    />
                   )}
                 </div>
 
-                {/* Saniye Aralığı Kırpma (StartSec - EndSec) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '16px', alignItems: 'flex-end' }}>
+                {/* Saniye Aralığı ve Önizleme */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '14px', alignItems: 'flex-end' }}>
                   <div>
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
-                      başlangıç (saniye):
+                      başlangıç saniyesi:
                     </label>
                     <input
                       type="number"
-                      step="0.1"
                       min="0"
+                      step="0.1"
                       value={newSoundStartSec}
                       onChange={(e) => setNewSoundStartSec(e.target.value)}
                       className="form-input"
@@ -2631,70 +3129,49 @@ export default function AdminPageView({ onBack, discordUser }) {
 
                   <div>
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>
-                      bitiş (saniye):
+                      bitiş saniyesi:
                     </label>
                     <input
                       type="number"
+                      min="0.1"
                       step="0.1"
-                      min="0.5"
                       value={newSoundEndSec}
                       onChange={(e) => setNewSoundEndSec(e.target.value)}
                       className="form-input"
                     />
                   </div>
 
-                  {/* Test Play Button */}
                   <button
                     type="button"
-                    onClick={() => {
-                      const ytId = newSoundSourceType === 'youtube' ? extractYouTubeId(newSoundYtUrl) : '';
-                      handleTestPlay({
-                        type: newSoundSourceType,
-                        url: newSoundUrl,
-                        ytId: ytId,
-                        startSec: Number(newSoundStartSec) || 0,
-                        endSec: Number(newSoundEndSec) || 3
-                      });
-                    }}
-                    style={{
-                      height: '46px',
-                      padding: '0 16px',
-                      borderRadius: '8px',
-                      background: '#262626',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      color: '#ffffff',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      cursor: 'pointer'
-                    }}
+                    onClick={() => handleTestPlay({
+                      name: newSoundName || 'önizleme',
+                      type: newSoundSourceType,
+                      url: newSoundUrl,
+                      ytId: extractYouTubeId(newSoundYtUrl),
+                      startSec: Number(newSoundStartSec) || 0,
+                      endSec: Number(newSoundEndSec) || 3
+                    })}
+                    className="btn-secondary"
+                    style={{ padding: '0 16px', height: '44px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem' }}
                   >
-                    <Play size={14} color="#22c55e" /> önizle / test et
+                    <Play size={14} fill="#ffffff" /> önizle / dinle
                   </button>
                 </div>
 
-                {/* Varsayılan Yap Checkbox & Ekle Butonu */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.84rem', color: '#ffffff', fontWeight: 600 }}>
-                    <input
-                      type="checkbox"
-                      checked={newSoundIsDefault}
-                      onChange={(e) => setNewSoundIsDefault(e.target.checked)}
-                      style={{ accentColor: '#FF0000', width: '16px', height: '16px', cursor: 'pointer' }}
-                    />
-                    bu kategorideki tüm oyuncular için varsayılan sistem sesi yap
-                  </label>
+                {/* Varsayılan Sistem Sesi Olsun mu */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.84rem', color: '#ffffff', fontWeight: 700 }}>
+                  <input
+                    type="checkbox"
+                    checked={newSoundIsDefault}
+                    onChange={(e) => setNewSoundIsDefault(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <span>bu kategorideki herkes için varsayılan sistem sesi yap</span>
+                </label>
 
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                    style={{ padding: '0 24px', height: '44px' }}
-                  >
-                    <Plus size={16} /> sesi kütüphaneye ekle
-                  </button>
-                </div>
+                <button type="submit" className="btn-primary" style={{ padding: '14px', alignSelf: 'flex-start' }}>
+                  <Plus size={18} /> ses kütüphanesine ekle
+                </button>
               </form>
             </div>
 
@@ -2903,511 +3380,7 @@ export default function AdminPageView({ onBack, discordUser }) {
             </button>
           </div>
         )}
-
-        {/* ----------------------------------------------------------------------- */}
-        {/* SECTION D: ÖNERİLEN KARTLAR VE DESTELER (SUGGESTIONS MANAGEMENT) */}
-        {/* ----------------------------------------------------------------------- */}
-        {mainNav === 'suggestions' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header & Refresh */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: '#1c1c1c',
-              padding: '20px 24px',
-              borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Lightbulb size={22} color="#FF0000" />
-                  önerilen kartlar ve desteler yönetimi
-                </h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.86rem', margin: '4px 0 0 0' }}>
-                  kullanıcıların profillerinden gönderdiği kart ve deste önerilerini inceleyin, tek tuşla istediğiniz desteye ekleyin veya reddedin.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => { sounds.playClick(); loadSuggestions(); }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                <RefreshCw size={14} className={suggestionsLoading ? 'spin' : ''} /> yenile
-              </button>
-            </div>
-
-            {/* Filter Tabs */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[
-                { id: 'all', label: `tümü (${suggestionsList.length})` },
-                { id: 'pending', label: `inceleniyor (${suggestionsList.filter(s => s.status === 'pending').length})` },
-                { id: 'approved', label: `onaylandı (${suggestionsList.filter(s => s.status === 'approved').length})` },
-                { id: 'rejected', label: `reddedildi (${suggestionsList.filter(s => s.status === 'rejected').length})` }
-              ].map(f => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => { sounds.playClick(); setCardSuggestionsFilter(f.id); }}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '10px',
-                    background: cardSuggestionsFilter === f.id ? '#FF0000' : '#1c1c1c',
-                    color: '#ffffff',
-                    border: cardSuggestionsFilter === f.id ? '1px solid #ff3333' : '1px solid rgba(255, 255, 255, 0.08)',
-                    fontWeight: 700,
-                    fontSize: '0.84rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
-            {/* 1. ÖNERİLEN KARTLAR BÖLÜMÜ */}
-            <div style={{
-              background: '#1c1c1c',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '16px',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px'
-            }}>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={18} color="#ef4444" />
-                önerilen tekil kartlar ({suggestionsList.filter(s => s.type === 'card' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter)).length})
-              </h4>
-
-              {(() => {
-                const cardSugs = suggestionsList.filter(s => s.type === 'card' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter));
-                if (cardSugs.length === 0) {
-                  return (
-                    <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.88rem' }}>
-                      bu filtrede önerilen kart bulunamadı.
-                    </div>
-                  );
-                }
-
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {cardSugs.map((sug) => {
-                      const isPending = sug.status === 'pending';
-                      const isWhite = sug.cardData?.type === 'perk';
-                      const selectedDest = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
-
-                      return (
-                        <div
-                          key={sug.id}
-                          style={{
-                            background: '#242424',
-                            border: isPending ? '1px solid rgba(255, 0, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '14px',
-                            padding: '16px 20px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '12px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                            {/* Left: Card Badge + Text */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{
-                                  background: isWhite ? '#ffffff' : '#FF0000',
-                                  color: isWhite ? '#000000' : '#ffffff',
-                                  fontWeight: 800,
-                                  fontSize: '0.72rem',
-                                  padding: '2px 8px',
-                                  borderRadius: '6px',
-                                  textTransform: 'lowercase'
-                                }}>
-                                  {isWhite ? '⚪ beyaz kart' : '🔴 kırmızı kart'}
-                                </span>
-                              </div>
-
-                              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.4 }}>
-                                "{sug.cardData?.text}"
-                              </div>
-                            </div>
-
-                            {/* Author Info (Discord ID & Name) */}
-                            <div style={{
-                              background: '#1a1a1a',
-                              border: '1px solid rgba(255, 255, 255, 0.08)',
-                              borderRadius: '10px',
-                              padding: '8px 12px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              minWidth: '240px'
-                            }}>
-                              <img
-                                src={sug.author?.avatar || defaultAvatarImg}
-                                alt="avatar"
-                                style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
-                              />
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
-                                  {sug.author?.name || sug.author?.username || 'Anonim'}
-                                </span>
-                                <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontFamily: 'monospace' }}>
-                                  ID: {sug.author?.id || 'Bilinmiyor'}
-                                </span>
-                                {sug.author?.isAnonymous && (
-                                  <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
-                                    🕵️ kullanıcı anonim gönderdi
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Action Toolbar */}
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                            paddingTop: '10px',
-                            gap: '12px'
-                          }}>
-                            {/* Destination Deck Selector */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>eklenecek deste:</span>
-                              <select
-                                value={selectedDest}
-                                onChange={(e) => setTargetDeckForCard(prev => ({ ...prev, [sug.id]: e.target.value }))}
-                                disabled={!isPending}
-                                style={{
-                                  background: '#141414',
-                                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                                  color: '#ffffff',
-                                  borderRadius: '8px',
-                                  padding: '5px 10px',
-                                  fontSize: '0.8rem',
-                                  cursor: isPending ? 'pointer' : 'default'
-                                }}
-                              >
-                                {combinedDeckList.map(d => (
-                                  <option key={d} value={d}>{d}</option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {/* Buttons / Status */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              {isPending ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApproveCardSuggestion(sug)}
-                                    style={{
-                                      background: '#22c55e',
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      padding: '7px 16px',
-                                      borderRadius: '8px',
-                                      fontWeight: 800,
-                                      fontSize: '0.8rem',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '6px'
-                                    }}
-                                  >
-                                    <Check size={14} /> tek tuşla desteye ekle & onayla
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRejectSuggestion(sug.id)}
-                                    style={{
-                                      background: 'rgba(239, 68, 68, 0.15)',
-                                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                                      color: '#f87171',
-                                      padding: '7px 12px',
-                                      borderRadius: '8px',
-                                      fontWeight: 700,
-                                      fontSize: '0.8rem',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    reddet
-                                  </button>
-                                </>
-                              ) : (
-                                <span style={{
-                                  background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                                  border: sug.status === 'approved' ? '1px solid #10b981' : '1px solid #ef4444',
-                                  color: sug.status === 'approved' ? '#34d399' : '#f87171',
-                                  padding: '4px 12px',
-                                  borderRadius: '9999px',
-                                  fontSize: '0.76rem',
-                                  fontWeight: 800,
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}>
-                                  {sug.status === 'approved' ? <><CheckCircle2 size={12} /> desteye eklendi</> : <><XCircle size={12} /> reddedildi</>}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* 2. ÖNERİLEN DESTELER BÖLÜMÜ */}
-            <div style={{
-              background: '#1c1c1c',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '16px',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px'
-            }}>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FolderEdit size={18} color="#3b82f6" />
-                önerilen desteler & paketler ({suggestionsList.filter(s => s.type === 'deck' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter)).length})
-              </h4>
-
-              {(() => {
-                const deckSugs = suggestionsList.filter(s => s.type === 'deck' && (cardSuggestionsFilter === 'all' || s.status === cardSuggestionsFilter));
-                if (deckSugs.length === 0) {
-                  return (
-                    <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '0.88rem' }}>
-                      bu filtrede önerilen deste bulunamadı.
-                    </div>
-                  );
-                }
-
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {deckSugs.map((sug) => {
-                      const isPending = sug.status === 'pending';
-                      const isExpanded = expandedDeckSugId === sug.id;
-                      const whiteCount = sug.deckData?.whiteCards?.length || 0;
-                      const redCount = sug.deckData?.redCards?.length || 0;
-
-                      return (
-                        <div
-                          key={sug.id}
-                          style={{
-                            background: '#242424',
-                            border: isPending ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '14px',
-                            padding: '18px 20px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '12px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff' }}>
-                                  📦 {sug.deckData?.title}
-                                </span>
-                              </div>
-
-                              {sug.deckData?.description && (
-                                <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0 }}>
-                                  {sug.deckData.description}
-                                </p>
-                              )}
-
-                              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-                                <span style={{ fontSize: '0.78rem', color: '#ffffff', fontWeight: 700 }}>
-                                  ⚪ {whiteCount} Beyaz Kart
-                                </span>
-                                <span style={{ fontSize: '0.78rem', color: '#f87171', fontWeight: 700 }}>
-                                  🔴 {redCount} Kırmızı Kart
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Author Info */}
-                            <div style={{
-                              background: '#1a1a1a',
-                              border: '1px solid rgba(255, 255, 255, 0.08)',
-                              borderRadius: '10px',
-                              padding: '8px 12px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              minWidth: '240px'
-                            }}>
-                              <img
-                                src={sug.author?.avatar || defaultAvatarImg}
-                                alt="avatar"
-                                style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }}
-                              />
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ffffff' }}>
-                                  {sug.author?.name || sug.author?.username || 'Anonim'}
-                                </span>
-                                <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontFamily: 'monospace' }}>
-                                  ID: {sug.author?.id || 'Bilinmiyor'}
-                                </span>
-                                {sug.author?.isAnonymous && (
-                                  <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
-                                    🕵️ kullanıcı anonim önerdi
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Expand Card List */}
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedDeckSugId(isExpanded ? null : sug.id)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#3b82f6',
-                                fontSize: '0.78rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                padding: 0,
-                                textDecoration: 'underline'
-                              }}
-                            >
-                              {isExpanded ? '▲ kart listesini gizle' : `▼ destedeki ${whiteCount + redCount} kartı incele`}
-                            </button>
-
-                            {isExpanded && (
-                              <div style={{
-                                marginTop: '10px',
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: '12px',
-                                background: '#181818',
-                                padding: '14px',
-                                borderRadius: '10px',
-                                maxHeight: '240px',
-                                overflowY: 'auto'
-                              }}>
-                                <div>
-                                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '6px' }}>
-                                    ⚪ Beyaz Kartlar ({whiteCount})
-                                  </span>
-                                  <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                    {(sug.deckData?.whiteCards || []).map((c, i) => (
-                                      <li key={i}>{c}</li>
-                                    ))}
-                                  </ol>
-                                </div>
-
-                                <div>
-                                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', display: 'block', marginBottom: '6px' }}>
-                                    🔴 Kırmızı Kartlar ({redCount})
-                                  </span>
-                                  <ol style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#fca5a5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                    {(sug.deckData?.redCards || []).map((c, i) => (
-                                      <li key={i}>{c}</li>
-                                    ))}
-                                  </ol>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Action Toolbar */}
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                            paddingTop: '10px',
-                            gap: '10px'
-                          }}>
-                            {isPending ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleApproveDeckSuggestion(sug)}
-                                  style={{
-                                    background: '#22c55e',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    padding: '7px 18px',
-                                    borderRadius: '8px',
-                                    fontWeight: 800,
-                                    fontSize: '0.82rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px'
-                                  }}
-                                >
-                                  <Check size={14} /> tek tuşla yeni deste olarak oyuna ekle
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleRejectSuggestion(sug.id)}
-                                  style={{
-                                    background: 'rgba(239, 68, 68, 0.15)',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    color: '#f87171',
-                                    padding: '7px 14px',
-                                    borderRadius: '8px',
-                                    fontWeight: 700,
-                                    fontSize: '0.82rem',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  reddet
-                                </button>
-                              </>
-                            ) : (
-                              <span style={{
-                                background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                                border: sug.status === 'approved' ? '1px solid #10b981' : '1px solid #ef4444',
-                                color: sug.status === 'approved' ? '#34d399' : '#f87171',
-                                padding: '4px 12px',
-                                borderRadius: '9999px',
-                                fontSize: '0.76rem',
-                                fontWeight: 800,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}>
-                                {sug.status === 'approved' ? <><CheckCircle2 size={12} /> yeni deste olarak eklendi</> : <><XCircle size={12} /> reddedildi</>}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        )}
+        </div>
       </main>
     </div>
   );
