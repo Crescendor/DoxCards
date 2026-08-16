@@ -588,35 +588,35 @@ export default function TabletopView({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '8px 0 6px 0',
-            gap: '8px'
+            padding: '2px 0 2px 0',
+            gap: 'clamp(6px, 1vh, 10px)'
           }}>
             {/* Large 3D Layered Deck */}
             <div style={{
               position: 'relative',
-              width: 'clamp(88px, 7.8vw, 126px)',
-              height: 'clamp(124px, 17vh, 178px)',
+              width: 'clamp(88px, 7.5vw, 124px)',
+              height: 'clamp(124px, 17vh, 174px)',
               aspectRatio: '5 / 7',
               margin: '0 auto'
             }}>
               {/* Layer 3 */}
               <div style={{
                 position: 'absolute',
-                inset: '10px -10px -10px 10px',
+                inset: '5px -5px -5px 5px',
                 background: '#ffffff',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 border: '1px solid #cbd5e1',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.5)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
                 opacity: 0.85
               }} />
               {/* Layer 2 */}
               <div style={{
                 position: 'absolute',
-                inset: '5px -5px -5px 5px',
+                inset: '2.5px -2.5px -2.5px 2.5px',
                 background: '#ffffff',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 border: '1px solid #cbd5e1',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.5)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
                 opacity: 0.95
               }} />
               {/* Top Card */}
@@ -624,7 +624,7 @@ export default function TabletopView({
                 position: 'relative',
                 width: '100%',
                 height: '100%',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 overflow: 'hidden',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(245, 158, 11, 0.35)',
                 border: '2px solid rgba(245, 158, 11, 0.6)',
@@ -640,19 +640,19 @@ export default function TabletopView({
 
             {/* Bekâr Status Message */}
             <div style={{
-              fontSize: '0.82rem',
+              fontSize: '0.78rem',
               fontWeight: 700,
               color: '#fbbf24',
               background: 'rgba(245, 158, 11, 0.12)',
               border: '1px solid rgba(245, 158, 11, 0.35)',
-              padding: '6px 16px',
+              padding: '4px 14px',
               borderRadius: '9999px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              marginTop: '4px'
+              marginTop: '2px'
             }}>
-              <Crown size={14} color="#fbbf24" />
+              <Crown size={13} color="#fbbf24" />
               <span>
                 {phase === 'VOTING' || phase === 'REVEAL'
                   ? (isSingle ? 'kazanan adayı seçmek için masasına tıkla!' : 'bekârın seçim yapması bekleniyor...')

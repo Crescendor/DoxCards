@@ -103,12 +103,12 @@ export default function CardItem({
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: isSmall ? '10px 8px 4px 8px' : '18px 15px',
-          paddingRight: isSmall ? '10px' : '22px',
+          padding: isSmall ? '10px 8px 4px 8px' : '16px 14px',
+          paddingRight: isSmall ? '10px' : '20px',
           fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           fontWeight: 800,
-          fontSize: isSmall ? 'clamp(0.70rem, 0.85vw, 0.92rem)' : '0.88rem',
-          lineHeight: 1.22,
+          fontSize: isSmall ? 'clamp(0.62rem, 0.74vw, 0.82rem)' : '0.82rem',
+          lineHeight: 1.2,
           textAlign: 'left',
           textTransform: 'lowercase',
           color: isWhite ? '#ff0000' : '#ffffff',
@@ -127,7 +127,7 @@ export default function CardItem({
                   style={{
                     color: '#000000',
                     background: isWhite ? 'rgba(0, 0, 0, 0.08)' : '#ffffff',
-                    padding: '1px 5px',
+                    padding: '1px 4px',
                     borderRadius: '4px',
                     textDecoration: 'underline',
                     fontWeight: 900,
@@ -149,10 +149,10 @@ export default function CardItem({
                 <span
                   style={{
                     display: 'inline-block',
-                    width: '32px',
+                    width: '28px',
                     height: '2px',
                     background: isWhite ? '#FF0000' : '#ffffff',
-                    margin: '0 3px',
+                    margin: '0 2px',
                     verticalAlign: 'middle',
                     borderRadius: '1px',
                     opacity: 0.95
@@ -164,36 +164,56 @@ export default function CardItem({
         )}
       </div>
 
-      {/* Subtle Deck Name & Extra Note on Bottom-Left */}
+      {/* Subtle Deck Name & Extra Note on Bottom-Left (Multi-line if extra note exists) */}
       {(() => {
         const deckLabel = card.deckName || card.deckTitle || card.category || card.deck || '';
         const extraNote = card.deckExtraNote || card.extraNote || '';
-        const fullDeckText = extraNote ? `${deckLabel} - "${extraNote}"` : deckLabel;
-        if (!fullDeckText) return null;
+        if (!deckLabel && !extraNote) return null;
 
         return (
           <div
             style={{
               position: 'absolute',
-              bottom: isSmall ? '10px' : '12px',
-              left: isSmall ? '12px' : '14px',
+              bottom: isSmall ? '6px' : '10px',
+              left: isSmall ? '8px' : '12px',
               zIndex: 3,
               fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-              fontWeight: 500,
-              fontSize: isSmall ? '0.62rem' : '0.68rem',
-              lineHeight: 1.2,
+              lineHeight: 1.15,
               letterSpacing: '-0.015em',
               textTransform: 'lowercase',
-              color: isWhite ? 'rgba(0, 0, 0, 0.42)' : 'rgba(255, 255, 255, 0.65)',
+              color: isWhite ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.7)',
               pointerEvents: 'none',
-              maxWidth: isSmall ? '96px' : '120px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              maxWidth: isSmall ? '64%' : '70%',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1px'
             }}
-            title={fullDeckText}
+            title={extraNote ? `${deckLabel} - "${extraNote}"` : deckLabel}
           >
-            {fullDeckText}
+            {deckLabel && (
+              <span style={{
+                fontSize: isSmall ? '0.58rem' : '0.66rem',
+                fontWeight: 700,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {deckLabel}
+              </span>
+            )}
+            {extraNote && (
+              <span style={{
+                fontSize: isSmall ? '0.52rem' : '0.60rem',
+                fontWeight: 500,
+                opacity: 0.85,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                "{extraNote}"
+              </span>
+            )}
           </div>
         );
       })()}
