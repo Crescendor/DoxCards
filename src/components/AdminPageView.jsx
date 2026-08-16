@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
-  X,
+  ArrowLeft,
   Plus,
   Trash2,
   Edit2,
@@ -10,11 +10,13 @@ import {
   Download,
   Upload,
   Search,
-  Filter,
   Layers,
   FileCode,
-  Check
+  Check,
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
+import doxcardsLogo from '../assets/doxcards.png';
 import {
   getActiveDeck,
   saveActiveDeck,
@@ -26,20 +28,36 @@ import { sounds } from '../services/soundEffects';
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
 
-export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
-  if (!isOpen) return null;
-
+export default function AdminPageView({ onBack, discordUser }) {
   // Verify Admin Access
   if (discordUser?.id !== ADMIN_DISCORD_ID) {
     return (
-      <div className="modal-overlay">
-        <div className="modal-content animate-pop" style={{ maxWidth: '440px', textAlign: 'center' }}>
-          <h3 style={{ color: '#ef4444', marginBottom: '12px' }}>yetkisiz erişim</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '20px' }}>
-            bu admin paneline yalnızca yetkili discord yöneticisi erişebilir.
+      <div style={{
+        minHeight: '100vh',
+        background: '#121212',
+        color: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          background: '#1c1c1c',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '20px',
+          padding: '36px 30px',
+          maxWidth: '460px',
+          width: '100%',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+        }}>
+          <h2 style={{ color: '#ef4444', marginBottom: '12px', fontSize: '1.4rem' }}>yetkisiz erişim</h2>
+          <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '24px' }}>
+            bu admin paneline sadece yetkili discord yöneticisi ({ADMIN_DISCORD_ID}) erişebilir.
           </p>
-          <button onClick={onClose} className="btn-secondary" style={{ width: '100%' }}>
-            kapat
+          <button onClick={onBack} className="btn-primary" style={{ width: '100%', padding: '14px' }}>
+            ← ana sayfaya dön
           </button>
         </div>
       </div>
@@ -217,191 +235,250 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
   };
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 1000 }}>
-      <div className="modal-content animate-pop" style={{
-        maxWidth: '920px',
-        width: '95vw',
-        maxHeight: '90vh',
-        background: '#181818',
-        color: '#ffffff',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        borderRadius: '20px',
-        padding: '24px',
+    <div style={{
+      minHeight: '100vh',
+      background: '#121212',
+      color: '#ffffff',
+      display: 'flex',
+      flexDirection: 'column',
+      fontFamily: "'Plus Jakarta Sans', sans-serif"
+    }}>
+      {/* Top Admin Navbar */}
+      <header style={{
+        background: '#1a1a1a',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '14px 28px',
         display: 'flex',
-        flexDirection: 'column'
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
       }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          paddingBottom: '16px',
-          marginBottom: '18px'
-        }}>
+        {/* Left: Back button & Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+          <button
+            onClick={onBack}
+            className="btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <ArrowLeft size={16} /> oyuna dön
+          </button>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={doxcardsLogo} alt="dox" style={{ height: '28px', width: 'auto' }} />
             <span style={{
               background: '#ef4444',
-              color: '#fff',
-              padding: '5px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              color: '#ffffff',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '9999px'
             }}>
-              <ShieldCheck size={20} />
+              admin paneli
             </span>
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-                doxcards admin paneli
-              </h2>
-              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
-                yönetici: {discordUser.displayName} ({discordUser.id})
-              </p>
-            </div>
           </div>
-
-          <button
-            onClick={onClose}
-            className="btn-icon"
-            style={{ width: '32px', height: '32px' }}
-            title="kapat"
-          >
-            <X size={18} />
-          </button>
         </div>
 
-        {/* Stats Summary Bar */}
+        {/* Right: Admin Profile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+            yönetici: <b style={{ color: '#ffffff' }}>{discordUser.displayName}</b> ({discordUser.id})
+          </span>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: '#22c55e',
+            boxShadow: '0 0 8px #22c55e'
+          }} />
+        </div>
+      </header>
+
+      {/* Main Admin Page Container */}
+      <main style={{
+        flex: 1,
+        maxWidth: '1280px',
+        width: '100%',
+        margin: '0 auto',
+        padding: '28px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        {/* Stats Dashboard Grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '10px',
-          marginBottom: '18px'
+          gap: '16px'
         }}>
-          <div style={{ background: '#242424', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>toplam kart</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{deckState.allCards.length}</div>
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '18px 20px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, marginBottom: '4px' }}>
+              toplam kart
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{deckState.allCards.length}</div>
           </div>
-          <div style={{ background: '#242424', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 600 }}>beyaz kartlar (perks)</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8' }}>{deckState.whiteCards.length}</div>
+
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(56, 189, 248, 0.2)',
+            borderRadius: '16px',
+            padding: '18px 20px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <div style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 600, marginBottom: '4px' }}>
+              beyaz kartlar (perks)
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#38bdf8' }}>
+              {deckState.whiteCards.length}
+            </div>
           </div>
-          <div style={{ background: '#242424', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 600 }}>kırmızı kartlar (red flags)</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f87171' }}>{deckState.redCards.length}</div>
+
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            borderRadius: '16px',
+            padding: '18px 20px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <div style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: 600, marginBottom: '4px' }}>
+              kırmızı kartlar (red flags)
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f87171' }}>
+              {deckState.redCards.length}
+            </div>
           </div>
-          <div style={{ background: '#242424', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#fbbf24', fontWeight: 600 }}>kategoriler</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fbbf24' }}>{allCategories.length}</div>
+
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(251, 191, 36, 0.2)',
+            borderRadius: '16px',
+            padding: '18px 20px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+          }}>
+            <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 600, marginBottom: '4px' }}>
+              kategori sayısı
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fbbf24' }}>
+              {allCategories.length}
+            </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Selector Bar */}
         <div style={{
           display: 'flex',
-          gap: '8px',
-          background: '#242424',
-          padding: '4px',
-          borderRadius: '12px',
-          marginBottom: '18px'
+          gap: '10px',
+          background: '#1c1c1c',
+          padding: '6px',
+          borderRadius: '14px',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
         }}>
           <button
             onClick={() => setActiveTab('list')}
             style={{
               flex: 1,
-              padding: '9px 14px',
-              borderRadius: '8px',
+              padding: '12px 18px',
+              borderRadius: '10px',
               background: activeTab === 'list' ? '#d90429' : 'transparent',
               color: '#ffffff',
               fontWeight: 700,
-              fontSize: '0.85rem',
+              fontSize: '0.92rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px'
+              gap: '8px'
             }}
           >
-            <Layers size={15} /> kart yönetimi ({filteredCards.length})
+            <Layers size={18} /> kart yönetimi ({filteredCards.length})
           </button>
 
           <button
             onClick={() => setActiveTab('add')}
             style={{
               flex: 1,
-              padding: '9px 14px',
-              borderRadius: '8px',
+              padding: '12px 18px',
+              borderRadius: '10px',
               background: activeTab === 'add' ? '#d90429' : 'transparent',
               color: '#ffffff',
               fontWeight: 700,
-              fontSize: '0.85rem',
+              fontSize: '0.92rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px'
+              gap: '8px'
             }}
           >
-            <Plus size={15} /> yeni kart ekle
+            <Plus size={18} /> yeni kart ekle
           </button>
 
           <button
             onClick={() => setActiveTab('json')}
             style={{
               flex: 1,
-              padding: '9px 14px',
-              borderRadius: '8px',
+              padding: '12px 18px',
+              borderRadius: '10px',
               background: activeTab === 'json' ? '#d90429' : 'transparent',
               color: '#ffffff',
               fontWeight: 700,
-              fontSize: '0.85rem',
+              fontSize: '0.92rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px'
+              gap: '8px'
             }}
           >
-            <FileCode size={15} /> json düzenleyici & içe/dışa aktar
+            <FileCode size={18} /> json düzenleyici & içe/dışa aktar
           </button>
         </div>
 
-        {/* Save feedback toast */}
+        {/* Feedback Alert */}
         {saveSuccess && (
           <div style={{
             background: 'rgba(16, 185, 129, 0.2)',
             border: '1px solid #10b981',
             color: '#34d399',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '0.82rem',
+            padding: '12px 18px',
+            borderRadius: '12px',
+            fontSize: '0.88rem',
             fontWeight: 700,
-            marginBottom: '14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '8px'
           }}>
-            <Check size={16} /> değişiklikler kaydedildi ve aktif desteye uygulandı!
+            <Check size={18} /> değişiklikler kaydedildi ve aktif desteye uygulandı!
           </div>
         )}
 
-        {/* TAB 1: CARDS LIST */}
+        {/* TAB 1: CARDS LIST (FULL SCREEN) */}
         {activeTab === 'list' && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-            {/* Search & Filter Bar */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
-              <div style={{
-                flex: 1,
-                minWidth: '220px',
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center'
-              }}>
-                <Search size={16} style={{ position: 'absolute', left: '12px', color: '#94a3b8' }} />
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '18px',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
+          }}>
+            {/* Filter controls */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '260px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={18} style={{ position: 'absolute', left: '14px', color: '#94a3b8' }} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="kart metninde ara..."
                   className="form-input"
-                  style={{ paddingLeft: '36px', height: '40px' }}
+                  style={{ paddingLeft: '40px', height: '44px', background: '#242424' }}
                 />
               </div>
 
@@ -410,7 +487,7 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
                 className="form-input"
-                style={{ width: '160px', height: '40px' }}
+                style={{ width: '180px', height: '44px', background: '#242424' }}
               >
                 <option value="all">tüm türler</option>
                 <option value="perk">🤍 beyaz (perk)</option>
@@ -422,7 +499,7 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="form-input"
-                style={{ width: '180px', height: '40px' }}
+                style={{ width: '220px', height: '44px', background: '#242424' }}
               >
                 <option value="all">tüm kategoriler</option>
                 {allCategories.map(cat => (
@@ -431,17 +508,17 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
               </select>
             </div>
 
-            {/* Scrollable Cards List */}
+            {/* Cards Grid / Table */}
             <div style={{
-              flex: 1,
-              overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px',
+              gap: '10px',
+              maxHeight: '650px',
+              overflowY: 'auto',
               paddingRight: '6px'
             }}>
               {filteredCards.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
                   eşleşen kart bulunamadı.
                 </div>
               ) : (
@@ -455,21 +532,22 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                       style={{
                         background: '#242424',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '10px',
-                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        padding: '12px 18px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        gap: '12px'
+                        gap: '16px',
+                        transition: 'background 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                         <span style={{
                           background: isPerk ? '#ffffff' : '#d90429',
                           color: isPerk ? '#000000' : '#ffffff',
-                          fontSize: '0.68rem',
+                          fontSize: '0.72rem',
                           fontWeight: 800,
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           borderRadius: '9999px',
                           whiteSpace: 'nowrap'
                         }}>
@@ -479,10 +557,10 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                         <span style={{
                           background: 'rgba(255,255,255,0.08)',
                           color: '#fbbf24',
-                          fontSize: '0.68rem',
+                          fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: '6px',
+                          padding: '3px 10px',
+                          borderRadius: '8px',
                           whiteSpace: 'nowrap'
                         }}>
                           {card.category}
@@ -494,18 +572,18 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                             value={editingText}
                             onChange={(e) => setEditingText(e.target.value)}
                             className="form-input"
-                            style={{ height: '34px', fontSize: '0.88rem' }}
+                            style={{ height: '38px', fontSize: '0.92rem' }}
                             autoFocus
                           />
                         ) : (
-                          <span style={{ fontSize: '0.88rem', fontWeight: 500, color: '#f1f5f9' }}>
+                          <span style={{ fontSize: '0.92rem', fontWeight: 500, color: '#f1f5f9' }}>
                             {card.text}
                           </span>
                         )}
                       </div>
 
                       {/* Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {isEditing ? (
                           <button
                             onClick={() => handleSaveEdit(card)}
@@ -513,36 +591,36 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                               background: '#10b981',
                               color: '#fff',
                               border: 'none',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
+                              padding: '7px 14px',
+                              borderRadius: '8px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '0.75rem',
+                              gap: '6px',
+                              fontSize: '0.8rem',
                               fontWeight: 700
                             }}
                           >
-                            <Save size={13} /> kaydet
+                            <Save size={14} /> kaydet
                           </button>
                         ) : (
                           <button
                             onClick={() => handleStartEdit(card)}
                             className="btn-icon"
-                            style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.06)' }}
+                            style={{ width: '34px', height: '34px', background: 'rgba(255,255,255,0.06)' }}
                             title="kartı düzenle"
                           >
-                            <Edit2 size={13} />
+                            <Edit2 size={15} />
                           </button>
                         )}
 
                         <button
                           onClick={() => handleDeleteCard(card)}
                           className="btn-icon"
-                          style={{ width: '28px', height: '28px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+                          style={{ width: '34px', height: '34px', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
                           title="kartı sil"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </div>
@@ -553,122 +631,140 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
           </div>
         )}
 
-        {/* TAB 2: ADD CARD */}
+        {/* TAB 2: ADD CARD (FULL SCREEN FORM) */}
         {activeTab === 'add' && (
-          <form onSubmit={handleAddCardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div>
-                <label className="form-label">kart türü</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setNewType('perk')}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      borderRadius: '10px',
-                      background: newType === 'perk' ? '#ffffff' : '#242424',
-                      color: newType === 'perk' ? '#000000' : '#ffffff',
-                      border: newType === 'perk' ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
-                      fontWeight: 800,
-                      fontSize: '0.88rem'
-                    }}
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '18px',
+            padding: '30px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
+          }}>
+            <form onSubmit={handleAddCardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div>
+                  <label className="form-label">kart türü</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setNewType('perk')}
+                      style={{
+                        flex: 1,
+                        padding: '14px',
+                        borderRadius: '12px',
+                        background: newType === 'perk' ? '#ffffff' : '#242424',
+                        color: newType === 'perk' ? '#000000' : '#ffffff',
+                        border: newType === 'perk' ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
+                        fontWeight: 800,
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      🤍 beyaz kart (perk)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewType('redflag')}
+                      style={{
+                        flex: 1,
+                        padding: '14px',
+                        borderRadius: '12px',
+                        background: newType === 'redflag' ? '#d90429' : '#242424',
+                        color: '#ffffff',
+                        border: newType === 'redflag' ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                        fontWeight: 800,
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      🚩 kırmızı kart (red flag)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label">kategori seçimi</label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="form-input"
+                    style={{ marginBottom: '10px', height: '48px', background: '#242424' }}
                   >
-                    🤍 beyaz kart (perk)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewType('redflag')}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      borderRadius: '10px',
-                      background: newType === 'redflag' ? '#d90429' : '#242424',
-                      color: '#ffffff',
-                      border: newType === 'redflag' ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
-                      fontWeight: 800,
-                      fontSize: '0.88rem'
-                    }}
-                  >
-                    🚩 kırmızı kart (red flag)
-                  </button>
+                    {(newType === 'perk' ? perkCategories : redFlagCategories).map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="__NEW__">+ yeni kategori adı yaz</option>
+                  </select>
+
+                  {newCategory === '__NEW__' && (
+                    <input
+                      type="text"
+                      value={customCategoryInput}
+                      onChange={(e) => setCustomCategoryInput(e.target.value)}
+                      placeholder="yeni kategori adı giriniz..."
+                      className="form-input"
+                      style={{ background: '#242424' }}
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="form-label">kategori seçimi</label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
+                <label className="form-label">kart metni (türkçe)</label>
+                <textarea
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  placeholder="kartın üzerindeki metni buraya yazınız..."
                   className="form-input"
-                  style={{ marginBottom: '8px' }}
-                >
-                  {(newType === 'perk' ? perkCategories : redFlagCategories).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                  <option value="__NEW__">+ yeni kategori adı yaz</option>
-                </select>
-
-                {newCategory === '__NEW__' && (
-                  <input
-                    type="text"
-                    value={customCategoryInput}
-                    onChange={(e) => setCustomCategoryInput(e.target.value)}
-                    placeholder="yeni kategori adı giriniz..."
-                    className="form-input"
-                    required
-                  />
-                )}
+                  style={{ height: '140px', resize: 'vertical', fontSize: '0.96rem', background: '#242424' }}
+                  required
+                />
               </div>
-            </div>
 
-            <div>
-              <label className="form-label">kart metni (türkçe)</label>
-              <textarea
-                value={newText}
-                onChange={(e) => setNewText(e.target.value)}
-                placeholder="kartın üzerindeki metni yazınız..."
-                className="form-input"
-                style={{ height: '110px', resize: 'vertical', fontSize: '0.92rem' }}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn-primary"
-              style={{ width: '100%', padding: '14px', fontSize: '0.95rem' }}
-            >
-              <Plus size={16} /> yeni kartı veritabanına ekle
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ padding: '16px', fontSize: '1rem', alignSelf: 'flex-end', minWidth: '240px' }}
+              >
+                <Plus size={18} /> yeni kartı veritabanına ekle
+              </button>
+            </form>
+          </div>
         )}
 
-        {/* TAB 3: RAW JSON EDITOR & IMPORT/EXPORT */}
+        {/* TAB 3: RAW JSON EDITOR (FULL SCREEN) */}
         {activeTab === 'json' && (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>
-                doğrudan raw json düzenleyebilir, dosya yükleyebilir veya dışa aktarabilirsiniz.
+          <div style={{
+            background: '#1c1c1c',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '18px',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <span style={{ fontSize: '0.88rem', color: '#94a3b8', fontWeight: 600 }}>
+                doğrudan raw json metnini düzenleyebilir, dosya yükleyebilir veya dışa aktarabilirsiniz.
               </span>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <label
                   style={{
                     background: '#242424',
                     color: '#ffffff',
                     border: '1px solid rgba(255,255,255,0.15)',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '6px'
                   }}
                 >
-                  <Upload size={13} /> json yükle
+                  <Upload size={15} /> json yükle
                   <input
                     type="file"
                     accept=".json"
@@ -684,17 +780,17 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                     background: '#242424',
                     color: '#ffffff',
                     border: '1px solid rgba(255,255,255,0.15)',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '6px'
                   }}
                 >
-                  <Download size={13} /> json indir
+                  <Download size={15} /> json indir
                 </button>
 
                 <button
@@ -704,17 +800,17 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                     background: 'rgba(239, 68, 68, 0.15)',
                     color: '#f87171',
                     border: '1px solid rgba(239, 68, 68, 0.3)',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '6px'
                   }}
                 >
-                  <RotateCcw size={13} /> sıfırla
+                  <RotateCcw size={15} /> sıfırla
                 </button>
               </div>
             </div>
@@ -724,9 +820,9 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
                 background: 'rgba(239, 68, 68, 0.2)',
                 border: '1px solid #ef4444',
                 color: '#fca5a5',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
                 fontWeight: 700
               }}>
                 hata: {jsonError}
@@ -739,25 +835,25 @@ export default function AdminPanelModal({ isOpen, onClose, discordUser }) {
               className="form-input"
               style={{
                 fontFamily: 'monospace',
-                fontSize: '0.82rem',
-                flex: 1,
-                minHeight: '260px',
-                resize: 'none',
+                fontSize: '0.86rem',
+                height: '480px',
+                resize: 'vertical',
                 background: '#121212',
-                lineHeight: '1.4'
+                lineHeight: '1.45',
+                padding: '16px'
               }}
             />
 
             <button
               onClick={handleSaveJson}
               className="btn-primary"
-              style={{ width: '100%', padding: '14px', fontSize: '0.95rem' }}
+              style={{ width: '100%', padding: '16px', fontSize: '0.98rem' }}
             >
-              <Save size={16} /> json değişikliklerini kaydet ve aktif et
+              <Save size={18} /> json değişikliklerini kaydet ve aktif et
             </button>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

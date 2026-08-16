@@ -7,6 +7,8 @@ import GameView from './components/GameView';
 import Navbar from './components/Navbar';
 import HowToPlayModal from './components/HowToPlayModal';
 import RightSidebarDrawer from './components/RightSidebarDrawer';
+import AdminPageView from './components/AdminPageView';
+import { getDiscordUser } from './services/discordAuth';
 
 export default function App() {
   const [player, setPlayer] = useState(getLocalPlayer());
@@ -14,6 +16,7 @@ export default function App() {
   const [gameState, setGameState] = useState(null);
   const [soundMuted, setSoundMuted] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAdminView, setIsAdminView] = useState(window.location.search.includes('admin'));
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -147,16 +150,22 @@ export default function App() {
     });
   };
 
-  // Toggle Ready
+  // Toggle Ready (Non-host)
   const handleToggleReady = () => {
     if (!currentRoom) return;
-    socket.emit('toggle_ready', { roomCode: currentRoom.code, playerId: player.id });
+    socket.emit('toggle_ready', {
+      roomCode: currentRoom.code,
+      playerId: player.id
+    });
   };
 
   // Update Settings (Host)
-  const handleUpdateSettings = (settings) => {
+  const handleUpdateSettings = (newSettings) => {
     if (!currentRoom) return;
-    socket.emit('update_settings', { roomCode: currentRoom.code, settings });
+    socket.emit('update_settings', {
+      roomCode: currentRoom.code,
+      settings: newSettings
+    });
   };
 
   // Submit Perks (Matchmaker 2 White Cards)
@@ -179,13 +188,13 @@ export default function App() {
     });
   };
 
-  // Select Winner (Single)
-  const handleSelectWinner = (winningMatchmakerId) => {
+  // Select Winner (Single Player)
+  const handleSelectWinner = (winnerMatchmakerId) => {
     if (!currentRoom) return;
-    socket.emit('bekar_select_winner', {
+    socket.emit('select_winner', {
       roomCode: currentRoom.code,
-      singlePlayerId: player.id,
-      winningMatchmakerId
+      playerId: player.id,
+      winnerMatchmakerId
     });
   };
 
@@ -194,6 +203,19 @@ export default function App() {
     if (!currentRoom) return;
     socket.emit('play_again', { roomCode: currentRoom.code });
   };
+
+  // Full-Screen Dedicated Admin Page View
+  if (isAdminView) {
+    return (
+      <AdminPageView
+        onBack={() => {
+          setIsAdminView(false);
+          window.history.pushState({}, '', window.location.pathname);
+        }}
+        discordUser={getDiscordUser()}
+      />
+    );
+  }
 
   const isGameActive = gameState && gameState.phase && gameState.phase !== 'LOBBY';
   const isHost = currentRoom?.hostId === player.id;
@@ -226,6 +248,10 @@ export default function App() {
             onUpdatePlayer={handleUpdatePlayer}
             onCreateRoom={handleCreateRoom}
             onJoinRoom={handleJoinRoom}
+            onOpenAdmin={() => {
+              setIsAdminView(true);
+              window.history.pushState({}, '', '?admin=true');
+            }}
             error={error}
             isLoading={isLoading}
           />

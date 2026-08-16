@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, ShieldCheck, Sparkles, Plus, Layers } from 'lucide-react';
+import { ArrowLeft, LogOut, ShieldCheck } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
@@ -9,7 +9,7 @@ import {
   checkDiscordAuthCallback,
   logoutDiscord
 } from '../services/discordAuth';
-import AdminPanelModal, { ADMIN_DISCORD_ID } from './AdminPanelModal';
+import { ADMIN_DISCORD_ID } from './AdminPageView';
 
 // Discord SVG Logo Icon
 function DiscordIcon() {
@@ -37,6 +37,7 @@ export default function LandingPage({
   onUpdatePlayer,
   onCreateRoom,
   onJoinRoom,
+  onOpenAdmin,
   error,
   isLoading
 }) {
@@ -46,7 +47,6 @@ export default function LandingPage({
   const [targetScore, setTargetScore] = useState(3);
   const [discordUser, setDiscordUser] = useState(getDiscordUser());
   const [useDiscordName, setUseDiscordName] = useState(true);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Check Discord redirect callback on mount
   useEffect(() => {
@@ -175,14 +175,14 @@ export default function LandingPage({
                 type="button"
                 onClick={() => {
                   sounds.playClick();
-                  setIsAdminOpen(true);
+                  if (onOpenAdmin) onOpenAdmin();
                 }}
                 style={{
                   background: 'rgba(239, 68, 68, 0.2)',
                   border: '1px solid #ef4444',
                   color: '#f87171',
                   borderRadius: '8px',
-                  padding: '5px 9px',
+                  padding: '6px 10px',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -190,7 +190,7 @@ export default function LandingPage({
                   alignItems: 'center',
                   gap: '4px'
                 }}
-                title="Admin Paneli"
+                title="Tam Ekran Admin Paneli"
               >
                 <ShieldCheck size={14} /> admin
               </button>
@@ -234,25 +234,26 @@ export default function LandingPage({
               odaya katıl
             </button>
 
-            {/* Admin Panel Quick Link if Admin */}
+            {/* Admin Panel Full-Screen Link if Admin */}
             {isAuthorizedAdmin && (
               <button
                 type="button"
                 onClick={() => {
                   sounds.playClick();
-                  setIsAdminOpen(true);
+                  if (onOpenAdmin) onOpenAdmin();
                 }}
                 className="btn-secondary"
                 style={{
                   width: '100%',
-                  padding: '12px',
-                  fontSize: '0.88rem',
+                  padding: '14px',
+                  fontSize: '0.9rem',
                   background: 'rgba(239, 68, 68, 0.12)',
                   border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171'
+                  color: '#f87171',
+                  fontWeight: 700
                 }}
               >
-                <ShieldCheck size={16} /> admin paneli (kart & json yönetimi)
+                <ShieldCheck size={16} /> admin paneli (tam ekran)
               </button>
             )}
 
@@ -571,13 +572,6 @@ export default function LandingPage({
           </form>
         )}
       </div>
-
-      {/* Admin Panel Modal (Restricted to Discord ID: 269639754675519489) */}
-      <AdminPanelModal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        discordUser={discordUser}
-      />
     </div>
   );
 }
