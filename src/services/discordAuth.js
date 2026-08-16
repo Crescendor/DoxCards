@@ -26,7 +26,8 @@ export function initiateDiscordLogin() {
 
   if (!clientId) return;
 
-  const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+  // Use /callback as configured by user in Discord Developer Portal
+  const redirectUri = encodeURIComponent(`${window.location.origin}/callback`);
   const authUrl = `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&response_type=token&scope=identify&redirect_uri=${redirectUri}`;
 
   window.location.href = authUrl;
@@ -64,8 +65,8 @@ export async function checkDiscordAuthCallback() {
 
     saveDiscordUser(user);
 
-    // Clean hash from URL
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    // Clean /callback and hash from URL back to base root /
+    window.history.replaceState(null, '', window.location.origin + window.location.search);
     return user;
   } catch (err) {
     console.error('Error fetching Discord user profile:', err);
