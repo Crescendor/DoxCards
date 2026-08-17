@@ -23,10 +23,31 @@ export function parseRawDeck(jsonData) {
     return { raw: { Perks: {}, 'Red Flags': {} }, whiteCards: [], redCards: [], allCards: [] };
   }
 
-  // Extract perks regardless of key casing
-  const perksObj = jsonData.Perks || jsonData.perks || jsonData.PERKS || jsonData.whiteCards || jsonData.white || {};
-  // Extract red flags regardless of key casing
-  const redFlagsObj = jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags || jsonData.RedFlags || jsonData.RED_FLAGS || jsonData.redCards || jsonData.red || {};
+  const defaultPerks = rawCardsData?.Perks || {};
+  const defaultRedFlags = rawCardsData?.['Red Flags'] || {};
+
+  const inputPerks = jsonData.Perks || jsonData.perks || jsonData.PERKS || jsonData.whiteCards || jsonData.white || {};
+  const inputRedFlags = jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags || jsonData.RedFlags || jsonData.RED_FLAGS || jsonData.redCards || jsonData.red || {};
+
+  const perksObj = { ...defaultPerks, ...inputPerks };
+  Object.keys(inputPerks).forEach(cat => {
+    if (Array.isArray(inputPerks[cat]) && inputPerks[cat].length > 0) {
+      perksObj[cat] = Array.from(new Set([
+        ...(defaultPerks[cat] || []),
+        ...inputPerks[cat]
+      ]));
+    }
+  });
+
+  const redFlagsObj = { ...defaultRedFlags, ...inputRedFlags };
+  Object.keys(inputRedFlags).forEach(cat => {
+    if (Array.isArray(inputRedFlags[cat]) && inputRedFlags[cat].length > 0) {
+      redFlagsObj[cat] = Array.from(new Set([
+        ...(defaultRedFlags[cat] || []),
+        ...inputRedFlags[cat]
+      ]));
+    }
+  });
 
   // Standardized raw object
   const normalizedRaw = {

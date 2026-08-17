@@ -15,9 +15,35 @@ export function buildCardsFromRaw(jsonData) {
   let wIndex = 1;
   let rIndex = 1;
 
-  const perks = jsonData?.Perks || jsonData?.perks || {};
-  const redFlags = jsonData?.['Red Flags'] || jsonData?.red_flags || jsonData?.redFlags || {};
-  const deckNotes = jsonData?.deckNotes || jsonData?.DeckNotes || {};
+  const defaultPerks = rawDeckJson?.Perks || {};
+  const defaultRedFlags = rawDeckJson?.['Red Flags'] || {};
+  const defaultDeckNotes = rawDeckJson?.deckNotes || {};
+
+  const inputPerks = jsonData?.Perks || jsonData?.perks || {};
+  const inputRedFlags = jsonData?.['Red Flags'] || jsonData?.red_flags || jsonData?.redFlags || {};
+  const inputDeckNotes = jsonData?.deckNotes || jsonData?.DeckNotes || {};
+
+  const perks = { ...defaultPerks, ...inputPerks };
+  Object.keys(inputPerks).forEach(cat => {
+    if (Array.isArray(inputPerks[cat]) && inputPerks[cat].length > 0) {
+      perks[cat] = Array.from(new Set([
+        ...(defaultPerks[cat] || []),
+        ...inputPerks[cat]
+      ]));
+    }
+  });
+
+  const redFlags = { ...defaultRedFlags, ...inputRedFlags };
+  Object.keys(inputRedFlags).forEach(cat => {
+    if (Array.isArray(inputRedFlags[cat]) && inputRedFlags[cat].length > 0) {
+      redFlags[cat] = Array.from(new Set([
+        ...(defaultRedFlags[cat] || []),
+        ...inputRedFlags[cat]
+      ]));
+    }
+  });
+
+  const deckNotes = { ...defaultDeckNotes, ...inputDeckNotes };
 
   Object.entries(perks).forEach(([category, list]) => {
     if (Array.isArray(list)) {
