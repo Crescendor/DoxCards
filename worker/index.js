@@ -27,7 +27,7 @@ const DEFAULT_CONFIG = {
     'Sekso Paket',
     'Kara Paket',
     'Zifiri Paket',
-    'Aktanfell Deste'
+    'Aktanfell Paket'
   ],
   deckMetadata: {
     'Ana Deste': { isSecret: false, lockDescription: 'Temel oyun destesi. Herkese açıktır.' },
@@ -37,7 +37,7 @@ const DEFAULT_CONFIG = {
     'Sekso Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium veya VIP yetkisi gereklidir.' },
     'Kara Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium yetkisi gereklidir.' },
     'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' },
-    'Aktanfell Deste': { isSecret: false, lockDescription: 'Aktanfell özel topluluk destesi.' }
+    'Aktanfell Paket': { isSecret: false, lockDescription: 'Aktanfell özel topluluk paketi.' }
   }
 };
 
