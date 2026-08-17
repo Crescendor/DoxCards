@@ -386,12 +386,18 @@ export class GameRoomDO {
 
           if (sug.type === 'card' && sug.cardData) {
             const destName = targetDeckName || sug.cardData.targetDeck || 'Ana Deste';
-            if (sug.cardData.type === 'perk') {
+            const finalText = (body.cardText || sug.cardData.text || '').trim();
+            const finalType = body.cardType || sug.cardData.type;
+            if (body.cardText) sug.cardData.text = finalText;
+            if (body.cardType) sug.cardData.type = finalType;
+            if (destName) sug.cardData.targetDeck = destName;
+
+            if (finalType === 'perk') {
               savedDeck.Perks[destName] = savedDeck.Perks[destName] || [];
-              savedDeck.Perks[destName].push(sug.cardData.text);
+              savedDeck.Perks[destName].push(finalText);
             } else {
               savedDeck['Red Flags'][destName] = savedDeck['Red Flags'][destName] || [];
-              savedDeck['Red Flags'][destName].push(sug.cardData.text);
+              savedDeck['Red Flags'][destName].push(finalText);
             }
             if (extraNote) {
               savedDeck.deckNotes[destName] = extraNote;

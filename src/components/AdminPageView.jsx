@@ -137,6 +137,8 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [targetDeckForCard, setTargetDeckForCard] = useState({}); // sugId -> selected target deck name
   const [cardSuggestionsFilter, setCardSuggestionsFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [expandedDeckSugId, setExpandedDeckSugId] = useState(null);
+  const [editingCardSug, setEditingCardSug] = useState({}); // sugId -> { text, type, targetDeck }
+  const [isUpdatingSug, setIsUpdatingSug] = useState({}); // sugId -> boolean
 
   // Users Section State
   const [usersList, setUsersList] = useState([]);
@@ -478,24 +480,91 @@ export default function AdminPageView({ onBack, discordUser }) {
     setSuggestionsLoading(false);
   };
 
+  const startEditCardSug = (sug) => {
+    sounds.playClick();
+    const destDeck = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
+    setEditingCardSug(prev => ({
+      ...prev,
+      [sug.id]: {
+        text: sug.cardData?.text || '',
+        type: sug.cardData?.type === 'perk' ? 'perk' : 'red_flag',
+        targetDeck: destDeck
+      }
+    }));
+  };
+
+  const cancelEditCardSug = (sugId) => {
+    sounds.playClick();
+    setEditingCardSug(prev => {
+      const copy = { ...prev };
+      delete copy[sugId];
+      return copy;
+    });
+  };
+
+  const handleSaveEditCardSug = async (sugId) => {
+    sounds.playClick();
+    const editData = editingCardSug[sugId];
+    if (!editData || !editData.text.trim()) return;
+
+    setIsUpdatingSug(prev => ({ ...prev, [sugId]: true }));
+    const res = await updateSuggestion(sugId, {
+      cardData: {
+        text: editData.text.trim(),
+        type: editData.type,
+        targetDeck: editData.targetDeck
+      }
+    });
+
+    if (res?.success) {
+      setSuggestionsList(prev => prev.map(s => {
+        if (s.id === sugId) {
+          return {
+            ...s,
+            cardData: {
+              ...s.cardData,
+              text: editData.text.trim(),
+              type: editData.type,
+              targetDeck: editData.targetDeck
+            }
+          };
+        }
+        return s;
+      }));
+      cancelEditCardSug(sugId);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    }
+    setIsUpdatingSug(prev => ({ ...prev, [sugId]: false }));
+  };
+
   const handleApproveCardSuggestion = async (sug) => {
     sounds.playWin();
-    const destDeck = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
+    const editData = editingCardSug[sug.id];
+    const finalText = (editData ? editData.text : sug.cardData?.text || '').trim();
+    const finalType = (editData ? editData.type : sug.cardData?.type) === 'perk' ? 'perk' : 'red_flag';
+    const destDeck = (editData ? editData.targetDeck : targetDeckForCard[sug.id]) || sug.cardData?.targetDeck || 'Ana Deste';
+
+    if (!finalText) return;
+
     const res = await reviewSuggestion({
       suggestionId: sug.id,
       status: 'approved',
-      targetDeckName: destDeck
+      targetDeckName: destDeck,
+      cardText: finalText,
+      cardType: finalType
     });
 
     if (res?.success) {
       const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
-      const sec = sug.cardData?.type === 'perk' ? 'Perks' : 'Red Flags';
+      const sec = finalType === 'perk' ? 'Perks' : 'Red Flags';
       updatedRaw[sec] = updatedRaw[sec] || {};
       updatedRaw[sec][destDeck] = updatedRaw[sec][destDeck] || [];
-      updatedRaw[sec][destDeck].push(sug.cardData?.text);
+      updatedRaw[sec][destDeck].push(finalText);
 
       saveActiveDeck(updatedRaw);
       setDeckState(parseRawDeck(updatedRaw));
+      cancelEditCardSug(sug.id);
       loadSuggestions();
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
@@ -2236,42 +2305,133 @@ export default function AdminPageView({ onBack, discordUser }) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {cardSugs.map((sug) => {
                           const isPending = sug.status === 'pending';
-                          const isWhite = sug.cardData?.type === 'perk';
-                          const selectedDest = targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste';
+                          const isEditing = !!editingCardSug[sug.id];
+                          const editData = editingCardSug[sug.id] || {};
+                          const isWhite = isEditing
+                            ? (editData.type === 'perk')
+                            : (sug.cardData?.type === 'perk');
+                          const selectedDest = isEditing
+                            ? (editData.targetDeck || targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste')
+                            : (targetDeckForCard[sug.id] || sug.cardData?.targetDeck || 'Ana Deste');
+                          const isSavingThis = !!isUpdatingSug[sug.id];
 
                           return (
                             <div
                               key={sug.id}
                               style={{
                                 background: '#242424',
-                                border: isPending ? '1px solid rgba(255, 0, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isEditing
+                                  ? '1px solid #3b82f6'
+                                  : (isPending ? '1px solid rgba(255, 0, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)'),
                                 borderRadius: '14px',
                                 padding: '16px 20px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '12px'
+                                gap: '12px',
+                                transition: 'border 0.2s'
                               }}
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                                {/* Left: Card Badge + Text */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{
-                                      background: isWhite ? '#ffffff' : '#FF0000',
-                                      color: isWhite ? '#000000' : '#ffffff',
-                                      fontWeight: 800,
-                                      fontSize: '0.72rem',
-                                      padding: '2px 8px',
-                                      borderRadius: '6px',
-                                      textTransform: 'lowercase'
-                                    }}>
-                                      {isWhite ? 'beyaz kart' : 'kırmızı kart'}
-                                    </span>
-                                  </div>
+                                {/* Left: Card Badge + Text / Edit Mode Form */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                                  {isEditing ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                      {/* Type Switcher */}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>kart türü:</span>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingCardSug(prev => ({
+                                              ...prev,
+                                              [sug.id]: { ...prev[sug.id], type: 'perk' }
+                                            }))}
+                                            style={{
+                                              background: editData.type === 'perk' ? '#ffffff' : '#141414',
+                                              color: editData.type === 'perk' ? '#000000' : '#ffffff',
+                                              border: editData.type === 'perk' ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.2)',
+                                              padding: '4px 10px',
+                                              borderRadius: '6px',
+                                              fontSize: '0.75rem',
+                                              fontWeight: 800,
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            beyaz kart
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingCardSug(prev => ({
+                                              ...prev,
+                                              [sug.id]: { ...prev[sug.id], type: 'red_flag' }
+                                            }))}
+                                            style={{
+                                              background: editData.type === 'red_flag' ? '#FF0000' : '#141414',
+                                              color: '#ffffff',
+                                              border: editData.type === 'red_flag' ? '1px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.2)',
+                                              padding: '4px 10px',
+                                              borderRadius: '6px',
+                                              fontSize: '0.75rem',
+                                              fontWeight: 800,
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            kırmızı kart
+                                          </button>
+                                        </div>
+                                      </div>
 
-                                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.4 }}>
-                                    "{sug.cardData?.text}"
-                                  </div>
+                                      {/* Textarea for card text */}
+                                      <div>
+                                        <textarea
+                                          value={editData.text || ''}
+                                          onChange={(e) => setEditingCardSug(prev => ({
+                                            ...prev,
+                                            [sug.id]: { ...prev[sug.id], text: e.target.value }
+                                          }))}
+                                          placeholder="kart metnini giriniz..."
+                                          rows={2}
+                                          style={{
+                                            width: '100%',
+                                            background: '#141414',
+                                            border: '1px solid #3b82f6',
+                                            borderRadius: '8px',
+                                            padding: '10px 12px',
+                                            color: '#ffffff',
+                                            fontSize: '0.95rem',
+                                            fontFamily: 'inherit',
+                                            lineHeight: '1.4',
+                                            resize: 'vertical',
+                                            boxSizing: 'border-box'
+                                          }}
+                                          autoFocus
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{
+                                          background: isWhite ? '#ffffff' : '#FF0000',
+                                          color: isWhite ? '#000000' : '#ffffff',
+                                          fontWeight: 800,
+                                          fontSize: '0.72rem',
+                                          padding: '2px 8px',
+                                          borderRadius: '6px',
+                                          textTransform: 'lowercase'
+                                        }}>
+                                          {isWhite ? 'beyaz kart' : 'kırmızı kart'}
+                                        </span>
+                                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                                          hedef: <strong style={{ color: '#ffffff' }}>{selectedDest}</strong>
+                                        </span>
+                                      </div>
+
+                                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.4 }}>
+                                        "{sug.cardData?.text}"
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
 
                                 {/* Author Info (Discord ID & Name) */}
@@ -2320,7 +2480,16 @@ export default function AdminPageView({ onBack, discordUser }) {
                                   <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>eklenecek deste:</span>
                                   <select
                                     value={selectedDest}
-                                    onChange={(e) => setTargetDeckForCard(prev => ({ ...prev, [sug.id]: e.target.value }))}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setTargetDeckForCard(prev => ({ ...prev, [sug.id]: val }));
+                                      if (isEditing) {
+                                        setEditingCardSug(prev => ({
+                                          ...prev,
+                                          [sug.id]: { ...prev[sug.id], targetDeck: val }
+                                        }));
+                                      }
+                                    }}
                                     disabled={!isPending}
                                     style={{
                                       background: '#141414',
@@ -2341,44 +2510,130 @@ export default function AdminPageView({ onBack, discordUser }) {
                                 {/* Buttons / Status */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   {isPending ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleApproveCardSuggestion(sug)}
-                                        style={{
-                                          background: '#22c55e',
-                                          color: '#ffffff',
-                                          border: 'none',
-                                          padding: '7px 16px',
-                                          borderRadius: '8px',
-                                          fontWeight: 800,
-                                          fontSize: '0.8rem',
-                                          cursor: 'pointer',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: '6px'
-                                        }}
-                                      >
-                                        <Check size={14} /> tek tuşla desteye ekle & onayla
-                                      </button>
+                                    isEditing ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => cancelEditCardSug(sug.id)}
+                                          style={{
+                                            background: 'rgba(255, 255, 255, 0.08)',
+                                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                                            color: '#ffffff',
+                                            padding: '7px 12px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                          }}
+                                        >
+                                          <X size={13} /> vazgeç
+                                        </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRejectSuggestion(sug.id)}
-                                        style={{
-                                          background: 'rgba(239, 68, 68, 0.15)',
-                                          border: '1px solid rgba(239, 68, 68, 0.3)',
-                                          color: '#f87171',
-                                          padding: '7px 12px',
-                                          borderRadius: '8px',
-                                          fontWeight: 700,
-                                          fontSize: '0.8rem',
-                                          cursor: 'pointer'
-                                        }}
-                                      >
-                                        reddet
-                                      </button>
-                                    </>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSaveEditCardSug(sug.id)}
+                                          disabled={isSavingThis || !editData.text?.trim()}
+                                          style={{
+                                            background: '#3b82f6',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            padding: '7px 14px',
+                                            borderRadius: '8px',
+                                            fontWeight: 800,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                          }}
+                                        >
+                                          <Save size={13} /> sadece öneriyi güncelle
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleApproveCardSuggestion(sug)}
+                                          disabled={!editData.text?.trim()}
+                                          style={{
+                                            background: '#22c55e',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            padding: '7px 16px',
+                                            borderRadius: '8px',
+                                            fontWeight: 800,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                          }}
+                                        >
+                                          <Check size={14} /> düzenlemeyi onayla & desteye ekle
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => startEditCardSug(sug)}
+                                          style={{
+                                            background: 'rgba(59, 130, 246, 0.15)',
+                                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                                            color: '#60a5fa',
+                                            padding: '7px 12px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                          }}
+                                        >
+                                          <Edit2 size={13} /> düzenle
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleApproveCardSuggestion(sug)}
+                                          style={{
+                                            background: '#22c55e',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            padding: '7px 16px',
+                                            borderRadius: '8px',
+                                            fontWeight: 800,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                          }}
+                                        >
+                                          <Check size={14} /> tek tuşla desteye ekle & onayla
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRejectSuggestion(sug.id)}
+                                          style={{
+                                            background: 'rgba(239, 68, 68, 0.15)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            color: '#f87171',
+                                            padding: '7px 12px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          reddet
+                                        </button>
+                                      </>
+                                    )
                                   ) : (
                                     <span style={{
                                       background: sug.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
