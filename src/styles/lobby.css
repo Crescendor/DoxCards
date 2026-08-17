@@ -381,3 +381,61 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Badge Glow & Animation Presets */
+@keyframes tagPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.88; }
+}
+
+@keyframes tagFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes tagShimmer {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.35) drop-shadow(0 0 4px currentColor); }
+  100% { filter: brightness(1); }
+}
+
+.anim-pulse {
+  animation: tagPulse 2s infinite ease-in-out;
+}
+
+.anim-bounce {
+  animation: tagFloat 2.5s infinite ease-in-out;
+}
+
+.anim-shimmer {
+  animation: tagShimmer 2.2s infinite ease-in-out;
+}
+
+.glow-none {
+  box-shadow: none;
+}
+
+.glow-subtle_red {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+
+.glow-crimson {
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.55), inset 0 0 6px rgba(220, 38, 38, 0.25);
+}
+
+.glow-neon_purple {
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.6), inset 0 0 6px rgba(168, 85, 247, 0.3);
+}
+
+.glow-neon_blue {
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6), inset 0 0 6px rgba(56, 189, 248, 0.3);
+}
+
+.glow-golden {
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.6), inset 0 0 6px rgba(245, 158, 11, 0.3);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.3);
+}
+

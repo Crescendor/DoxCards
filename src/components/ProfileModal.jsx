@@ -21,6 +21,7 @@ import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
 import { fetchAppConfig, updateUser, saveLocalUserProfile } from '../services/userService';
 import { socket } from '../services/socket';
+import TagBadge from './TagBadge';
 
 export default function ProfileModal({
   isOpen,
@@ -337,31 +338,8 @@ export default function ProfileModal({
                       <ShieldCheck size={11} /> admin
                     </span>
                   )}
-                  {userProfile.tags?.includes('VIP') && (
-                    <span className="badge-vip">
-                      <Crown size={11} /> VIP
-                    </span>
-                  )}
-                  {userProfile.tags?.includes('Premium') && (
-                    <span className="badge-premium">
-                      <Sparkles size={11} /> Premium
-                    </span>
-                  )}
-                  {(userProfile.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(t => (
-                    <span key={t} style={{
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      color: '#e2e8f0',
-                      padding: '0 8px',
-                      height: '22px',
-                      fontSize: '0.70rem',
-                      fontWeight: 700,
-                      borderRadius: '6px',
-                      display: 'inline-flex',
-                      alignItems: 'center'
-                    }}>
-                      {t}
-                    </span>
+                  {(userProfile.tags || []).map(t => (
+                    <TagBadge key={t} tag={t} size="md" customTags={appConfig?.customTags} />
                   ))}
                   {!isAdmin && (!userProfile.tags || userProfile.tags.length === 0) && (
                     <span style={{ fontSize: '0.76rem', color: '#64748b' }}>

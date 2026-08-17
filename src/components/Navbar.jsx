@@ -3,6 +3,7 @@ import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, 
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import ProfileModal from './ProfileModal';
+import TagBadge from './TagBadge';
 
 export default function Navbar({
   roomCode,
@@ -121,21 +122,9 @@ export default function Navbar({
                 {(userProfile.coins || 0).toLocaleString('tr-TR')}
               </span>
 
-              {userProfile.tags?.includes('admin') && (
-                <span className="badge-admin">
-                  <ShieldCheck size={10} /> admin
-                </span>
-              )}
-              {userProfile.tags?.includes('VIP') && (
-                <span className="badge-vip">
-                  <Crown size={10} /> VIP
-                </span>
-              )}
-              {userProfile.tags?.includes('Premium') && (
-                <span className="badge-premium">
-                  <Sparkles size={10} /> Premium
-                </span>
-              )}
+              {(userProfile.tags || []).map(t => (
+                <TagBadge key={t} tag={t} size="sm" />
+              ))}
             </button>
           </div>
         )}

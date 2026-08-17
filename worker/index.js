@@ -44,7 +44,57 @@ const DEFAULT_CONFIG = {
     default: 10,
     premium: 20,
     vip: 30
-  }
+  },
+  customTags: [
+    {
+      id: 'admin',
+      name: 'admin',
+      icon: 'ShieldCheck',
+      color: '#f87171',
+      bgColor: 'rgba(239, 68, 68, 0.18)',
+      borderColor: 'rgba(239, 68, 68, 0.45)',
+      glow: 'crimson',
+      animation: 'none',
+      permissions: {
+        customSounds: true,
+        allDecks: true,
+        adminAccess: true,
+        multiplier: 30
+      }
+    },
+    {
+      id: 'vip',
+      name: 'VIP',
+      icon: 'Crown',
+      color: '#c084fc',
+      bgColor: 'rgba(168, 85, 247, 0.18)',
+      borderColor: 'rgba(168, 85, 247, 0.45)',
+      glow: 'neon_purple',
+      animation: 'pulse',
+      permissions: {
+        customSounds: true,
+        allDecks: false,
+        adminAccess: false,
+        multiplier: 30
+      }
+    },
+    {
+      id: 'premium',
+      name: 'Premium',
+      icon: 'Sparkles',
+      color: '#38bdf8',
+      bgColor: 'rgba(56, 189, 248, 0.18)',
+      borderColor: 'rgba(56, 189, 248, 0.45)',
+      glow: 'neon_blue',
+      animation: 'shimmer',
+      permissions: {
+        customSounds: true,
+        allDecks: false,
+        adminAccess: false,
+        multiplier: 20
+      }
+    }
+  ]
 };
 
 // Durable Object class for 100% synchronized stateful multiplayer rooms

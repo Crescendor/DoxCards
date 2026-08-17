@@ -65,6 +65,8 @@ import {
 } from '../services/userService';
 import { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
+import TagBadge from './TagBadge';
+import TagEditModal from './TagEditModal';
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
 
@@ -198,6 +200,60 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [coinUserSearch, setCoinUserSearch] = useState('');
   const [isCoinConfigSaving, setIsCoinConfigSaving] = useState(false);
   const [savingUserCoinId, setSavingUserCoinId] = useState(null);
+
+  // UI Settings & Tag Management State
+  const [uiTab, setUiTab] = useState('sounds'); // 'sounds' | 'tags'
+  const [editingTag, setEditingTag] = useState(null);
+  const [isNewTag, setIsNewTag] = useState(false);
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+
+  const handleOpenNewTagModal = () => {
+    sounds.playClick();
+    setEditingTag(null);
+    setIsNewTag(true);
+    setTagModalOpen(true);
+  };
+
+  const handleOpenEditTagModal = (tagToEdit) => {
+    sounds.playClick();
+    setEditingTag(tagToEdit);
+    setIsNewTag(false);
+    setTagModalOpen(true);
+  };
+
+  const handleSaveTag = async (savedTag) => {
+    const currentTags = appConfig.customTags || DEFAULT_CONFIG.customTags || [];
+    const existingIdx = currentTags.findIndex(t => t.id.toLowerCase() === savedTag.id.toLowerCase());
+    let updatedTags = [];
+    if (existingIdx !== -1) {
+      updatedTags = currentTags.map((t, idx) => idx === existingIdx ? savedTag : t);
+    } else {
+      updatedTags = [...currentTags, savedTag];
+    }
+
+    const updatedConfig = { ...appConfig, customTags: updatedTags };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleDeleteTag = async (tagIdToDelete) => {
+    if (['admin', 'vip', 'premium'].includes(tagIdToDelete.toLowerCase())) {
+      alert('Temel sistem etiketleri silinemez. Ancak düzenleyebilirsiniz.');
+      return;
+    }
+    if (!window.confirm('Bu etiketi silmek istediğinize emin misiniz?')) return;
+    sounds.playClick();
+
+    const currentTags = appConfig.customTags || DEFAULT_CONFIG.customTags || [];
+    const updatedTags = currentTags.filter(t => t.id.toLowerCase() !== tagIdToDelete.toLowerCase());
+    const updatedConfig = { ...appConfig, customTags: updatedTags };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
 
   // Sync editing user data when modal opens
   useEffect(() => {
@@ -1159,7 +1215,7 @@ export default function AdminPageView({ onBack, discordUser }) {
             </button>
 
             <button
-              onClick={() => { sounds.playClick(); setMainNav('sounds'); }}
+              onClick={() => { sounds.playClick(); setMainNav('ui_settings'); }}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -1167,18 +1223,18 @@ export default function AdminPageView({ onBack, discordUser }) {
                 gap: '12px',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                background: mainNav === 'sounds' ? '#FF0000' : 'transparent',
+                background: mainNav === 'ui_settings' ? '#FF0000' : 'transparent',
                 color: '#ffffff',
-                border: mainNav === 'sounds' ? '1px solid #ff3333' : '1px solid transparent',
+                border: mainNav === 'ui_settings' ? '1px solid #ff3333' : '1px solid transparent',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: mainNav === 'sounds' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                boxShadow: mainNav === 'ui_settings' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
                 textAlign: 'left'
               }}
             >
-              <Volume2 size={18} /> ses ayarları ({(appConfig.customSounds || []).length})
+              <Sliders size={18} /> arayüz ayarları
             </button>
           </nav>
         </div>
@@ -3272,21 +3328,9 @@ export default function AdminPageView({ onBack, discordUser }) {
                                 <ShieldCheck size={10} /> ana yönetici
                               </span>
                             )}
-                            {user.tags?.includes('admin') && !isMainAdminUser && (
-                              <span className="badge-admin">
-                                <ShieldCheck size={10} /> admin
-                              </span>
-                            )}
-                            {user.tags?.includes('VIP') && (
-                              <span className="badge-vip">
-                                <Crown size={10} /> VIP
-                              </span>
-                            )}
-                            {user.tags?.includes('Premium') && (
-                              <span className="badge-premium">
-                                <Sparkles size={10} /> Premium
-                              </span>
-                            )}
+                            {(user.tags || []).map(t => (
+                              <TagBadge key={t} tag={t} size="sm" customTags={appConfig.customTags} />
+                            ))}
                             {isBanned && (
                               <span style={{
                                 background: '#ef4444',
@@ -3350,28 +3394,85 @@ export default function AdminPageView({ onBack, discordUser }) {
         )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* SECTION C: SES AYARLARI (SOUNDS MANAGEMENT) */}
+        {/* SECTION C: ARAYÜZ AYARLARI (UI SETTINGS: SOUNDS & TAGS)                 */}
         {/* ----------------------------------------------------------------------- */}
-        {mainNav === 'sounds' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1000px' }}>
-            <div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
-                ses efektleri & müzik yönetimi
-              </h2>
-              <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
-                beyaz kart atarken, kırmızı kart atarken ve oyun kazanıldığında çalacak sesleri ekleyin. yerel mp3/wav yükleyebilir veya youtube video linki verip saniye aralığı belirleyebilirsiniz.
-              </p>
+        {mainNav === 'ui_settings' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+            {/* Top Horizontal Sub-Navbar */}
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              background: '#1c1c1c',
+              padding: '6px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <button
+                onClick={() => { sounds.playClick(); setUiTab('sounds'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: uiTab === 'sounds' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <Volume2 size={18} /> ses ayarları ({(appConfig.customSounds || []).length})
+              </button>
+
+              <button
+                onClick={() => { sounds.playClick(); setUiTab('tags'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: uiTab === 'tags' ? '#d90429' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <Tag size={18} /> etiketler & roller ({(appConfig.customTags || DEFAULT_CONFIG.customTags || []).length})
+              </button>
             </div>
 
-            {/* 1. YENİ SES EKLEME FORMU */}
-            <div style={{
-              background: '#1c1c1c',
-              border: '1px solid rgba(255, 0, 0, 0.35)',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+            {/* SUB-TAB 1: SES AYARLARI */}
+            {uiTab === 'sounds' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1000px' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+                    ses efektleri & müzik yönetimi
+                  </h2>
+                  <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
+                    beyaz kart atarken, kırmızı kart atarken ve oyun kazanıldığında çalacak sesleri ekleyin. yerel mp3/wav yükleyebilir veya youtube video linki verip saniye aralığı belirleyebilirsiniz.
+                  </p>
+                </div>
+
+                {/* 1. YENİ SES EKLEME FORMU */}
+                <div style={{
+                  background: '#1c1c1c',
+                  border: '1px solid rgba(255, 0, 0, 0.35)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
                 <span style={{
                   background: '#FF0000',
                   color: '#ffffff',
@@ -3800,6 +3901,158 @@ export default function AdminPageView({ onBack, discordUser }) {
             </button>
           </div>
         )}
+
+        {/* SUB-TAB 2: ETİKETLER & ROLLER YÖNETİMİ */}
+        {uiTab === 'tags' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
+            {/* Header & Create Tag Button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#1c1c1c',
+              padding: '20px 24px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={20} color="#FF0000" />
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>
+                    etiketler & roller yönetimi
+                  </h2>
+                </div>
+                <p style={{ color: '#94a3b8', fontSize: '0.84rem' }}>
+                  oyuncuların sahip olabileceği etiketleri, rozet renklerini, parlama ve animasyon efektlerini, ses ve deste yetkilerini özelleştirin.
+                </p>
+              </div>
+
+              <button
+                onClick={handleOpenNewTagModal}
+                className="btn-primary"
+                style={{ height: '42px', padding: '0 20px', fontSize: '0.86rem' }}
+              >
+                <Plus size={16} /> yeni etiket oluştur
+              </button>
+            </div>
+
+            {/* Tags Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '16px'
+            }}>
+              {(appConfig.customTags || DEFAULT_CONFIG.customTags || []).map(tagDef => {
+                const isProtected = ['admin', 'vip', 'premium'].includes(tagDef.id.toLowerCase());
+                return (
+                  <div
+                    key={tagDef.id}
+                    style={{
+                      background: '#1c1c1c',
+                      border: `1px solid ${tagDef.borderColor || 'rgba(255, 255, 255, 0.1)'}`,
+                      borderRadius: '16px',
+                      padding: '18px 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+                      textAlign: 'left'
+                    }}
+                  >
+                    {/* Top: Badge Preview & ID */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <TagBadge tag={tagDef} size="lg" customTags={appConfig.customTags} />
+                        <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                          (id: {tagDef.id})
+                        </span>
+                      </div>
+
+                      {isProtected && (
+                        <span style={{
+                          background: 'rgba(245, 158, 11, 0.15)',
+                          border: '1px solid rgba(245, 158, 11, 0.35)',
+                          color: '#fbbf24',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.66rem',
+                          fontWeight: 800
+                        }}>
+                          temel rol
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Middle: Style Properties */}
+                    <div style={{
+                      background: '#242424',
+                      borderRadius: '10px',
+                      padding: '10px 12px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '8px',
+                      fontSize: '0.74rem'
+                    }}>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>parlama: </span>
+                        <span style={{ color: '#ffffff', fontWeight: 700 }}>{tagDef.glow || 'yok'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>animasyon: </span>
+                        <span style={{ color: '#ffffff', fontWeight: 700 }}>{tagDef.animation || 'yok'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>özel ses yetkisi: </span>
+                        <span style={{ color: tagDef.permissions?.customSounds ? '#34d399' : '#94a3b8', fontWeight: 700 }}>
+                          {tagDef.permissions?.customSounds ? 'var' : 'yok'}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8' }}>coin katsayısı: </span>
+                        <span style={{ color: '#fbbf24', fontWeight: 800 }}>
+                          {tagDef.permissions?.multiplier ? `${tagDef.permissions.multiplier}x` : '10x'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bottom: Action Buttons */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 'auto' }}>
+                      <button
+                        onClick={() => handleOpenEditTagModal(tagDef)}
+                        className="btn-secondary"
+                        style={{ padding: '6px 14px', fontSize: '0.78rem', height: '32px', minHeight: '32px' }}
+                      >
+                        <Edit2 size={13} /> düzenle
+                      </button>
+
+                      {!isProtected && (
+                        <button
+                          onClick={() => handleDeleteTag(tagDef.id)}
+                          className="btn-icon"
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: '#f87171'
+                          }}
+                          title="Etiketi Sil"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )}
 
         {/* ----------------------------------------------------------------------- */}
         {/* SECTION D: COIN DÜZENLEME & KATSAYI YÖNETİMİ                            */}
@@ -4396,109 +4649,86 @@ export default function AdminPageView({ onBack, discordUser }) {
               gap: '12px',
               textAlign: 'left'
             }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff' }}>
-                1. roller & etiketler (tags)
-              </span>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setEditUserTags(prev => prev.includes('admin') ? prev.filter(t => t !== 'admin') : [...prev, 'admin']);
-                  }}
-                  className={editUserTags.includes('admin') ? 'badge-admin' : 'deck-tag-btn'}
-                  style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
-                >
-                  <ShieldCheck size={13} /> admin
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setEditUserTags(prev => prev.includes('VIP') ? prev.filter(t => t !== 'VIP') : [...prev, 'VIP']);
-                  }}
-                  className={editUserTags.includes('VIP') ? 'badge-vip' : 'deck-tag-btn'}
-                  style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
-                >
-                  <Crown size={13} /> VIP
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setEditUserTags(prev => prev.includes('Premium') ? prev.filter(t => t !== 'Premium') : [...prev, 'Premium']);
-                  }}
-                  className={editUserTags.includes('Premium') ? 'badge-premium' : 'deck-tag-btn'}
-                  style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
-                >
-                  <Sparkles size={13} /> Premium
-                </button>
-
-                {editUserTags.filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(tag => (
-                  <span
-                    key={tag}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      border: '1px solid rgba(255, 255, 255, 0.25)',
-                      color: '#ffffff',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      padding: '4px 10px',
-                      borderRadius: '9999px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    {tag}
-                    <X
-                      size={12}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => setEditUserTags(prev => prev.filter(t => t !== tag))}
-                    />
-                  </span>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff' }}>
+                  1. roller & etiketler ({editUserTags.length} seçili)
+                </span>
+                <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                  etiket atamak veya kaldırmak için tıklayın
+                </span>
               </div>
 
-              {/* Add Custom Tag */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
-                <input
-                  type="text"
-                  placeholder="yeni özel etiket ekle..."
-                  value={editNewTagInput}
-                  onChange={(e) => setEditNewTagInput(e.target.value)}
-                  className="form-input"
-                  style={{ padding: '6px 12px', fontSize: '0.82rem', maxWidth: '220px' }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && editNewTagInput.trim()) {
-                      e.preventDefault();
-                      const val = editNewTagInput.trim();
-                      if (!editUserTags.includes(val)) {
-                        setEditUserTags(prev => [...prev, val]);
-                      }
-                      setEditNewTagInput('');
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (editNewTagInput.trim()) {
-                      const val = editNewTagInput.trim();
-                      if (!editUserTags.includes(val)) {
-                        setEditUserTags(prev => [...prev, val]);
-                      }
-                      setEditNewTagInput('');
-                    }
-                  }}
-                  className="btn-secondary"
-                  style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-                >
-                  + etiket ekle
-                </button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {(appConfig.customTags || DEFAULT_CONFIG.customTags || []).map(tagDef => {
+                  const isSelected = editUserTags.some(t => t.toLowerCase() === tagDef.id.toLowerCase() || t.toLowerCase() === tagDef.name.toLowerCase());
+                  return (
+                    <button
+                      key={tagDef.id}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setEditUserTags(prev => {
+                          const hasIt = prev.some(t => t.toLowerCase() === tagDef.id.toLowerCase() || t.toLowerCase() === tagDef.name.toLowerCase());
+                          if (hasIt) {
+                            return prev.filter(t => t.toLowerCase() !== tagDef.id.toLowerCase() && t.toLowerCase() !== tagDef.name.toLowerCase());
+                          } else {
+                            return [...prev, tagDef.name];
+                          }
+                        });
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        height: '28px',
+                        padding: '0 12px',
+                        borderRadius: '9999px',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        border: isSelected ? `1px solid ${tagDef.borderColor || '#ef4444'}` : '1px solid rgba(255, 255, 255, 0.12)',
+                        background: isSelected ? (tagDef.bgColor || 'rgba(239, 68, 68, 0.2)') : '#181818',
+                        color: isSelected ? (tagDef.color || '#ffffff') : '#64748b',
+                        boxShadow: isSelected && tagDef.glow ? `0 0 10px ${tagDef.color}40` : 'none',
+                        transition: 'all 0.15s ease',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      {isSelected && <Check size={12} color={tagDef.color || '#ffffff'} />}
+                      {tagDef.name}
+                    </button>
+                  );
+                })}
+
+                {/* Leftover custom tags on user */}
+                {editUserTags.filter(t => !(appConfig.customTags || DEFAULT_CONFIG.customTags || []).some(def => def.name.toLowerCase() === t.toLowerCase() || def.id.toLowerCase() === t.toLowerCase())).map(customTag => (
+                  <button
+                    key={customTag}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setEditUserTags(prev => prev.filter(t => t !== customTag));
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      height: '28px',
+                      padding: '0 12px',
+                      borderRadius: '9999px',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <Check size={12} /> {customTag}
+                    <X size={11} style={{ marginLeft: '2px', opacity: 0.7 }} />
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -4839,6 +5069,18 @@ export default function AdminPageView({ onBack, discordUser }) {
           </div>
         </div>
       )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* MODAL 3: ETİKET DÜZENLEME & OLUŞTURMA MODALI                       */}
+      {/* ------------------------------------------------------------------- */}
+      <TagEditModal
+        isOpen={tagModalOpen}
+        onClose={() => setTagModalOpen(false)}
+        tag={editingTag}
+        isNew={isNewTag}
+        onSave={handleSaveTag}
+      />
     </div>
   );
 }
+

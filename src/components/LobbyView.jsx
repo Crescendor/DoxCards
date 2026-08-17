@@ -6,6 +6,7 @@ import { ADMIN_DISCORD_ID } from './AdminPageView';
 import { getDiscordUser } from '../services/discordAuth';
 import { getLocalUserProfile, fetchAppConfig, DEFAULT_CONFIG } from '../services/userService';
 import { DEFAULT_RAW_CARDS } from '../data/cardsData';
+import TagBadge from './TagBadge';
 
 const MAX_SLOTS = 6;
 
@@ -232,31 +233,8 @@ export default function LobbyView({
                             <Crown size={11} /> oda kurucusu
                           </span>
                         )}
-                        {slotPlayer.tags?.includes('VIP') && (
-                          <span className="badge-vip">
-                            <Crown size={11} /> VIP
-                          </span>
-                        )}
-                        {slotPlayer.tags?.includes('Premium') && (
-                          <span className="badge-premium">
-                            <Sparkles size={11} /> Premium
-                          </span>
-                        )}
-                        {(slotPlayer.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(t => (
-                          <span key={t} style={{
-                            background: 'rgba(255, 255, 255, 0.08)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#e2e8f0',
-                            fontSize: '0.70rem',
-                            fontWeight: 700,
-                            height: '22px',
-                            padding: '0 7px',
-                            borderRadius: '6px',
-                            display: 'inline-flex',
-                            alignItems: 'center'
-                          }}>
-                            {t}
-                          </span>
+                        {(slotPlayer.tags || []).map(t => (
+                          <TagBadge key={t} tag={t} size="sm" customTags={appConfig?.customTags} />
                         ))}
                       </div>
 
