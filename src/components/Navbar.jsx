@@ -256,6 +256,7 @@ export default function Navbar({
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
         userProfile={userProfile}
+        onUpdateProfile={onUpdateProfile}
         onLogout={onLogout}
       />
     </>

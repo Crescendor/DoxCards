@@ -38,7 +38,11 @@ import {
   Calculator,
   TrendingUp,
   Wallet,
-  Award
+  Award,
+  ShieldAlert,
+  Ban,
+  CheckSquare,
+  VolumeX
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
