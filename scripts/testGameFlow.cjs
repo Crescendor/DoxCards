@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const rawDeck = JSON.parse(fs.readFileSync('worker/Red_Flags_Turkish_Complete.json', 'utf8'));
+const rawDeck = JSON.parse(fs.readFileSync('src/data/defaultDeck.json', 'utf8'));
 
 console.log('--- RAW DECK CHECK ---');
 console.log('Perks in rawDeck:', Object.keys(rawDeck.Perks || {}));

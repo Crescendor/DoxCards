@@ -1,5 +1,5 @@
-// Turkish Cards Database for Red Flags (DoxCards) - Complete 800+ Cards Edition
-import rawDeckJson from './Red_Flags_Turkish_Complete.json';
+// Turkish Cards Database for Red Flags (DoxCards) - Complete Cards Edition
+import rawDeckJson from './defaultDeck.json';
 
 export function standardizeBlankTokens(text) {
   if (!text) return '';

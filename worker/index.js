@@ -1,6 +1,5 @@
-// Cloudflare Worker Multiplayer Game Server with Durable Objects for DoxCards (Red Flags)
 import { getDeck, updateGlobalDeck, getActiveRawDeck } from './cards.js';
-import rawDeckJson from './Red_Flags_Turkish_Complete.json';
+import rawDeckJson from './defaultDeck.json';
 import { GameEngine, PHASES } from './gameEngine.js';
 import { generateRoomOgPng } from './ogRenderer.js';
 

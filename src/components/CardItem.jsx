@@ -155,7 +155,7 @@ export default function CardItem({
             return chunk;
           })
         ) : (
-          card.text.split(/(?:\[boşluk\]|[_\s]*_{2,}[_\s]*|\[blank\]|\{blank\})/i).map((chunk, idx, arr) => (
+          (typeof card.text === 'string' ? card.text : (card.filledText || '')).split(/(?:\[boşluk\]|[_\s]*_{2,}[_\s]*|\[blank\]|\{blank\})/i).map((chunk, idx, arr) => (
             <React.Fragment key={idx}>
               {chunk}
               {idx < arr.length - 1 && (
