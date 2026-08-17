@@ -835,15 +835,37 @@ export class GameRoomDO {
             }
           } else if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
             setTimeout(() => {
-              if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
-                this.room.game.nextRound(this.room.players);
-                this.broadcastGameState();
-                this.checkAndTriggerBotTurn();
+              try {
+                if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
+                  this.room.game.nextRound(this.room.players);
+                  this.broadcastGameState();
+                  this.checkAndTriggerBotTurn();
+                }
+              } catch (err) {
+                console.error('Auto nextRound error:', err);
               }
-            }, 5500);
+            }, 4000);
           }
 
           sendAck({ success: true });
+        }
+
+        // 8.5 Next Round Trigger (Client or Host initiated backup)
+        else if (evt === 'next_round') {
+          if (!this.room || !this.room.game) return;
+          if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
+            try {
+              this.room.game.nextRound(this.room.players);
+              this.broadcastGameState();
+              this.checkAndTriggerBotTurn();
+              sendAck({ success: true });
+            } catch (err) {
+              console.error('Manual nextRound error:', err);
+              sendAck({ error: err.message });
+            }
+          } else {
+            sendAck({ success: true });
+          }
         }
 
         // 9. Kick Player (Host only)

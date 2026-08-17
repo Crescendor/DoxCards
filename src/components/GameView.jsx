@@ -29,12 +29,18 @@ export default function GameView({
   const isHost = room.hostId === player.id;
   const players = room.players || [];
 
-  // Play fanfare on round summary
+  // Play fanfare on round summary & ensure automatic round transition
   useEffect(() => {
     if (phase === 'ROUND_SUMMARY') {
       sounds.playWin();
+      const timer = setTimeout(() => {
+        if (room?.code) {
+          socket.emit('next_round', { roomCode: room.code });
+        }
+      }, 4500);
+      return () => clearTimeout(timer);
     }
-  }, [phase]);
+  }, [phase, room?.code]);
 
   const {
     isSingle,

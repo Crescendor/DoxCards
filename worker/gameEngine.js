@@ -53,11 +53,11 @@ export class GameEngine {
     this.usedCardIds = new Set();
   }
 
-  // Draws only fresh cards, reshuffling strictly within selected decks if pile is exhausted
+  // Draws fresh cards, reshuffling strictly within selected decks if pile is exhausted
   drawCards(type, count) {
     const cards = [];
     let attempts = 0;
-    while (cards.length < count && attempts < 200) {
+    while (cards.length < count && attempts < 500) {
       attempts++;
       if (!this.deck[type] || this.deck[type].length === 0) {
         const fresh = getDeck(this.deckType, this.customRawDeck, this.selectedDecks);
@@ -68,8 +68,15 @@ export class GameEngine {
       if (this.deck[type] && this.deck[type].length > 0) {
         const candidate = this.deck[type].pop();
         if (candidate) {
-          this.usedCardIds.add(candidate.id);
-          cards.push(candidate);
+          // Guaranteed globally unique instance ID for each drawn card to avoid key collisions
+          const uniqueInstanceId = `${candidate.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const drawnCard = {
+            ...candidate,
+            id: uniqueInstanceId,
+            rawId: candidate.id
+          };
+          this.usedCardIds.add(uniqueInstanceId);
+          cards.push(drawnCard);
         }
       } else {
         break;
@@ -79,7 +86,7 @@ export class GameEngine {
   }
 
   startGame(players, customRawDeck = null) {
-    if (players.length < 2) {
+    if (!Array.isArray(players) || players.length < 2) {
       throw new Error('Oyunu başlatmak için en az 2 oyuncu gerekli!');
     }
 
@@ -109,19 +116,25 @@ export class GameEngine {
     return this.startGame(players);
   }
 
-  startRound(players) {
+  startRound(players = []) {
+    const rawList = Array.isArray(players) && players.length > 0 ? players : [];
+    let activePlayers = rawList.filter(p => p && p.connected !== false);
+    if (activePlayers.length === 0) {
+      activePlayers = rawList.filter(Boolean);
+    }
+    if (activePlayers.length === 0) return;
+
     this.currentRound++;
     this.candidates = {};
     this.sabotageAssignments = {};
     this.roundWinner = null;
     this.winningCandidate = null;
 
-    const activePlayers = players.filter(p => p.connected !== false);
-    if (this.singleIndex >= activePlayers.length) {
+    if (this.singleIndex >= activePlayers.length || this.singleIndex < 0) {
       this.singleIndex = 0;
     }
-    const single = activePlayers[this.singleIndex];
-    this.singlePlayerId = single.id;
+    const single = activePlayers[this.singleIndex] || activePlayers[0];
+    this.singlePlayerId = single ? single.id : activePlayers[0].id;
 
     // Matchmakers (all players except single)
     const matchmakers = activePlayers.filter(p => p.id !== this.singlePlayerId);
@@ -134,7 +147,7 @@ export class GameEngine {
     // Circular sabotage assignments
     matchmakers.forEach((m, idx) => {
       const target = matchmakers[(idx + 1) % matchmakers.length];
-      this.sabotageAssignments[m.id] = target.id;
+      this.sabotageAssignments[m.id] = target ? target.id : m.id;
       this.candidates[m.id] = {
         matchmakerId: m.id,
         matchmakerName: m.name,
@@ -153,14 +166,14 @@ export class GameEngine {
       const hand = this.hands[p.id];
 
       // Draw only the missing white cards (up to 4)
-      const neededWhite = 4 - hand.whiteCards.length;
+      const neededWhite = Math.max(0, 4 - (hand.whiteCards?.length || 0));
       if (neededWhite > 0) {
         const freshWhite = this.drawCards('white', neededWhite);
         hand.whiteCards.push(...freshWhite);
       }
 
       // Draw only the missing red cards (up to 3)
-      const neededRed = 3 - hand.redCards.length;
+      const neededRed = Math.max(0, 3 - (hand.redCards?.length || 0));
       if (neededRed > 0) {
         const freshRed = this.drawCards('red', neededRed);
         hand.redCards.push(...freshRed);
