@@ -89,8 +89,8 @@ export function shuffleArray(array) {
 export function normalizeDeckName(name) {
   return (name || '')
     .toLowerCase()
-    .replace(/[^a-z0-9ğüşıöç]/gi, '')
-    .replace(/(deste|paket|deck|pack)$/i, '')
+    .trim()
+    .replace(/\s+(deste|paket|deck|pack)$/i, '')
     .trim();
 }
 
@@ -109,17 +109,13 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
     selectedWhite = allWhite.filter(c => {
       const cLow = (c.category || '').toLowerCase().trim();
       const cNorm = normalizeDeckName(c.category);
-      return lowerDecks.includes(cLow) ||
-             normDecks.includes(cNorm) ||
-             normDecks.some(nd => cNorm.includes(nd) || nd.includes(cNorm));
+      return lowerDecks.includes(cLow) || normDecks.includes(cNorm);
     });
 
     selectedRed = allRed.filter(c => {
       const cLow = (c.category || '').toLowerCase().trim();
       const cNorm = normalizeDeckName(c.category);
-      return lowerDecks.includes(cLow) ||
-             normDecks.includes(cNorm) ||
-             normDecks.some(nd => cNorm.includes(nd) || nd.includes(cNorm));
+      return lowerDecks.includes(cLow) || normDecks.includes(cNorm);
     });
   } else if (deckType && deckType !== 'all') {
     selectedWhite = allWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
