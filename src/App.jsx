@@ -83,6 +83,21 @@ export default function App() {
     socket.on('game_state_update', ({ room, gameState }) => {
       if (room) setCurrentRoom(room);
       setGameState(gameState);
+
+      if (gameState?.phase === 'GAME_OVER' && gameState?.earnedCoins) {
+        const cached = getLocalUserProfile();
+        if (cached?.id) {
+          const myEarned = gameState.earnedCoins[player.id] || gameState.earnedCoins[cached.id];
+          if (myEarned && myEarned > 0) {
+            const updated = {
+              ...cached,
+              coins: (cached.coins || 0) + myEarned
+            };
+            saveLocalUserProfile(updated);
+            setUserProfile(updated);
+          }
+        }
+      }
     });
 
     socket.on('play_sound_event', (soundEvt) => {

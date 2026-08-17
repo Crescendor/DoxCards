@@ -206,6 +206,7 @@ export default function GameView({
         players={players}
         scores={scores}
         stats={stats}
+        earnedCoins={gameState?.earnedCoins || {}}
         isHost={isHost}
         onPlayAgain={onPlayAgain}
         onLeave={onLeave}

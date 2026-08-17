@@ -373,7 +373,8 @@ export class GameEngine {
       } : null,
       roundWinner: this.roundWinner,
       roundWinnerName: this.roundWinner && this.candidates[this.roundWinner] ? this.candidates[this.roundWinner].matchmakerName : null,
-      winningCandidate: this.winningCandidate
+      winningCandidate: this.winningCandidate,
+      earnedCoins: this.earnedCoins || {}
     };
   }
 }

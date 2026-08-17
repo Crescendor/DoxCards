@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Trophy, Crown, RotateCcw, LogOut } from 'lucide-react';
+import { Trophy, Crown, RotateCcw, LogOut, Coins } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 
 export default function GameOverModal({
@@ -10,6 +10,7 @@ export default function GameOverModal({
   players = [],
   scores = {},
   stats = {},
+  earnedCoins = {},
   isHost,
   onPlayAgain,
   onLeave
@@ -87,39 +88,62 @@ export default function GameOverModal({
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {sortedPlayers.map((p, idx) => (
-              <div
-                key={p.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  background: idx === 0 ? 'rgba(245, 158, 11, 0.1)' : '#ffffff',
-                  border: idx === 0 ? '1px solid #f59e0b' : '1px solid var(--border-site)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.95rem', color: idx === 0 ? '#f59e0b' : '#64748b' }}>
-                    #{idx + 1}
-                  </span>
-                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{p.name}</span>
-                  {idx === 0 && <Crown size={15} color="#f59e0b" />}
-                </div>
+            {sortedPlayers.map((p, idx) => {
+              const coinsEarned = earnedCoins ? (earnedCoins[p.id] || 0) : 0;
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: idx === 0 ? 'rgba(245, 158, 11, 0.1)' : '#ffffff',
+                    border: idx === 0 ? '1px solid #f59e0b' : '1px solid var(--border-site)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.95rem', color: idx === 0 ? '#f59e0b' : '#64748b' }}>
+                      #{idx + 1}
+                    </span>
+                    <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{p.name}</span>
+                    {idx === 0 && <Crown size={15} color="#f59e0b" />}
+                  </div>
 
-                <div style={{
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontWeight: 600,
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
-                  fontSize: '0.82rem'
-                }}>
-                  {scores[p.id] || 0} puan
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {coinsEarned > 0 && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        color: '#d97706',
+                        fontWeight: 800,
+                        padding: '3px 9px',
+                        borderRadius: '9999px',
+                        fontSize: '0.80rem'
+                      }}>
+                        <Coins size={12} color="#d97706" />
+                        +{coinsEarned.toLocaleString('tr-TR')} coin
+                      </span>
+                    )}
+
+                    <div style={{
+                      background: '#ef4444',
+                      color: '#fff',
+                      fontWeight: 600,
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      fontSize: '0.82rem'
+                    }}>
+                      {scores[p.id] || 0} puan
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb, Link2 } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb, Link2, Coins } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import SoundSettingsModal from './SoundSettingsModal';
@@ -106,6 +106,22 @@ export default function Navbar({
                   {userProfile.displayName || userProfile.username}
                 </span>
 
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  color: '#fbbf24',
+                  padding: '1px 6px',
+                  borderRadius: '9999px',
+                  fontSize: '0.68rem',
+                  fontWeight: 800
+                }}>
+                  <Coins size={10} color="#fbbf24" />
+                  {(userProfile.coins || 0).toLocaleString('tr-TR')}
+                </span>
+
                 {userProfile.tags?.includes('admin') && (
                   <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
                     <ShieldCheck size={9} /> admin
@@ -173,6 +189,25 @@ export default function Navbar({
                     discord id: {userProfile.id}
                   </div>
                 </div>
+              </div>
+
+              {/* Coin Balance Card */}
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Coins size={15} color="#f59e0b" />
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>bakiye:</span>
+                </div>
+                <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#fbbf24' }}>
+                  {(userProfile.coins || 0).toLocaleString('tr-TR')} coin
+                </span>
               </div>
 
               {/* Roles & Tags Section */}

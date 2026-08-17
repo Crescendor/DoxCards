@@ -20,39 +20,21 @@ export function parseRawDeck(jsonData) {
   let rIndex = 1;
 
   if (!jsonData || typeof jsonData !== 'object') {
-    return { raw: { Perks: {}, 'Red Flags': {} }, whiteCards: [], redCards: [], allCards: [] };
+    jsonData = rawCardsData;
   }
 
-  const defaultPerks = rawCardsData?.Perks || {};
-  const defaultRedFlags = rawCardsData?.['Red Flags'] || {};
+  const hasInputPerks = jsonData?.Perks || jsonData?.perks || jsonData?.PERKS || jsonData?.whiteCards || jsonData?.white;
+  const hasInputRedFlags = jsonData?.['Red Flags'] || jsonData?.red_flags || jsonData?.redFlags || jsonData?.RedFlags || jsonData?.RED_FLAGS || jsonData?.redCards || jsonData?.red;
 
-  const inputPerks = jsonData.Perks || jsonData.perks || jsonData.PERKS || jsonData.whiteCards || jsonData.white || {};
-  const inputRedFlags = jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags || jsonData.RedFlags || jsonData.RED_FLAGS || jsonData.redCards || jsonData.red || {};
-
-  const perksObj = { ...defaultPerks, ...inputPerks };
-  Object.keys(inputPerks).forEach(cat => {
-    if (Array.isArray(inputPerks[cat]) && inputPerks[cat].length > 0) {
-      perksObj[cat] = Array.from(new Set([
-        ...(defaultPerks[cat] || []),
-        ...inputPerks[cat]
-      ]));
-    }
-  });
-
-  const redFlagsObj = { ...defaultRedFlags, ...inputRedFlags };
-  Object.keys(inputRedFlags).forEach(cat => {
-    if (Array.isArray(inputRedFlags[cat]) && inputRedFlags[cat].length > 0) {
-      redFlagsObj[cat] = Array.from(new Set([
-        ...(defaultRedFlags[cat] || []),
-        ...inputRedFlags[cat]
-      ]));
-    }
-  });
+  const perksObj = hasInputPerks ? (jsonData.Perks || jsonData.perks || jsonData.PERKS || jsonData.whiteCards || jsonData.white) : (rawCardsData?.Perks || {});
+  const redFlagsObj = hasInputRedFlags ? (jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags || jsonData.RedFlags || jsonData.RED_FLAGS || jsonData.redCards || jsonData.red) : (rawCardsData?.['Red Flags'] || {});
+  const deckNotes = jsonData?.deckNotes || jsonData?.DeckNotes || rawCardsData?.deckNotes || {};
 
   // Standardized raw object
   const normalizedRaw = {
     Perks: perksObj,
-    'Red Flags': redFlagsObj
+    'Red Flags': redFlagsObj,
+    deckNotes
   };
 
   // 1. Perks (White Cards)
@@ -66,7 +48,9 @@ export function parseRawDeck(jsonData) {
             id: `w_${String(wIndex++).padStart(4, '0')}`,
             text: standardized,
             type: 'perk',
-            category
+            category,
+            deckName: category,
+            deckExtraNote: deckNotes[category] || ''
           });
         }
       });
@@ -84,7 +68,9 @@ export function parseRawDeck(jsonData) {
             id: `r_${String(rIndex++).padStart(4, '0')}`,
             text: standardized,
             type: 'redflag',
-            category
+            category,
+            deckName: category,
+            deckExtraNote: deckNotes[category] || ''
           });
         }
       });
@@ -99,7 +85,11 @@ export function parseRawDeck(jsonData) {
   };
 }
 
-const SERVER_URL = 'https://doxcards-server.burakcnaydin.workers.dev';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || (
+  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3001'
+    : 'https://doxcards-server.burakcnaydin.workers.dev'
+);
 
 // Get active deck from localStorage cache or fallback
 export function getActiveDeck() {

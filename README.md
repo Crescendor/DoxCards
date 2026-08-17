@@ -1,13 +1,13 @@
-# 🚩 DoxCards - Multiplayer Red Flags Türkçe Kart Oyunu
+# DoxCards - Multiplayer Red Flags Türkçe Kart Oyunu
 
 Modern, minimal ve eğlenceli çok oyunculu **Red Flags** kart oyunu. **Cloudflare Pages**, **Cloudflare Workers** ve modern bulut platformları ile %100 uyumlu olarak geliştirilmiştir.
 
 ---
 
-## 🚀 Özellikler
+## Özellikler
 
 - **Multiplayer Lobi Sistemi**: 5 haneli rastgele kodlar, 6 kişiye kadar lobi kapasitesi.
-- **Gerçek Zamanlı İletişim (Socket.io & WebSockets)**: Anlık kart oynama, reaksiyonlar ve sağ panele entegre canlı oda sohbeti.
+- **Gerçek Zamanlı İletişim (WebSockets & Durable Objects)**: Anlık kart oynama, reaksiyonlar ve canlı oda sohbeti.
 - **Zengin Türkçe Kart Veritabanı**: 400+ Türkçe Beyaz (İyi Özellik) ve Kırmızı (Kırmızı Bayrak / Sabotaj) kartlar.
 - **Minimalist & Modern Tasarım**:
   - Açılış ve Lobi ekranında minimal beyaz arkaplan ve net tipografi.
@@ -16,26 +16,17 @@ Modern, minimal ve eğlenceli çok oyunculu **Red Flags** kart oyunu. **Cloudfla
 
 ---
 
-## 🛠️ Kurulum ve Yerel Geliştirme (Local Development)
+## Kurulum ve Yerel Geliştirme (Local Development)
 
 ### 1. Bağımlılıkları Yükleyin:
 ```bash
 # Ana dizin bağımlılıkları
 npm install
-
-# İstemci (Client) bağımlılıkları
-cd client && npm install && cd ..
-
-# Sunucu (Server) bağımlılıkları
-cd server && npm install && cd ..
 ```
 
 ### 2. Uygulamayı Başlatın:
 ```bash
-# Windows için (Tek komutla hem client hem server)
-npm run dev:win
-
-# Veya Linux / Mac için
+# Geliştirme sunucusu
 npm run dev
 ```
 Uygulama açılacaktır:
@@ -44,7 +35,7 @@ Uygulama açılacaktır:
 
 ---
 
-## ☁️ Cloudflare Pages ile Dağıtım (Deployment Guide)
+## Cloudflare Pages ile Dağıtım (Deployment Guide)
 
 ### Adım 1: Projeyi GitHub'a Yükleyin
 ```bash
@@ -61,18 +52,17 @@ git push -u origin main
 2. **Connect to Git** seçeneğini seçip GitHub reponuzu bağlayın.
 3. Dağıtım ayarlarını şu şekilde yapılandırın:
    - **Framework Preset**: `Vite`
-   - **Root directory**: `client` (veya ana dizin bırakıp `npm run build` diyebilirsiniz)
    - **Build command**: `npm run build`
    - **Build output directory**: `dist`
 4. **Environment variables (Ortam Değişkenleri)** bölümüne ekleyin:
-   - `VITE_SERVER_URL`: `https://doxcards-server.sizin-domaininiz.com` (Canlı WebSocket sunucu adresiniz)
+   - `VITE_SERVER_URL`: `https://doxcards-server.sizin-domaininiz.workers.dev` (Canlı Cloudflare Worker sunucu adresiniz)
 5. **Save and Deploy** butonuna tıklayın!
 
-> 💡 `client/public/_redirects` dosyası repo içerisinde hazır bulunmaktadır; tek sayfa (SPA) yönlendirmeleri Cloudflare Pages üzerinde sorunsuz çalışır.
+> `public/_redirects` dosyası repo içerisinde hazır bulunmaktadır; tek sayfa (SPA) yönlendirmeleri Cloudflare Pages üzerinde sorunsuz çalışır.
 
 ---
 
-## 🎮 Oyun Kuralları (Nasıl Oynanır?)
+## Oyun Kuralları (Nasıl Oynanır?)
 
 1. **Tur Başı (Bekâr Belirlenir)**: Her tur sırayla bir oyuncu **Bekâr** olur. Diğer oyuncular ise **Çöpçatan** rolündedir.
 2. **1. Aşama (Aday Hazırlama)**: Çöpçatanlar ellerindeki beyaz kartlardan Bekâr'ın en çok hoşlanacağını düşündükleri **2 İyi Özellik** seçerek sevgili adaylarını oluşturur.
@@ -82,5 +72,5 @@ git push -u origin main
 
 ---
 
-## 📄 Lisans
+## Lisans
 MIT License - Burak

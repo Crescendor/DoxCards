@@ -33,7 +33,12 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Send
+  Send,
+  Coins,
+  Calculator,
+  TrendingUp,
+  Wallet,
+  Award
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
@@ -167,6 +172,17 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [editingSoundId, setEditingSoundId] = useState(null);
   const [editingSoundName, setEditingSoundName] = useState('');
 
+  // Coin Management State
+  const [coinDefaultMult, setCoinDefaultMult] = useState(10);
+  const [coinPremiumMult, setCoinPremiumMult] = useState(20);
+  const [coinVipMult, setCoinVipMult] = useState(30);
+  const [simScore, setSimScore] = useState(2);
+  const [simPlayers, setSimPlayers] = useState(4);
+  const [userCoinsInput, setUserCoinsInput] = useState({}); // userId -> coins amount
+  const [coinUserSearch, setCoinUserSearch] = useState('');
+  const [isCoinConfigSaving, setIsCoinConfigSaving] = useState(false);
+  const [savingUserCoinId, setSavingUserCoinId] = useState(null);
+
   // Sync deck & users from Cloudflare Database on mount
   useEffect(() => {
     setIsCloudSyncing(true);
@@ -182,7 +198,14 @@ export default function AdminPageView({ onBack, discordUser }) {
     });
 
     fetchAppConfig().then(cfg => {
-      if (cfg) setAppConfig(cfg);
+      if (cfg) {
+        setAppConfig(cfg);
+        if (cfg.coinMultipliers) {
+          setCoinDefaultMult(cfg.coinMultipliers.default ?? 10);
+          setCoinPremiumMult(cfg.coinMultipliers.premium ?? 20);
+          setCoinVipMult(cfg.coinMultipliers.vip ?? 30);
+        }
+      }
     });
 
     fetchSuggestions(ADMIN_DISCORD_ID).then(sugs => {
@@ -877,6 +900,52 @@ export default function AdminPageView({ onBack, discordUser }) {
     setTimeout(() => setSaveSuccess(false), 2000);
   };
 
+  const handleSaveCoinMultipliers = async () => {
+    sounds.playClick();
+    setIsCoinConfigSaving(true);
+    const updatedConfig = {
+      ...appConfig,
+      coinMultipliers: {
+        default: Number(coinDefaultMult) || 10,
+        premium: Number(coinPremiumMult) || 20,
+        vip: Number(coinVipMult) || 30
+      }
+    };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setIsCoinConfigSaving(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleSaveUserCoin = async (userId, targetAmount) => {
+    sounds.playClick();
+    setSavingUserCoinId(userId);
+    const amount = Number(targetAmount);
+    const updated = await updateUser(userId, { coins: isNaN(amount) ? 0 : amount });
+    if (updated) {
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, coins: isNaN(amount) ? 0 : amount } : u));
+    }
+    setSavingUserCoinId(null);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleQuickAdjustCoins = async (userId, currentCoins, delta) => {
+    const newAmount = Math.max(0, (Number(currentCoins) || 0) + delta);
+    setUserCoinsInput(prev => ({ ...prev, [userId]: String(newAmount) }));
+    await handleSaveUserCoin(userId, newAmount);
+  };
+
+  // Filtered coin users
+  const filteredCoinUsers = usersList.filter(u => {
+    const q = coinUserSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (u.username || '').toLowerCase().includes(q) ||
+           (u.displayName || '').toLowerCase().includes(q) ||
+           (u.id || '').includes(q);
+  });
+
   // Filtered users
   const filteredUsers = usersList.filter(u => {
     const q = usersSearch.toLowerCase().trim();
@@ -978,6 +1047,29 @@ export default function AdminPageView({ onBack, discordUser }) {
               }}
             >
               <Users size={18} /> kullanıcılar ({usersList.length})
+            </button>
+
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('coins'); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'coins' ? '#FF0000' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'coins' ? '1px solid #ff3333' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'coins' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Coins size={18} /> coin düzenleme
             </button>
 
             <button
@@ -3694,6 +3786,536 @@ export default function AdminPageView({ onBack, discordUser }) {
             >
               <Save size={18} /> {configSaving ? 'kaydediliyor...' : 'genel ses ayarlarını kaydet'}
             </button>
+          </div>
+        )}
+
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION D: COIN DÜZENLEME & KATSAYI YÖNETİMİ                            */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'coins' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Header / Info Banner */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(245, 158, 11, 0.2)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '14px',
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Coins size={28} color="#f59e0b" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+                    coin ve katsayı yönetimi
+                  </h2>
+                  <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                    yalnızca discord ile giriş yapan oyuncular için oyun sonu kazanım katsayılarını ve kullanıcı bakiyelerini yönetin.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveCoinMultipliers}
+                disabled={isCoinConfigSaving}
+                className="btn-primary"
+                style={{ padding: '0 24px', height: '44px', background: '#f59e0b', color: '#000000', fontWeight: 800, border: 'none' }}
+              >
+                <Save size={16} /> {isCoinConfigSaving ? 'kaydediliyor...' : 'katsayıları kaydet'}
+              </button>
+            </div>
+
+            {/* 1. Coin Kazanım Katsayıları (Çarpanlar) */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <TrendingUp size={20} color="#f59e0b" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                  oyun sonu kazanım katsayıları
+                </h3>
+              </div>
+
+              <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5' }}>
+                oyuncular oyun bittiğinde aldıkları puan ve odadaki kişi sayısına göre coin kazanır. <br />
+                <code style={{ background: '#262626', padding: '2px 8px', borderRadius: '6px', color: '#fbbf24', fontSize: '0.82rem', fontWeight: 700 }}>
+                  kazanılan coin = (((oyundaki puan + 1) × katsayı) × oyuncu sayısı)
+                </code>
+              </p>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '16px'
+              }}>
+                {/* Düz Oyuncular */}
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff' }}>
+                      düz oyuncular
+                    </span>
+                    <span style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#cbd5e1',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700
+                    }}>
+                      standart discord
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                    özel bir yetki rolü (premium/vip) bulunmayan discord kullanıcıları için çarpan.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 700 }}>çarpan:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={coinDefaultMult}
+                      onChange={(e) => setCoinDefaultMult(Math.max(1, Number(e.target.value) || 1))}
+                      className="form-input"
+                      style={{ width: '90px', padding: '6px 10px', fontSize: '0.95rem', fontWeight: 800, textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 800 }}>× çarpan</span>
+                  </div>
+                </div>
+
+                {/* Premium Oyuncular */}
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Sparkles size={14} color="#c084fc" /> premium oyuncular
+                    </span>
+                    <span style={{
+                      background: 'rgba(168, 85, 247, 0.2)',
+                      color: '#c084fc',
+                      border: '1px solid rgba(168, 85, 247, 0.4)',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700
+                    }}>
+                      premium rolü
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                    profilinde "Premium" tagine sahip özel kullanıcılar için çarpan.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 700 }}>çarpan:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={coinPremiumMult}
+                      onChange={(e) => setCoinPremiumMult(Math.max(1, Number(e.target.value) || 1))}
+                      className="form-input"
+                      style={{ width: '90px', padding: '6px 10px', fontSize: '0.95rem', fontWeight: 800, textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#c084fc', fontWeight: 800 }}>× çarpan</span>
+                  </div>
+                </div>
+
+                {/* VIP & Admin Oyuncular */}
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Crown size={14} color="#fbbf24" /> VIP & admin oyuncular
+                    </span>
+                    <span style={{
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      color: '#fbbf24',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700
+                    }}>
+                      VIP / admin rolü
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                    profilinde "VIP" veya "admin" tagine sahip seçkin kullanıcılar için çarpan.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 700 }}>çarpan:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={coinVipMult}
+                      onChange={(e) => setCoinVipMult(Math.max(1, Number(e.target.value) || 1))}
+                      className="form-input"
+                      style={{ width: '90px', padding: '6px 10px', fontSize: '0.95rem', fontWeight: 800, textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 800 }}>× çarpan</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Canlı Formül Hesaplama Simülatörü */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Calculator size={20} color="#38bdf8" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                  canlı kazanım simülatörü
+                </h3>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#cbd5e1' }}>
+                    örnek puan:
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={simScore}
+                    onChange={(e) => setSimScore(Math.max(0, Number(e.target.value) || 0))}
+                    className="form-input"
+                    style={{ width: '70px', padding: '6px 10px', textAlign: 'center', fontWeight: 700 }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#cbd5e1' }}>
+                    oyuncu sayısı:
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="6"
+                    value={simPlayers}
+                    onChange={(e) => setSimPlayers(Math.max(2, Number(e.target.value) || 2))}
+                    className="form-input"
+                    style={{ width: '70px', padding: '6px 10px', textAlign: 'center', fontWeight: 700 }}
+                  />
+                </div>
+              </div>
+
+              {/* Simulation Result Cards */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '14px'
+              }}>
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <span style={{ fontSize: '0.76rem', color: '#94a3b8', fontWeight: 700 }}>düz oyuncu kazanımı</span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ffffff' }}>
+                    {(((simScore + 1) * (Number(coinDefaultMult) || 10)) * simPlayers).toLocaleString('tr-TR')} coin
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                    (({simScore}+1) × {coinDefaultMult}) × {simPlayers}
+                  </span>
+                </div>
+
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(168, 85, 247, 0.25)',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>premium oyuncu kazanımı</span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#c084fc' }}>
+                    {(((simScore + 1) * (Number(coinPremiumMult) || 20)) * simPlayers).toLocaleString('tr-TR')} coin
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                    (({simScore}+1) × {coinPremiumMult}) × {simPlayers}
+                  </span>
+                </div>
+
+                <div style={{
+                  background: '#242424',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <span style={{ fontSize: '0.76rem', color: '#fbbf24', fontWeight: 700 }}>vip oyuncu kazanımı</span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fbbf24' }}>
+                    {(((simScore + 1) * (Number(coinVipMult) || 30)) * simPlayers).toLocaleString('tr-TR')} coin
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                    (({simScore}+1) × {coinVipMult}) × {simPlayers}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Discord Kullanıcıları Coin Bakiye Yönetimi */}
+            <div style={{
+              background: '#1c1c1c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Wallet size={20} color="#10b981" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                    kullanıcı coin bakiyeleri ({filteredCoinUsers.length})
+                  </h3>
+                </div>
+
+                <div style={{ position: 'relative', width: '280px' }}>
+                  <Search size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    placeholder="kullanıcı ara..."
+                    value={coinUserSearch}
+                    onChange={(e) => setCoinUserSearch(e.target.value)}
+                    className="form-input"
+                    style={{ paddingLeft: '36px', width: '100%', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              {filteredCoinUsers.length === 0 ? (
+                <div style={{ padding: '32px', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+                  eşleşen discord kullanıcısı bulunamadı.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {filteredCoinUsers.map(u => {
+                    const currentCoins = u.coins !== undefined ? u.coins : 0;
+                    const inputValue = userCoinsInput[u.id] !== undefined ? userCoinsInput[u.id] : String(currentCoins);
+                    const isSaving = savingUserCoinId === u.id;
+
+                    return (
+                      <div
+                        key={u.id}
+                        style={{
+                          background: '#242424',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '12px',
+                          padding: '14px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '14px'
+                        }}
+                      >
+                        {/* User info */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <img
+                            src={u.avatar || defaultAvatarImg}
+                            alt={u.username}
+                            style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff' }}>
+                                {u.displayName || u.username}
+                              </span>
+                              {u.username && u.username !== u.displayName && (
+                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                  (@{u.username})
+                                </span>
+                              )}
+                              {(u.tags || []).map(t => (
+                                <span
+                                  key={t}
+                                  className={t === 'admin' ? 'badge-admin' : t === 'VIP' ? 'badge-vip' : t === 'Premium' ? 'badge-premium' : ''}
+                                  style={{
+                                    fontSize: '0.65rem',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    fontWeight: 700
+                                  }}
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                              id: {u.id}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Coin Controls */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          {/* Current Balance Badge */}
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            color: '#fbbf24',
+                            fontWeight: 800,
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '0.82rem'
+                          }}>
+                            <Coins size={14} color="#fbbf24" />
+                            {currentCoins.toLocaleString('tr-TR')} coin
+                          </span>
+
+                          {/* Quick Add Buttons */}
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAdjustCoins(u.id, currentCoins, 100)}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                color: '#e2e8f0',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              +100
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAdjustCoins(u.id, currentCoins, 500)}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                color: '#e2e8f0',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              +500
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAdjustCoins(u.id, currentCoins, 1000)}
+                              style={{
+                                background: 'rgba(245, 158, 11, 0.15)',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                color: '#fbbf24',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              +1000
+                            </button>
+                          </div>
+
+                          {/* Direct Edit input */}
+                          <input
+                            type="number"
+                            min="0"
+                            value={inputValue}
+                            onChange={(e) => setUserCoinsInput(prev => ({ ...prev, [u.id]: e.target.value }))}
+                            className="form-input"
+                            style={{ width: '100px', padding: '4px 8px', fontSize: '0.85rem', fontWeight: 800, textAlign: 'right' }}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => handleSaveUserCoin(u.id, inputValue)}
+                            disabled={isSaving}
+                            style={{
+                              background: '#22c55e',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              fontSize: '0.78rem',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {isSaving ? '...' : 'kaydet'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
         </div>

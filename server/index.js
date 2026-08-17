@@ -6,13 +6,151 @@ import cors from 'cors';
 import { RoomManager } from './roomManager.js';
 import { PHASES } from './gameEngine.js';
 
+import rawDeckJson from '../src/data/defaultDeck.json' with { type: 'json' };
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+let localActiveDeck = rawDeckJson;
+let localUsersMap = {};
+let localSuggestions = [];
+let localConfig = {
+  guestDecks: ['Ana Deste'],
+  discordDecks: ['Ana Deste', 'Ek Paket'],
+  allDecks: [
+    'Ana Deste',
+    'Ek Paket',
+    'Nerd Paket',
+    'Fenasal Nerd Paket',
+    'Sekso Paket',
+    'Kara Paket',
+  coinMultipliers: {
+    default: 10,
+    premium: 20,
+    vip: 30
+  }
+};
 
 // Healthcheck endpoint for Cloudflare / cloud hosting
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'doxcards-server', time: new Date().toISOString() });
+});
+
+// Deck API
+app.get('/api/deck', (req, res) => {
+  res.json(localActiveDeck);
+});
+
+app.post('/api/deck', (req, res) => {
+  const newDeck = req.body.deck || req.body;
+  if (newDeck) {
+    localActiveDeck = newDeck;
+  }
+  res.json({ success: true, message: 'Deste yerel sunucuya kaydedildi.' });
+});
+
+app.post('/api/deck/reset', (req, res) => {
+  localActiveDeck = rawDeckJson;
+  res.json({ success: true, message: 'Deste sıfırlandı.' });
+});
+
+// Config API
+app.get('/api/config', (req, res) => {
+  res.json(localConfig);
+});
+
+app.post('/api/config', (req, res) => {
+  localConfig = { ...localConfig, ...req.body };
+  res.json({ success: true, config: localConfig });
+});
+
+// Users API
+app.get('/api/users', (req, res) => {
+  res.json(Object.values(localUsersMap));
+});
+
+app.post('/api/users/sync', (req, res) => {
+  const { id, username, displayName, avatar } = req.body;
+  if (!id) return res.status(400).json({ error: 'ID required' });
+  let user = localUsersMap[id];
+  if (user) {
+    user.username = username || user.username;
+    user.displayName = displayName || user.displayName;
+    if (avatar) user.avatar = avatar;
+    if (user.coins === undefined) user.coins = 0;
+    user.updatedAt = Date.now();
+  } else {
+    user = {
+      id,
+      username: username || displayName || 'oyuncu',
+      displayName: displayName || username || 'oyuncu',
+      avatar: avatar || null,
+      coins: 0,
+      totalScore: 0,
+      tags: id === '269639754675519489' ? ['admin'] : [],
+      unlockedDecks: id === '269639754675519489' ? [...localConfig.allDecks] : [...localConfig.discordDecks],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    localUsersMap[id] = user;
+  }
+  res.json({ success: true, user });
+});
+
+app.post('/api/users/update', (req, res) => {
+  const { userId, coins, totalScore, ...rest } = req.body;
+  if (!userId || !localUsersMap[userId]) return res.status(404).json({ error: 'User not found' });
+  if (typeof coins === 'number') localUsersMap[userId].coins = coins;
+  if (typeof totalScore === 'number') localUsersMap[userId].totalScore = totalScore;
+  Object.assign(localUsersMap[userId], rest, { updatedAt: Date.now() });
+  res.json({ success: true, user: localUsersMap[userId] });
+});
+
+// Suggestions API
+app.get('/api/suggestions', (req, res) => {
+  const discordId = req.query.discordId;
+  const isMainAdmin = !discordId || discordId === '269639754675519489' || req.query.admin === 'true';
+  if (isMainAdmin) {
+    res.json(localSuggestions);
+  } else {
+    res.json(localSuggestions.filter(s => s.author?.id === discordId));
+  }
+});
+
+app.post('/api/suggestions/create', (req, res) => {
+  const newSug = {
+    id: 'sug_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+    ...req.body,
+    status: 'pending',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  localSuggestions.unshift(newSug);
+  res.json({ success: true, suggestion: newSug });
+});
+
+app.post('/api/suggestions/update', (req, res) => {
+  const { suggestionId, ...rest } = req.body;
+  const target = localSuggestions.find(s => s.id === suggestionId);
+  if (!target) return res.status(404).json({ error: 'Suggestion not found' });
+  Object.assign(target, rest, { updatedAt: Date.now() });
+  res.json({ success: true, suggestion: target });
+});
+
+app.post('/api/suggestions/delete', (req, res) => {
+  const { suggestionId } = req.body;
+  localSuggestions = localSuggestions.filter(s => s.id !== suggestionId);
+  res.json({ success: true });
+});
+
+app.post('/api/suggestions/review', (req, res) => {
+  const { suggestionId, status } = req.body;
+  const target = localSuggestions.find(s => s.id === suggestionId);
+  if (!target) return res.status(404).json({ error: 'Suggestion not found' });
+  target.status = status;
+  target.reviewedAt = Date.now();
+  res.json({ success: true, suggestion: target });
 });
 
 const httpServer = createServer(app);
@@ -207,6 +345,37 @@ io.on('connection', (socket) => {
 
     const ok = room.game.bekarSelectWinner(singlePlayerId, winningMatchmakerId, room.players);
     if (ok) {
+      if (room.game.phase === PHASES.GAME_OVER) {
+        const multipliers = localConfig.coinMultipliers || { default: 10, premium: 20, vip: 30 };
+        const playerCount = (room.players || []).length || 1;
+        const earnedCoinsMap = {};
+
+        room.players.forEach(p => {
+          const dId = p.discordId || p.id;
+          const user = localUsersMap[dId];
+          const pScore = Number(room.game.scores[p.id]) || 0;
+
+          if (user) {
+            const tags = (user.tags || []).map(t => String(t || '').toLowerCase());
+            let mult = Number(multipliers.default) || 10;
+            if (tags.includes('admin') || tags.includes('vip')) {
+              mult = Number(multipliers.vip) || 30;
+            } else if (tags.includes('premium')) {
+              mult = Number(multipliers.premium) || 20;
+            }
+
+            const earned = Math.max(0, Math.floor(((pScore + 1) * mult) * playerCount));
+            earnedCoinsMap[p.id] = earned;
+
+            user.coins = (Number(user.coins) || 0) + earned;
+            user.totalScore = (Number(user.totalScore) || 0) + pScore;
+            user.updatedAt = Date.now();
+          }
+        });
+
+        room.game.earnedCoins = earnedCoinsMap;
+      }
+
       broadcastGameState(room);
       if (callback) callback({ success: true });
     } else {
@@ -266,5 +435,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Red Flags DoxCards Server running on http://localhost:${PORT}`);
+  console.log(`[DoxCards Server] Running on http://localhost:${PORT}`);
 });

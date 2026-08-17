@@ -39,6 +39,11 @@ const DEFAULT_CONFIG = {
     'Kara Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium yetkisi gereklidir.' },
     'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' },
     'Aktanfell Paket': { isSecret: false, lockDescription: 'Aktanfell özel topluluk paketi.' }
+  },
+  coinMultipliers: {
+    default: 10,
+    premium: 20,
+    vip: 30
   }
 };
 
@@ -151,6 +156,7 @@ export class GameRoomDO {
           user.username = username || user.username;
           user.displayName = displayName || user.displayName;
           if (avatar) user.avatar = avatar;
+          if (user.coins === undefined) user.coins = 0;
           if (isMainAdmin && !user.tags.includes('admin')) {
             user.tags = ['admin', ...user.tags];
           }
@@ -161,6 +167,7 @@ export class GameRoomDO {
             username: username || displayName || 'oyuncu',
             displayName: displayName || username || 'oyuncu',
             avatar: avatar || null,
+            coins: 0,
             totalScore: 0,
             tags: isMainAdmin ? ['admin'] : [],
             unlockedDecks: isMainAdmin ? [...config.allDecks] : [...config.discordDecks],
@@ -182,7 +189,7 @@ export class GameRoomDO {
       // 3. Update user profile by Admin or User
       if (url.pathname === '/api/users/update' && request.method === 'POST') {
         const body = await request.json();
-        const { userId, tags, unlockedDecks, totalScore, customSounds, ...rest } = body;
+        const { userId, tags, unlockedDecks, totalScore, coins, customSounds, ...rest } = body;
         if (!userId || !usersMap[userId]) {
           return Response.json({ error: 'User not found' }, { status: 404, headers: corsHeaders });
         }
@@ -191,6 +198,7 @@ export class GameRoomDO {
         if (Array.isArray(tags)) user.tags = tags;
         if (Array.isArray(unlockedDecks)) user.unlockedDecks = unlockedDecks;
         if (typeof totalScore === 'number') user.totalScore = totalScore;
+        if (typeof coins === 'number') user.coins = coins;
         if (customSounds !== undefined) user.customSounds = customSounds;
         Object.assign(user, rest);
         user.updatedAt = Date.now();
@@ -830,22 +838,7 @@ export class GameRoomDO {
           this.broadcastGameState();
 
           if (this.room.game.phase === PHASES.GAME_OVER) {
-            // Persist scores to registered users in Cloudflare DB
-            if (this.state?.storage && this.room.players) {
-              this.state.storage.get('users_map').then(usersMap => {
-                if (usersMap) {
-                  this.room.players.forEach(p => {
-                    const dId = p.discordId || p.id;
-                    const pScore = this.room.game.scores[p.id] || 0;
-                    if (usersMap[dId] && pScore > 0) {
-                      usersMap[dId].totalScore = (usersMap[dId].totalScore || 0) + pScore;
-                      usersMap[dId].updatedAt = Date.now();
-                    }
-                  });
-                  this.state.storage.put('users_map', usersMap);
-                }
-              }).catch(() => {});
-            }
+            await this.handleGameOverCoins();
           } else if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
             if (this.state?.storage?.setAlarm) {
               try {
@@ -1138,7 +1131,9 @@ export class GameRoomDO {
         this.broadcast('play_sound_event', { type: 'game_win', playerId: move.winningMatchmakerId, playerName: winner?.name || 'kazanan' });
         this.broadcastGameState();
 
-        if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
+        if (this.room.game.phase === PHASES.GAME_OVER) {
+          this.handleGameOverCoins();
+        } else if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
           if (this.state?.storage?.setAlarm) {
             try {
               this.state.storage.setAlarm(Date.now() + 3500);
@@ -1158,6 +1153,87 @@ export class GameRoomDO {
         }
       }
     }, 1350);
+  }
+
+  async handleGameOverCoins() {
+    if (!this.room || !this.room.game || this.room.game.phase !== PHASES.GAME_OVER) return;
+    try {
+      let storageObj = null;
+      if (this.env && this.env.GAME_ROOMS) {
+        const id = this.env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
+        storageObj = this.env.GAME_ROOMS.get(id);
+      }
+
+      let config = DEFAULT_CONFIG;
+      let usersList = [];
+
+      if (storageObj) {
+        const [cfgRes, usersRes] = await Promise.all([
+          storageObj.fetch(new Request('http://internal/api/config')).catch(() => null),
+          storageObj.fetch(new Request('http://internal/api/users')).catch(() => null)
+        ]);
+        if (cfgRes && cfgRes.ok) config = await cfgRes.json();
+        if (usersRes && usersRes.ok) usersList = await usersRes.json();
+      } else if (this.state?.storage) {
+        config = (await this.state.storage.get('app_config')) || DEFAULT_CONFIG;
+        const map = (await this.state.storage.get('users_map')) || {};
+        usersList = Object.values(map);
+      }
+
+      const multipliers = config.coinMultipliers || { default: 10, premium: 20, vip: 30 };
+      const usersMap = {};
+      usersList.forEach(u => { if (u && u.id) usersMap[u.id] = u; });
+
+      const playerCount = (this.room.players || []).length || 1;
+      const earnedCoinsMap = {};
+
+      for (const p of this.room.players) {
+        const dId = p.discordId || p.id;
+        const pScore = Number(this.room.game.scores[p.id]) || 0;
+        const userRec = usersMap[dId];
+
+        if (userRec) {
+          const tags = (userRec.tags || []).map(t => String(t || '').toLowerCase());
+          let mult = Number(multipliers.default) || 10;
+          if (tags.includes('admin') || tags.includes('vip')) {
+            mult = Number(multipliers.vip) || 30;
+          } else if (tags.includes('premium')) {
+            mult = Number(multipliers.premium) || 20;
+          }
+
+          const earned = Math.max(0, Math.floor(((pScore + 1) * mult) * playerCount));
+          earnedCoinsMap[p.id] = earned;
+
+          const newCoins = (Number(userRec.coins) || 0) + earned;
+          const newTotalScore = (Number(userRec.totalScore) || 0) + pScore;
+
+          if (storageObj) {
+            await storageObj.fetch(new Request('http://internal/api/users/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: dId,
+                coins: newCoins,
+                totalScore: newTotalScore
+              })
+            })).catch(() => {});
+          } else if (this.state?.storage) {
+            userRec.coins = newCoins;
+            userRec.totalScore = newTotalScore;
+            userRec.updatedAt = Date.now();
+          }
+        }
+      }
+
+      if (!storageObj && this.state?.storage) {
+        await this.state.storage.put('users_map', usersMap);
+      }
+
+      this.room.game.earnedCoins = earnedCoinsMap;
+      this.broadcastGameState();
+    } catch (err) {
+      console.error('Error awarding game over coins:', err);
+    }
   }
 }
 

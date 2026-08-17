@@ -1,6 +1,8 @@
-// User & Deck Permission Service for DoxCards Cloudflare Backend
-
-const SERVER_URL = 'https://doxcards-server.burakcnaydin.workers.dev';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || (
+  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3001'
+    : 'https://doxcards-server.burakcnaydin.workers.dev'
+);
 
 export const DEFAULT_CONFIG = {
   guestDecks: ['Ana Deste'],
@@ -56,7 +58,12 @@ export const DEFAULT_CONFIG = {
       endSec: 3,
       isDefault: true
     }
-  ]
+  ],
+  coinMultipliers: {
+    default: 10,
+    premium: 20,
+    vip: 30
+  }
 };
 
 // Get locally cached user profile
@@ -113,6 +120,7 @@ export async function syncUserProfile(discordUser) {
     username: discordUser.username || discordUser.displayName,
     displayName: discordUser.displayName || discordUser.username,
     avatar: discordUser.avatarUrl || discordUser.avatar,
+    coins: 0,
     totalScore: 0,
     tags: discordUser.id === '269639754675519489' ? ['admin'] : [],
     unlockedDecks: discordUser.id === '269639754675519489' ? [...DEFAULT_CONFIG.allDecks] : [...DEFAULT_CONFIG.discordDecks]
