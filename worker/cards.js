@@ -94,48 +94,47 @@ export function normalizeDeckName(name) {
     .trim();
 }
 
-// Get shuffled full match deck
 export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = null) {
   const parsed = customRawDeck ? buildCardsFromRaw(customRawDeck) : activeParsed;
-  let selectedWhite = [...parsed.whiteCards];
-  let selectedRed = [...parsed.redCards];
+  const allWhite = [...parsed.whiteCards];
+  const allRed = [...parsed.redCards];
+
+  let selectedWhite = [];
+  let selectedRed = [];
 
   if (Array.isArray(selectedDecks) && selectedDecks.length > 0) {
     const lowerDecks = selectedDecks.map(d => (d || '').toLowerCase().trim());
     const normDecks = selectedDecks.map(d => normalizeDeckName(d)).filter(Boolean);
 
-    const filteredWhite = selectedWhite.filter(c => {
+    selectedWhite = allWhite.filter(c => {
       const cLow = (c.category || '').toLowerCase().trim();
       const cNorm = normalizeDeckName(c.category);
-      return lowerDecks.includes(cLow) || normDecks.includes(cNorm);
+      return lowerDecks.includes(cLow) ||
+             normDecks.includes(cNorm) ||
+             normDecks.some(nd => cNorm.includes(nd) || nd.includes(cNorm));
     });
 
-    const filteredRed = selectedRed.filter(c => {
+    selectedRed = allRed.filter(c => {
       const cLow = (c.category || '').toLowerCase().trim();
       const cNorm = normalizeDeckName(c.category);
-      return lowerDecks.includes(cLow) || normDecks.includes(cNorm);
+      return lowerDecks.includes(cLow) ||
+             normDecks.includes(cNorm) ||
+             normDecks.some(nd => cNorm.includes(nd) || nd.includes(cNorm));
     });
-
-    // If selected decks contain white cards, strictly use them! If not, fallback to core Ana Deste white cards
-    if (filteredWhite.length > 0) {
-      selectedWhite = filteredWhite;
-    } else {
-      const coreWhite = selectedWhite.filter(c => (c.category || '').toLowerCase().includes('ana'));
-      selectedWhite = coreWhite.length > 0 ? coreWhite : selectedWhite;
-    }
-
-    // If selected decks contain red cards, strictly use them! If not, fallback to core Ana Deste red cards
-    if (filteredRed.length > 0) {
-      selectedRed = filteredRed;
-    } else {
-      const coreRed = selectedRed.filter(c => (c.category || '').toLowerCase().includes('ana'));
-      selectedRed = coreRed.length > 0 ? coreRed : selectedRed;
-    }
   } else if (deckType && deckType !== 'all') {
-    const filteredWhite = selectedWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
-    const filteredRed = selectedRed.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
-    if (filteredWhite.length > 0) selectedWhite = filteredWhite;
-    if (filteredRed.length > 0) selectedRed = filteredRed;
+    selectedWhite = allWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
+    selectedRed = allRed.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
+  }
+
+  // Fallbacks: If no cards match, fall back to core Ana Deste, or all available cards
+  if (selectedWhite.length === 0) {
+    const coreWhite = allWhite.filter(c => (c.category || '').toLowerCase().includes('ana'));
+    selectedWhite = coreWhite.length > 0 ? coreWhite : allWhite;
+  }
+
+  if (selectedRed.length === 0) {
+    const coreRed = allRed.filter(c => (c.category || '').toLowerCase().includes('ana'));
+    selectedRed = coreRed.length > 0 ? coreRed : allRed;
   }
 
   return {
