@@ -63,7 +63,14 @@ export default function App() {
     setSoundMuted(isMuted);
   };
 
-  // Socket Event Listeners
+  const currentRoomRef = useRef(currentRoom);
+  const appConfigRef = useRef(appConfig);
+  useEffect(() => {
+    currentRoomRef.current = currentRoom;
+    appConfigRef.current = appConfig;
+  }, [currentRoom, appConfig]);
+
+  // Socket Event Listeners (Registered once, stable throughout lifecycle)
   useEffect(() => {
     socket.on('room_updated', (roomData) => {
       setCurrentRoom(prev => ({ ...prev, ...roomData }));
@@ -81,12 +88,12 @@ export default function App() {
     socket.on('play_sound_event', (soundEvt) => {
       if (!soundEvt) return;
       const { type, playerId, customSounds: playerCustomSounds } = soundEvt;
-      const actorPlayer = currentRoom?.players?.find(p => p.id === playerId);
+      const actorPlayer = currentRoomRef.current?.players?.find(p => p.id === playerId);
       const playerWithSounds = {
         ...(actorPlayer || {}),
         customSounds: playerCustomSounds || actorPlayer?.customSounds || null
       };
-      sounds.playTriggerSound(type, playerWithSounds, appConfig?.customSounds || []);
+      sounds.playTriggerSound(type, playerWithSounds, appConfigRef.current?.customSounds || []);
     });
 
     socket.on('game_reset_to_lobby', () => {
@@ -107,7 +114,7 @@ export default function App() {
       socket.off('game_reset_to_lobby');
       socket.off('kicked_from_room');
     };
-  }, [currentRoom, appConfig]);
+  }, []);
 
   // Get enriched player with live profile data & tags
   const getEnrichedPlayer = () => ({
