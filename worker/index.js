@@ -967,38 +967,35 @@ export class GameRoomDO {
     });
 
     serverWs.addEventListener('close', () => {
-      this.sessions.delete(serverWs);
-      if (playerId && this.room) {
-        this.room.players = this.room.players.filter(p => p.id !== playerId);
-        if (this.room.players.length === 0) {
-          if (this.room.game) this.room.game.clearTimer();
-          this.room = null;
-        } else {
-          if (this.room.hostId === playerId) {
-            this.room.hostId = this.room.players[0].id;
-            this.room.players[0].isHost = true;
-          }
-
-          if (this.room.game) {
-            this.room.game.removePlayer(playerId, this.room.players);
-            if (this.room.players.length < 2) {
-              this.room.game.clearTimer();
-              this.room.game = null;
-              this.broadcast('game_reset_to_lobby', {});
-            } else {
-              this.broadcastGameState();
+      try {
+        this.sessions.delete(serverWs);
+        if (playerId && this.room) {
+          this.room.players = this.room.players.filter(p => p.id !== playerId);
+          if (this.room.players.length === 0) {
+            if (this.room.game) this.room.game.clearTimer();
+            this.room = null;
+          } else {
+            if (this.room.hostId === playerId) {
+              this.room.hostId = this.room.players[0].id;
+              this.room.players[0].isHost = true;
             }
-          }
 
-          this.broadcastRoomUpdate();
+            if (this.room.game) {
+              this.room.game.removePlayer(playerId, this.room.players);
+              if (this.room.players.length < 2) {
+                this.room.game.clearTimer();
+                this.room.game = null;
+                this.broadcast('game_reset_to_lobby', {});
+              } else {
+                this.broadcastGameState();
+              }
+            }
+
+            this.broadcastRoomUpdate();
+          }
         }
       } catch (err) {
-        console.error('Error handling WebSocket message:', err);
-        try {
-          if (ackId) {
-            serverWs.send(JSON.stringify({ ackId, response: { error: err.message || 'Bir sunucu hatası oluştu.' } }));
-          }
-        } catch (e) {}
+        console.error('Error handling WebSocket close:', err);
       }
     });
   }
