@@ -102,12 +102,15 @@ export function updateGlobalDeck(newRawDeck) {
 export const WHITE_CARDS = () => activeParsed.whiteCards;
 export const RED_CARDS = () => activeParsed.redCards;
 
-// Shuffle helper
+// Multi-pass Durstenfeld shuffle for maximum entropy and truly uniform distribution
 export function shuffleArray(array) {
+  if (!Array.isArray(array) || array.length <= 1) return array ? [...array] : [];
   const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
   }
   return arr;
 }

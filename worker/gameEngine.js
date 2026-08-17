@@ -24,8 +24,9 @@ export class GameEngine {
     this.singleIndex = 0; // Bekâr indexi
     this.singlePlayerId = null;
 
-    // Global match decks & unique card tracking
+    // Global match decks & discard piles for fair uniform card cycling
     this.deck = { white: [], red: [] };
+    this.discardPiles = { white: [], red: [] };
     this.usedCardIds = new Set();
 
     // Persistent player hands throughout the entire match!
@@ -50,30 +51,45 @@ export class GameEngine {
   initDecks(customRawDeck = null) {
     if (customRawDeck) this.customRawDeck = customRawDeck;
     this.deck = getDeck(this.deckType, this.customRawDeck, this.selectedDecks);
+    this.discardPiles = { white: [], red: [] };
     this.usedCardIds = new Set();
   }
 
-  // Draws fresh cards, reshuffling strictly within selected decks if pile is exhausted
+  // Draws fresh cards using true discard-pile cycle so ALL cards in selected decks are seen fairly
   drawCards(type, count) {
     const cards = [];
     let attempts = 0;
     while (cards.length < count && attempts < 500) {
       attempts++;
       if (!this.deck[type] || this.deck[type].length === 0) {
-        const fresh = getDeck(this.deckType, this.customRawDeck, this.selectedDecks);
-        this.deck[type] = shuffleArray(fresh[type] || []);
-        this.usedCardIds.clear();
+        if (this.discardPiles && this.discardPiles[type] && this.discardPiles[type].length > 0) {
+          // Reshuffle discard pile back into draw pile
+          this.deck[type] = shuffleArray(this.discardPiles[type]);
+          this.discardPiles[type] = [];
+        } else {
+          // Draw pile and discard pile both empty -> draw fresh deck excluding cards currently in active hands
+          const fresh = getDeck(this.deckType, this.customRawDeck, this.selectedDecks);
+          const currentInHands = new Set();
+          Object.values(this.hands).forEach(h => {
+            const list = type === 'white' ? h.whiteCards : h.redCards;
+            (list || []).forEach(c => {
+              if (c.rawId) currentInHands.add(c.rawId);
+              if (c.text) currentInHands.add(c.text);
+            });
+          });
+          const available = (fresh[type] || []).filter(c => !currentInHands.has(c.id) && !currentInHands.has(c.text));
+          this.deck[type] = shuffleArray(available.length > 0 ? available : (fresh[type] || []));
+        }
       }
 
       if (this.deck[type] && this.deck[type].length > 0) {
         const candidate = this.deck[type].pop();
         if (candidate) {
-          // Guaranteed globally unique instance ID for each drawn card to avoid key collisions
           const uniqueInstanceId = `${candidate.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
           const drawnCard = {
             ...candidate,
             id: uniqueInstanceId,
-            rawId: candidate.id
+            rawId: candidate.rawId || candidate.id
           };
           this.usedCardIds.add(uniqueInstanceId);
           cards.push(drawnCard);
@@ -206,6 +222,10 @@ export class GameEngine {
     }
     this.candidates[playerId].whiteCards.push(card);
 
+    if (this.discardPiles && this.discardPiles.white) {
+      this.discardPiles.white.push(card);
+    }
+
     // If 2 white cards are placed by this matchmaker, advance turn
     if (this.candidates[playerId].whiteCards.length >= 2) {
       this.turnIndex++;
@@ -249,6 +269,10 @@ export class GameEngine {
     hand.whiteCards = hand.whiteCards.filter(c => !cardIds.includes(c.id));
     this.candidates[playerId].whiteCards = processedCards;
 
+    if (this.discardPiles && this.discardPiles.white) {
+      processedCards.forEach(c => this.discardPiles.white.push(c));
+    }
+
     // Advance turn to next matchmaker in sequence
     this.turnIndex++;
     if (this.turnIndex < this.turnOrder.length) {
@@ -288,6 +312,10 @@ export class GameEngine {
     this.candidates[targetId].redFlag = redCard;
     this.candidates[targetId].sabotagedBy = playerId;
     this.candidates[targetId].sabotagedByName = player ? player.name : (this.candidates[playerId]?.matchmakerName || 'Rakip');
+
+    if (this.discardPiles && this.discardPiles.red) {
+      this.discardPiles.red.push(redCard);
+    }
 
     if (this.stats[playerId]) {
       this.stats[playerId].sabotagesGiven++;
@@ -469,7 +497,7 @@ export class GameEngine {
     };
   }
 
-  // Automated bot move generator
+  // Automated bot move generator with random hand card selection
   getBotMove(botId) {
     if (this.phase === PHASES.PERKS && this.turnPlayerId === botId) {
       const hand = this.hands[botId];
@@ -477,7 +505,8 @@ export class GameEngine {
         const candidate = this.candidates[botId];
         const placedCount = candidate?.whiteCards?.length || 0;
         if (placedCount < 2) {
-          const randomCard = hand.whiteCards[0];
+          const randomIdx = Math.floor(Math.random() * hand.whiteCards.length);
+          const randomCard = hand.whiteCards[randomIdx];
           return {
             type: 'place_white_card',
             cardId: randomCard.id,
@@ -488,7 +517,8 @@ export class GameEngine {
     } else if (this.phase === PHASES.SABOTAGE && this.turnPlayerId === botId) {
       const hand = this.hands[botId];
       if (hand && hand.redCards && hand.redCards.length > 0) {
-        const randomCard = hand.redCards[0];
+        const randomIdx = Math.floor(Math.random() * hand.redCards.length);
+        const randomCard = hand.redCards[randomIdx];
         return {
           type: 'submit_sabotage',
           cardId: randomCard.id,
