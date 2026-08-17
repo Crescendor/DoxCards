@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb, Link2, Coins } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
-import SoundSettingsModal from './SoundSettingsModal';
-import SuggestionModal from './SuggestionModal';
+import ProfileModal from './ProfileModal';
 
 export default function Navbar({
   roomCode,
@@ -18,10 +17,7 @@ export default function Navbar({
 }) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [soundModalOpen, setSoundModalOpen] = useState(false);
-  const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const handleCopyCode = () => {
     if (!roomCode) return;
@@ -40,443 +36,217 @@ export default function Navbar({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setProfileMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
-    <div style={{
-      position: 'fixed',
-      top: '16px',
-      right: '20px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      zIndex: 100
-    }}>
-      {/* Discord Profile Pill (if logged in) */}
-      {userProfile && (
-        <div style={{ position: 'relative' }} ref={dropdownRef}>
-          <button
-            onClick={() => {
-              sounds.playClick();
-              setProfileMenuOpen(prev => !prev);
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: '#1c1c1c',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '9999px',
-              padding: '4px 12px 4px 5px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <img
-              src={userProfile.avatar || defaultAvatarImg}
-              alt={userProfile.displayName || userProfile.username}
-              draggable={false}
-              onDragStart={(e) => e.preventDefault()}
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                pointerEvents: 'none',
-                userSelect: 'none',
-                WebkitUserDrag: 'none'
+    <>
+      <div style={{
+        position: 'fixed',
+        top: '16px',
+        right: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        zIndex: 100
+      }}>
+        {/* Discord Profile Pill (Opens Profile Modal) */}
+        {userProfile && (
+          <div>
+            <button
+              onClick={() => {
+                sounds.playClick();
+                setProfileModalOpen(true);
               }}
-            />
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, textTransform: 'lowercase' }}>
-                  {userProfile.displayName || userProfile.username}
-                </span>
-
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                  color: '#fbbf24',
-                  padding: '1px 6px',
-                  borderRadius: '9999px',
-                  fontSize: '0.68rem',
-                  fontWeight: 800
-                }}>
-                  <Coins size={10} color="#fbbf24" />
-                  {(userProfile.coins || 0).toLocaleString('tr-TR')}
-                </span>
-
-                {userProfile.tags?.includes('admin') && (
-                  <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
-                    <ShieldCheck size={9} /> admin
-                  </span>
-                )}
-                {userProfile.tags?.includes('VIP') && (
-                  <span className="badge-vip" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
-                    <Crown size={9} /> VIP
-                  </span>
-                )}
-                {userProfile.tags?.includes('Premium') && (
-                  <span className="badge-premium" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
-                    <Sparkles size={9} /> Premium
-                  </span>
-                )}
-                {(userProfile.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(t => (
-                  <span key={t} style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: '#e2e8f0',
-                    padding: '1px 5px',
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    borderRadius: '4px'
-                  }}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <ChevronDown size={14} color="#94a3b8" />
-          </button>
-
-          {/* Profile Dropdown Menu */}
-          {profileMenuOpen && (
-            <div style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              right: 0,
-              width: '270px',
-              background: '#1c1c1c',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '16px',
-              padding: '16px',
-              boxShadow: '0 16px 36px rgba(0, 0, 0, 0.75)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              animation: 'fadeIn 0.15s ease'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img
-                  src={userProfile.avatar || defaultAvatarImg}
-                  alt={userProfile.displayName}
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                  style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
-                />
-                <div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff', textTransform: 'lowercase' }}>
-                    {userProfile.displayName || userProfile.username}
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                    discord id: {userProfile.id}
-                  </div>
-                </div>
-              </div>
-
-              {/* Coin Balance Card */}
-              <div style={{
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid rgba(245, 158, 11, 0.25)',
-                borderRadius: '10px',
-                padding: '8px 12px',
+              style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Coins size={15} color="#f59e0b" />
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>bakiye:</span>
-                </div>
-                <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#fbbf24' }}>
-                  {(userProfile.coins || 0).toLocaleString('tr-TR')} coin
-                </span>
-              </div>
+                gap: '8px',
+                background: '#1c1c1c',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '9999px',
+                padding: '4px 12px 4px 5px',
+                color: '#ffffff',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <img
+                src={userProfile.avatar || defaultAvatarImg}
+                alt={userProfile.displayName || userProfile.username}
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  WebkitUserDrag: 'none'
+                }}
+              />
 
-              {/* Roles & Tags Section */}
-              <div style={{
-                background: '#242424',
-                padding: '10px 12px',
-                borderRadius: '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px'
-              }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8' }}>rollerim & taglerim:</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {userProfile.tags && userProfile.tags.length > 0 ? (
-                    userProfile.tags.map(t => (
-                      <span key={t} className={t === 'admin' ? 'badge-admin' : t === 'VIP' ? 'badge-vip' : t === 'Premium' ? 'badge-premium' : ''} style={{
-                        background: t === 'admin' || t === 'VIP' || t === 'Premium' ? undefined : 'rgba(255, 255, 255, 0.1)',
-                        color: t === 'admin' || t === 'VIP' || t === 'Premium' ? undefined : '#e2e8f0',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        padding: '2px 8px',
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        borderRadius: '6px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        {t === 'admin' && <ShieldCheck size={10} />}
-                        {t === 'VIP' && <Crown size={10} />}
-                        {t === 'Premium' && <Sparkles size={10} />}
-                        {t}
-                      </span>
-                    ))
-                  ) : (
-                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>özel tag bulunmuyor</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, textTransform: 'lowercase' }}>
+                    {userProfile.displayName || userProfile.username}
+                  </span>
+
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    color: '#fbbf24',
+                    padding: '1px 6px',
+                    borderRadius: '9999px',
+                    fontSize: '0.68rem',
+                    fontWeight: 800
+                  }}>
+                    <Coins size={10} color="#fbbf24" />
+                    {(userProfile.coins || 0).toLocaleString('tr-TR')}
+                  </span>
+
+                  {userProfile.tags?.includes('admin') && (
+                    <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
+                      <ShieldCheck size={9} /> admin
+                    </span>
+                  )}
+                  {userProfile.tags?.includes('VIP') && (
+                    <span className="badge-vip" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
+                      <Crown size={9} /> VIP
+                    </span>
+                  )}
+                  {userProfile.tags?.includes('Premium') && (
+                    <span className="badge-premium" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
+                      <Sparkles size={9} /> Premium
+                    </span>
                   )}
                 </div>
               </div>
+            </button>
+          </div>
+        )}
 
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                  açık destelerin ({userProfile.unlockedDecks?.length || 0}):
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {(userProfile.unlockedDecks || ['Ana Deste']).map(deck => (
-                    <span key={deck} style={{
-                      background: 'rgba(255, 0, 0, 0.15)',
-                      border: '1px solid rgba(255, 0, 0, 0.3)',
-                      color: '#ff6666',
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      padding: '2px 7px',
-                      borderRadius: '9999px'
-                    }}>
-                      {deck}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Sound Settings Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setProfileMenuOpen(false);
-                  setSoundModalOpen(true);
-                }}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255, 0, 0, 0.12)',
-                  border: '1px solid rgba(255, 0, 0, 0.35)',
-                  color: '#ff6666',
-                  borderRadius: '10px',
-                  padding: '8px',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Music size={14} /> özel ses efektlerim
-              </button>
-
-              {/* Suggest Card / Deck Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setProfileMenuOpen(false);
-                  setSuggestionModalOpen(true);
-                }}
-                style={{
-                  width: '100%',
-                  background: 'rgba(234, 179, 8, 0.12)',
-                  border: '1px solid rgba(234, 179, 8, 0.35)',
-                  color: '#fde047',
-                  borderRadius: '10px',
-                  padding: '8px',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Lightbulb size={14} /> kart & deste öner
-              </button>
-
-              <button
-                onClick={() => {
-                  setProfileMenuOpen(false);
-                  if (onLogout) onLogout();
-                }}
-                style={{
-                  width: '100%',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  borderRadius: '10px',
-                  padding: '8px',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  marginTop: '2px'
-                }}
-              >
-                <LogOut size={14} /> çıkış yap
-              </button>
-            </div>
-          )}
-
-          {/* Sound Settings Modal */}
-          <SoundSettingsModal
-            isOpen={soundModalOpen}
-            onClose={() => setSoundModalOpen(false)}
-            userProfile={userProfile}
-            onUpdateProfile={(updated) => {
-              if (onUpdateProfile) onUpdateProfile(updated);
-            }}
-          />
-
-          {/* Card & Deck Suggestion Modal */}
-          <SuggestionModal
-            isOpen={suggestionModalOpen}
-            onClose={() => setSuggestionModalOpen(false)}
-            userProfile={userProfile}
-          />
-        </div>
-      )}
-
-      {/* Room Code Badge (only when inside a room) */}
-      {roomCode && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: isGameActive ? 'rgba(239, 68, 68, 0.25)' : '#ffffff',
-          border: isGameActive ? '1px solid rgba(239, 68, 68, 0.4)' : '1.5px solid #000000',
-          padding: '6px 14px',
-          borderRadius: '9999px',
-          boxShadow: isGameActive ? '0 4px 16px rgba(0,0,0,0.5)' : '0 2px 10px rgba(0,0,0,0.06)'
-        }}>
-          <span style={{ fontSize: '0.8rem', color: isGameActive ? '#fca5a5' : '#000000', fontWeight: 800 }}>
-            oda:
-          </span>
-          <span style={{
-            fontFamily: 'monospace',
-            fontWeight: 900,
-            fontSize: '1.05rem',
-            color: isGameActive ? '#ffffff' : '#ef4444',
-            letterSpacing: '0.08em'
+        {/* Room Code Badge (only when inside a room) */}
+        {roomCode && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: isGameActive ? 'rgba(239, 68, 68, 0.25)' : '#ffffff',
+            border: isGameActive ? '1px solid rgba(239, 68, 68, 0.4)' : '1.5px solid #000000',
+            padding: '6px 14px',
+            borderRadius: '9999px',
+            boxShadow: isGameActive ? '0 4px 16px rgba(0,0,0,0.5)' : '0 2px 10px rgba(0,0,0,0.06)'
           }}>
-            {roomCode}
-          </span>
-          <button
-            onClick={handleCopyCode}
-            title="oda kodunu kopyala"
-            style={{
-              background: 'transparent',
-              color: copied ? '#10b981' : isGameActive ? '#fff' : '#000000',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '2px',
-              cursor: 'pointer'
-            }}
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-          </button>
-          <button
-            onClick={handleCopyLink}
-            title="oda davet linkini kopyala"
-            style={{
-              background: 'transparent',
-              color: copiedLink ? '#10b981' : isGameActive ? '#fff' : '#000000',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '2px',
-              cursor: 'pointer'
-            }}
-          >
-            {copiedLink ? <Check size={16} /> : <Link2 size={16} />}
-          </button>
-        </div>
-      )}
+            <span style={{ fontSize: '0.8rem', color: isGameActive ? '#fca5a5' : '#000000', fontWeight: 800 }}>
+              oda:
+            </span>
+            <span style={{
+              fontFamily: 'monospace',
+              fontWeight: 900,
+              fontSize: '1.05rem',
+              color: isGameActive ? '#ffffff' : '#ef4444',
+              letterSpacing: '0.08em'
+            }}>
+              {roomCode}
+            </span>
+            <button
+              onClick={handleCopyCode}
+              title="oda kodunu kopyala"
+              style={{
+                background: 'transparent',
+                color: copied ? '#10b981' : isGameActive ? '#fff' : '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '2px',
+                cursor: 'pointer'
+              }}
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </button>
+            <button
+              onClick={handleCopyLink}
+              title="oda davet linkini kopyala"
+              style={{
+                background: 'transparent',
+                color: copiedLink ? '#10b981' : isGameActive ? '#fff' : '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '2px',
+                cursor: 'pointer'
+              }}
+            >
+              {copiedLink ? <Check size={16} /> : <Link2 size={16} />}
+            </button>
+          </div>
+        )}
 
-      {/* Sound Mute Toggle */}
-      <button
-        onClick={onToggleSound}
-        className="btn-icon"
-        title={soundMuted ? "sesi aç" : "sesi kapat"}
-        style={{
-          background: isGameActive ? 'rgba(255, 255, 255, 0.12)' : '#ffffff',
-          border: isGameActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1.5px solid #000000',
-          color: isGameActive ? '#ffffff' : '#000000',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
-        }}
-      >
-        {soundMuted ? <VolumeX size={18} color={isGameActive ? "#fca5a5" : "#94a3b8"} /> : <Volume2 size={18} color="#ef4444" />}
-      </button>
-
-      {/* How To Play */}
-      <button
-        onClick={() => {
-          sounds.playClick();
-          onOpenHelp();
-        }}
-        className="btn-icon"
-        title="nasıl oynanır?"
-        style={{
-          background: isGameActive ? 'rgba(255, 255, 255, 0.12)' : '#ffffff',
-          border: isGameActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1.5px solid #000000',
-          color: isGameActive ? '#ffffff' : '#000000',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
-        }}
-      >
-        <HelpCircle size={18} />
-      </button>
-
-      {/* Leave Room (if inside room) */}
-      {roomCode && (
+        {/* Sound Mute Toggle */}
         <button
-          onClick={() => {
-            sounds.playClick();
-            if (window.confirm('odadan ayrılmak istediğinize emin misiniz?')) {
-              onLeave();
-            }
-          }}
+          onClick={onToggleSound}
           className="btn-icon"
-          title="odadan ayrıl"
+          title={soundMuted ? "sesi aç" : "sesi kapat"}
           style={{
-            background: isGameActive ? 'rgba(239, 68, 68, 0.25)' : '#fee2e2',
-            border: isGameActive ? '1px solid rgba(239, 68, 68, 0.5)' : '1.5px solid #ef4444',
-            color: '#ef4444',
+            background: isGameActive ? 'rgba(255, 255, 255, 0.12)' : '#ffffff',
+            border: isGameActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1.5px solid #000000',
+            color: isGameActive ? '#ffffff' : '#000000',
             boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
           }}
         >
-          <LogOut size={18} />
+          {soundMuted ? <VolumeX size={18} color={isGameActive ? "#fca5a5" : "#94a3b8"} /> : <Volume2 size={18} color="#ef4444" />}
         </button>
-      )}
-    </div>
+
+        {/* How To Play */}
+        <button
+          onClick={() => {
+            sounds.playClick();
+            onOpenHelp();
+          }}
+          className="btn-icon"
+          title="nasıl oynanır?"
+          style={{
+            background: isGameActive ? 'rgba(255, 255, 255, 0.12)' : '#ffffff',
+            border: isGameActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1.5px solid #000000',
+            color: isGameActive ? '#ffffff' : '#000000',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
+          }}
+        >
+          <HelpCircle size={18} />
+        </button>
+
+        {/* Leave Room (if inside room) */}
+        {roomCode && (
+          <button
+            onClick={() => {
+              sounds.playClick();
+              if (window.confirm('odadan ayrılmak istediğinize emin misiniz?')) {
+                onLeave();
+              }
+            }}
+            className="btn-icon"
+            title="odadan ayrıl"
+            style={{
+              background: isGameActive ? 'rgba(239, 68, 68, 0.25)' : '#fee2e2',
+              border: isGameActive ? '1px solid rgba(239, 68, 68, 0.5)' : '1.5px solid #ef4444',
+              color: '#ef4444',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
+            }}
+          >
+            <LogOut size={18} />
+          </button>
+        )}
+      </div>
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        userProfile={userProfile}
+        onLogout={onLogout}
+      />
+    </>
   );
 }

@@ -24,7 +24,8 @@ let localConfig = {
     'Nerd Paket',
     'Fenasal Nerd Paket',
     'Sekso Paket',
-    'Kara Paket',
+    'Kara Paket'
+  ],
   coinMultipliers: {
     default: 10,
     premium: 20,

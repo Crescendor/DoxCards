@@ -1206,6 +1206,7 @@ export class GameRoomDO {
 
           const newCoins = (Number(userRec.coins) || 0) + earned;
           const newTotalScore = (Number(userRec.totalScore) || 0) + pScore;
+          const newTotalGames = (Number(userRec.totalGames) || 0) + 1;
 
           if (storageObj) {
             await storageObj.fetch(new Request('http://internal/api/users/update', {
@@ -1214,12 +1215,14 @@ export class GameRoomDO {
               body: JSON.stringify({
                 userId: dId,
                 coins: newCoins,
-                totalScore: newTotalScore
+                totalScore: newTotalScore,
+                totalGames: newTotalGames
               })
             })).catch(() => {});
           } else if (this.state?.storage) {
             userRec.coins = newCoins;
             userRec.totalScore = newTotalScore;
+            userRec.totalGames = newTotalGames;
             userRec.updatedAt = Date.now();
           }
         }

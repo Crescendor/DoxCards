@@ -85,7 +85,6 @@ export default function AdminPageView({ onBack, discordUser }) {
           borderRadius: '20px',
           padding: '36px 30px',
           maxWidth: '460px',
-          width: '100%',
           boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
         }}>
           <h2 style={{ color: '#ef4444', marginBottom: '12px', fontSize: '1.4rem' }}>yetkisiz erişim</h2>
@@ -93,7 +92,7 @@ export default function AdminPageView({ onBack, discordUser }) {
             bu admin paneline sadece yetkili discord yöneticisi ({ADMIN_DISCORD_ID}) erişebilir.
           </p>
           <button onClick={onBack} className="btn-primary" style={{ width: '100%', padding: '14px' }}>
-            ← ana sayfaya dön
+            ana sayfaya dön
           </button>
         </div>
       </div>
@@ -154,6 +153,19 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [userSavingId, setUserSavingId] = useState(null);
   const [isUsersRefreshing, setIsUsersRefreshing] = useState(false);
 
+  // User Modals State
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserTags, setEditUserTags] = useState([]);
+  const [editNewTagInput, setEditNewTagInput] = useState('');
+  const [editUserDecks, setEditUserDecks] = useState([]);
+  const [editUserWhiteSound, setEditUserWhiteSound] = useState('');
+  const [editUserRedSound, setEditUserRedSound] = useState('');
+  const [editUserWinSound, setEditUserWinSound] = useState('');
+  const [editUserCoins, setEditUserCoins] = useState(0);
+
+  const [banningUser, setBanningUser] = useState(null);
+  const [banReasonInput, setBanReasonInput] = useState('');
+
   // Global Config Section State
   const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
   const [configSaving, setConfigSaving] = useState(false);
@@ -182,6 +194,19 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [coinUserSearch, setCoinUserSearch] = useState('');
   const [isCoinConfigSaving, setIsCoinConfigSaving] = useState(false);
   const [savingUserCoinId, setSavingUserCoinId] = useState(null);
+
+  // Sync editing user data when modal opens
+  useEffect(() => {
+    if (editingUser) {
+      setEditUserTags(editingUser.tags || []);
+      setEditNewTagInput('');
+      setEditUserDecks(editingUser.unlockedDecks || [...(appConfig.discordDecks || DEFAULT_CONFIG.discordDecks)]);
+      setEditUserWhiteSound(editingUser.customSounds?.whiteCardSoundId || '');
+      setEditUserRedSound(editingUser.customSounds?.redCardSoundId || '');
+      setEditUserWinSound(editingUser.customSounds?.gameWinSoundId || '');
+      setEditUserCoins(editingUser.coins !== undefined ? editingUser.coins : 0);
+    }
+  }, [editingUser]);
 
   // Sync deck & users from Cloudflare Database on mount
   useEffect(() => {
@@ -724,6 +749,63 @@ export default function AdminPageView({ onBack, discordUser }) {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     }
+  };
+
+  const handleSaveUserFromModal = async () => {
+    if (!editingUser) return;
+    sounds.playClick();
+    setUserSavingId(editingUser.id);
+    const updatedData = {
+      tags: editUserTags,
+      unlockedDecks: editUserDecks,
+      coins: Math.max(0, Number(editUserCoins) || 0),
+      customSounds: {
+        whiteCardSoundId: editUserWhiteSound || null,
+        redCardSoundId: editUserRedSound || null,
+        gameWinSoundId: editUserWinSound || null
+      }
+    };
+    const res = await updateUser(editingUser.id, updatedData);
+    if (res) {
+      setUsersList(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...updatedData } : u));
+    }
+    setUserSavingId(null);
+    setEditingUser(null);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleBanUser = async () => {
+    if (!banningUser) return;
+    sounds.playClick();
+    const reason = banReasonInput.trim() || 'Kural ihlali nedeniyle erişim engellendi.';
+    const res = await updateUser(banningUser.id, {
+      isBanned: true,
+      banReason: reason
+    });
+    if (res) {
+      setUsersList(prev => prev.map(u => u.id === banningUser.id ? { ...u, isBanned: true, banReason: reason } : u));
+    }
+    setBanningUser(null);
+    setBanReasonInput('');
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleUnbanUser = async () => {
+    if (!banningUser) return;
+    sounds.playClick();
+    const res = await updateUser(banningUser.id, {
+      isBanned: false,
+      banReason: ''
+    });
+    if (res) {
+      setUsersList(prev => prev.map(u => u.id === banningUser.id ? { ...u, isBanned: false, banReason: '' } : u));
+    }
+    setBanningUser(null);
+    setBanReasonInput('');
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
   };
 
   // Global Config Handlers
@@ -3082,7 +3164,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                   kayıtlı discord kullanıcıları ({usersList.length})
                 </h2>
                 <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
-                  discord ile giriş yapan oyuncuları görüntüleyin, özel etiketler (Admin, VIP, Premium) atayın ve hangi destelere erişebileceklerini belirleyin.
+                  discord ile giriş yapan oyuncuları görüntüleyin, düzenleme modalı üzerinden etiket, deste ve ses tercihlerini yönetin.
                 </p>
               </div>
 
@@ -3124,7 +3206,7 @@ export default function AdminPageView({ onBack, discordUser }) {
               </div>
             </div>
 
-            {/* Users List */}
+            {/* Clean Users Table / Card Rows */}
             {filteredUsers.length === 0 ? (
               <div style={{
                 background: '#1c1c1c',
@@ -3137,197 +3219,123 @@ export default function AdminPageView({ onBack, discordUser }) {
                 {usersList.length === 0 ? 'henüz discord ile giriş yapmış kullanıcı bulunmuyor.' : 'arama ile eşleşen kullanıcı bulunamadı.'}
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {filteredUsers.map(user => {
                   const isMainAdminUser = user.id === ADMIN_DISCORD_ID;
-                  const isSaving = userSavingId === user.id;
+                  const isBanned = !!user.isBanned;
 
                   return (
                     <div
                       key={user.id}
                       style={{
                         background: '#1c1c1c',
-                        border: isMainAdminUser ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '16px',
-                        padding: '20px 24px',
+                        border: isBanned ? '1px solid rgba(239, 68, 68, 0.4)' : isMainAdminUser ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '14px',
+                        padding: '14px 20px',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '18px',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '14px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
                       }}
                     >
-                      {/* User Top Row */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <img
-                            src={user.avatar || defaultAvatarImg}
-                            alt={user.displayName}
-                            style={{
-                              width: '48px',
-                              height: '48px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: isMainAdminUser ? '2px solid #ef4444' : '2px solid rgba(255, 255, 255, 0.2)'
-                            }}
-                          />
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
-                                {user.displayName || user.username}
-                              </span>
-                              {isMainAdminUser && (
-                                <span className="badge-admin">
-                                  <ShieldCheck size={11} /> ana yönetici
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                              discord id: <b style={{ color: '#cbd5e1' }}>{user.id}</b>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <button
-                            onClick={() => handleSaveUser(user)}
-                            disabled={isSaving}
-                            className="btn-primary"
-                            style={{ padding: '8px 18px', fontSize: '0.85rem' }}
-                          >
-                            <Save size={15} /> {isSaving ? 'kaydediliyor...' : 'kaydet'}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Middle: Tags Section */}
-                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '14px' }}>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px' }}>
-                          özel etiketler (taglar):
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          {/* Quick Tag Toggles */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleUserTag(user, 'admin')}
-                            className={user.tags?.includes('admin') ? 'badge-admin' : 'deck-tag-btn'}
-                            style={{ cursor: 'pointer', padding: '4px 10px' }}
-                          >
-                            <ShieldCheck size={12} /> admin
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleToggleUserTag(user, 'VIP')}
-                            className={user.tags?.includes('VIP') ? 'badge-vip' : 'deck-tag-btn'}
-                            style={{ cursor: 'pointer', padding: '4px 10px' }}
-                          >
-                            <Crown size={12} /> VIP
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleToggleUserTag(user, 'Premium')}
-                            className={user.tags?.includes('Premium') ? 'badge-premium' : 'deck-tag-btn'}
-                            style={{ cursor: 'pointer', padding: '4px 10px' }}
-                          >
-                            <Sparkles size={12} /> Premium
-                          </button>
-
-                          {/* Render other custom tags */}
-                          {(user.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(customTag => (
-                            <span key={customTag} style={{
-                              background: 'rgba(255, 255, 255, 0.1)',
-                              border: '1px solid rgba(255, 255, 255, 0.25)',
-                              color: '#ffffff',
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              padding: '3px 8px',
-                              borderRadius: '9999px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}>
-                              {customTag}
-                              <X
-                                size={12}
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => handleToggleUserTag(user, customTag)}
-                              />
+                      {/* Left: User Info */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <img
+                          src={user.avatar || defaultAvatarImg}
+                          alt={user.displayName}
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: isBanned ? '2px solid #ef4444' : isMainAdminUser ? '2px solid #ef4444' : '2px solid rgba(255, 255, 255, 0.2)'
+                          }}
+                        />
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff' }}>
+                              {user.displayName || user.username}
                             </span>
-                          ))}
-
-                          {/* Add Custom Tag Input */}
-                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <input
-                              type="text"
-                              placeholder="özel etiket adı..."
-                              value={editingUserTags[user.id] || ''}
-                              onChange={(e) => setEditingUserTags(prev => ({ ...prev, [user.id]: e.target.value }))}
-                              style={{
-                                background: '#242424',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                borderRadius: '6px',
+                            {user.username && user.username !== user.displayName && (
+                              <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                                (@{user.username})
+                              </span>
+                            )}
+                            {isMainAdminUser && (
+                              <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                                <ShieldCheck size={10} /> ana yönetici
+                              </span>
+                            )}
+                            {user.tags?.includes('admin') && !isMainAdminUser && (
+                              <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                                <ShieldCheck size={10} /> admin
+                              </span>
+                            )}
+                            {user.tags?.includes('VIP') && (
+                              <span className="badge-vip" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                                <Crown size={10} /> VIP
+                              </span>
+                            )}
+                            {user.tags?.includes('Premium') && (
+                              <span className="badge-premium" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                                <Sparkles size={10} /> Premium
+                              </span>
+                            )}
+                            {isBanned && (
+                              <span style={{
+                                background: '#ef4444',
                                 color: '#ffffff',
-                                fontSize: '0.78rem',
-                                padding: '4px 8px',
-                                width: '120px'
-                              }}
-                              onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTag(user.id)}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleAddCustomTag(user.id)}
-                              className="btn-secondary"
-                              style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            >
-                              + ekle
-                            </button>
+                                padding: '1px 8px',
+                                borderRadius: '4px',
+                                fontSize: '0.68rem',
+                                fontWeight: 800
+                              }}>
+                                yasaklı
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                            discord id: <b style={{ color: '#cbd5e1' }}>{user.id}</b>
                           </div>
                         </div>
                       </div>
 
-                      {/* Bottom: Unlocked Decks Section */}
-                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#94a3b8' }}>
-                            kullanıcının sahip olduğu desteler ({user.unlockedDecks?.length || 0} aktif):
-                          </span>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleGrantAllDecksToUser(user.id)}
-                              style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              tümünü aç
-                            </button>
-                            <span style={{ color: '#475569' }}>|</span>
-                            <button
-                              type="button"
-                              onClick={() => handleResetUserDecks(user.id)}
-                              style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              varsayılana dön
-                            </button>
-                          </div>
-                        </div>
+                      {/* Right: Actions (Düzenle & Yasakla) */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setEditingUser(user);
+                          }}
+                          className="btn-primary"
+                          style={{ padding: '8px 16px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', background: '#3b82f6', color: '#fff', border: 'none' }}
+                        >
+                          <Edit2 size={14} /> düzenle
+                        </button>
 
-                        <div className="deck-tags-container">
-                          {DEFAULT_CONFIG.allDecks.map(deckName => {
-                            const isUnlocked = (user.unlockedDecks || []).includes(deckName);
-                            return (
-                              <button
-                                key={deckName}
-                                type="button"
-                                onClick={() => handleToggleUserDeck(user, deckName)}
-                                className={`deck-tag-btn ${isUnlocked ? 'active' : ''}`}
-                                style={{ padding: '4px 10px', fontSize: '0.74rem' }}
-                              >
-                                {isUnlocked ? <Check size={12} /> : <Plus size={12} />}
-                                {deckName}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setBanningUser(user);
+                            setBanReasonInput(user.banReason || '');
+                          }}
+                          className="btn-secondary"
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            color: isBanned ? '#34d399' : '#f87171',
+                            borderColor: isBanned ? 'rgba(52, 211, 153, 0.4)' : 'rgba(248, 113, 113, 0.4)'
+                          }}
+                        >
+                          <ShieldAlert size={14} /> {isBanned ? 'yasağı kaldır' : 'yasakla'}
+                        </button>
                       </div>
                     </div>
                   );
@@ -4320,6 +4328,513 @@ export default function AdminPageView({ onBack, discordUser }) {
         )}
         </div>
       </main>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* MODAL 1: KULLANICI DÜZENLEME MODALI                                */}
+      {/* ------------------------------------------------------------------- */}
+      {editingUser && (
+        <div className="modal-overlay" onClick={() => setEditingUser(null)}>
+          <div
+            className="modal-content animate-pop"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '88vh',
+              overflowY: 'auto',
+              padding: '28px',
+              background: '#181818',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '20px',
+              boxShadow: '0 24px 50px rgba(0,0,0,0.85)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <img
+                  src={editingUser.avatar || defaultAvatarImg}
+                  alt={editingUser.displayName}
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f59e0b' }}
+                />
+                <div style={{ textAlign: 'left' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                    {editingUser.displayName || editingUser.username}
+                  </h3>
+                  <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                    discord id: <b style={{ color: '#cbd5e1' }}>{editingUser.id}</b>
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="btn-icon"
+                style={{ width: '32px', height: '32px' }}
+                title="Kapat"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* 1. Roller ve Etiketler */}
+            <div style={{
+              background: '#222222',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              textAlign: 'left'
+            }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff' }}>
+                1. roller & etiketler (tags)
+              </span>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setEditUserTags(prev => prev.includes('admin') ? prev.filter(t => t !== 'admin') : [...prev, 'admin']);
+                  }}
+                  className={editUserTags.includes('admin') ? 'badge-admin' : 'deck-tag-btn'}
+                  style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
+                >
+                  <ShieldCheck size={13} /> admin
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setEditUserTags(prev => prev.includes('VIP') ? prev.filter(t => t !== 'VIP') : [...prev, 'VIP']);
+                  }}
+                  className={editUserTags.includes('VIP') ? 'badge-vip' : 'deck-tag-btn'}
+                  style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
+                >
+                  <Crown size={13} /> VIP
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setEditUserTags(prev => prev.includes('Premium') ? prev.filter(t => t !== 'Premium') : [...prev, 'Premium']);
+                  }}
+                  className={editUserTags.includes('Premium') ? 'badge-premium' : 'deck-tag-btn'}
+                  style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
+                >
+                  <Sparkles size={13} /> Premium
+                </button>
+
+                {editUserTags.filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(tag => (
+                  <span
+                    key={tag}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      color: '#ffffff',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      padding: '4px 10px',
+                      borderRadius: '9999px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {tag}
+                    <X
+                      size={12}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setEditUserTags(prev => prev.filter(t => t !== tag))}
+                    />
+                  </span>
+                ))}
+              </div>
+
+              {/* Add Custom Tag */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="yeni özel etiket ekle..."
+                  value={editNewTagInput}
+                  onChange={(e) => setEditNewTagInput(e.target.value)}
+                  className="form-input"
+                  style={{ padding: '6px 12px', fontSize: '0.82rem', maxWidth: '220px' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && editNewTagInput.trim()) {
+                      e.preventDefault();
+                      const val = editNewTagInput.trim();
+                      if (!editUserTags.includes(val)) {
+                        setEditUserTags(prev => [...prev, val]);
+                      }
+                      setEditNewTagInput('');
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editNewTagInput.trim()) {
+                      const val = editNewTagInput.trim();
+                      if (!editUserTags.includes(val)) {
+                        setEditUserTags(prev => [...prev, val]);
+                      }
+                      setEditNewTagInput('');
+                    }
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                >
+                  + etiket ekle
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Sahip Olunan Desteler */}
+            <div style={{
+              background: '#222222',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff' }}>
+                  2. sahip olunan desteler ({editUserDecks.length} aktif)
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditUserDecks([...DEFAULT_CONFIG.allDecks])}
+                    style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    tümünü aç
+                  </button>
+                  <span style={{ color: '#475569' }}>|</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditUserDecks(['Ana Deste'])}
+                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    sıfırla
+                  </button>
+                </div>
+              </div>
+
+              <div className="deck-tags-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {DEFAULT_CONFIG.allDecks.map(deckName => {
+                  const isUnlocked = editUserDecks.includes(deckName);
+                  return (
+                    <button
+                      key={deckName}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setEditUserDecks(prev => prev.includes(deckName) ? prev.filter(d => d !== deckName) : [...prev, deckName]);
+                      }}
+                      className={`deck-tag-btn ${isUnlocked ? 'active' : ''}`}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
+                    >
+                      {isUnlocked ? <Check size={13} /> : <Plus size={13} />}
+                      {deckName}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. Özel Ses Seçenekleri */}
+            <div style={{
+              background: '#222222',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              textAlign: 'left'
+            }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff' }}>
+                3. kullanıcının özel ses tercihleri
+              </span>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                {/* White Card Sound */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>beyaz kart sesi</label>
+                  <select
+                    value={editUserWhiteSound}
+                    onChange={(e) => setEditUserWhiteSound(e.target.value)}
+                    className="form-input"
+                    style={{ fontSize: '0.82rem', padding: '6px 10px' }}
+                  >
+                    <option value="">varsayılan sistem sesi</option>
+                    {(appConfig.customSounds || []).filter(s => s.category === 'white_card').map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Red Card Sound */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>kırmızı kart sesi</label>
+                  <select
+                    value={editUserRedSound}
+                    onChange={(e) => setEditUserRedSound(e.target.value)}
+                    className="form-input"
+                    style={{ fontSize: '0.82rem', padding: '6px 10px' }}
+                  >
+                    <option value="">varsayılan sistem sesi</option>
+                    {(appConfig.customSounds || []).filter(s => s.category === 'red_card').map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Win Sound */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>kazanma sesi</label>
+                  <select
+                    value={editUserWinSound}
+                    onChange={(e) => setEditUserWinSound(e.target.value)}
+                    className="form-input"
+                    style={{ fontSize: '0.82rem', padding: '6px 10px' }}
+                  >
+                    <option value="">varsayılan sistem sesi</option>
+                    {(appConfig.customSounds || []).filter(s => s.category === 'game_win').map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Coin Bakiyesi */}
+            <div style={{
+              background: '#222222',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              textAlign: 'left'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Coins size={16} color="#fbbf24" /> coin bakiyesi
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                  kullanıcının mevcut toplam coin miktarını belirleyin
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="number"
+                  min="0"
+                  value={editUserCoins}
+                  onChange={(e) => setEditUserCoins(Math.max(0, Number(e.target.value) || 0))}
+                  className="form-input"
+                  style={{ width: '110px', padding: '6px 10px', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditUserCoins(prev => prev + 100)}
+                  className="btn-secondary"
+                  style={{ padding: '6px 8px', fontSize: '0.75rem' }}
+                >
+                  +100
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditUserCoins(prev => prev + 500)}
+                  className="btn-secondary"
+                  style={{ padding: '6px 8px', fontSize: '0.75rem' }}
+                >
+                  +500
+                </button>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="btn-secondary"
+                style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+              >
+                iptal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveUserFromModal}
+                disabled={userSavingId === editingUser.id}
+                className="btn-primary"
+                style={{ padding: '10px 24px', fontSize: '0.85rem', background: '#22c55e', color: '#fff', border: 'none' }}
+              >
+                <Save size={16} /> {userSavingId === editingUser.id ? 'kaydediliyor...' : 'değişiklikleri kaydet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* MODAL 2: KULLANICI YASAKLAMA (BAN) MODALI                          */}
+      {/* ------------------------------------------------------------------- */}
+      {banningUser && (
+        <div className="modal-overlay" onClick={() => setBanningUser(null)}>
+          <div
+            className="modal-content animate-pop"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '460px',
+              width: '100%',
+              padding: '28px',
+              background: '#181818',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: '20px',
+              boxShadow: '0 24px 50px rgba(0,0,0,0.85)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldAlert size={20} color="#ef4444" />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
+                  kullanıcı yasaklama (ban)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBanningUser(null)}
+                className="btn-icon"
+                style={{ width: '32px', height: '32px' }}
+                title="Kapat"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Target User Info */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: '#222222',
+              padding: '12px 14px',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <img
+                src={banningUser.avatar || defaultAvatarImg}
+                alt={banningUser.displayName}
+                style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
+              />
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff' }}>
+                  {banningUser.displayName || banningUser.username}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                  discord id: {banningUser.id}
+                </div>
+              </div>
+            </div>
+
+            {/* If currently banned: display reason and Unban button */}
+            {banningUser.isBanned ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid #ef4444',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  textAlign: 'left'
+                }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f87171', marginBottom: '4px' }}>
+                    bu kullanıcı şu anda yasaklı
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>
+                    yasaklama sebebi: <b>{banningUser.banReason || 'Belirtilmedi'}</b>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBanningUser(null)}
+                    className="btn-secondary"
+                    style={{ padding: '10px 16px' }}
+                  >
+                    vazgeç
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleUnbanUser}
+                    className="btn-primary"
+                    style={{ padding: '10px 20px', background: '#10b981', color: '#ffffff', border: 'none', fontWeight: 800 }}
+                  >
+                    yasağı kaldır (unban)
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* If not banned: input reason and Ban button */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', textAlign: 'left' }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.8rem' }}>yasaklama sebebi</label>
+                  <input
+                    type="text"
+                    placeholder="örn: uygunsuz davranış, hile..."
+                    value={banReasonInput}
+                    onChange={(e) => setBanReasonInput(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', padding: '10px 12px', fontSize: '0.85rem' }}
+                    autoFocus
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBanningUser(null)}
+                    className="btn-secondary"
+                    style={{ padding: '10px 16px' }}
+                  >
+                    iptal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBanUser}
+                    className="btn-primary"
+                    style={{ padding: '10px 20px', background: '#ef4444', color: '#ffffff', border: 'none', fontWeight: 800 }}
+                  >
+                    kullanıcıyı yasakla
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
