@@ -94,16 +94,11 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
 
   if (Array.isArray(selectedDecks) && selectedDecks.length > 0) {
     const lowerDecks = selectedDecks.map(d => (d || '').toLowerCase().trim());
-    const filteredWhite = selectedWhite.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
-    const filteredRed = selectedRed.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
-
-    if (filteredWhite.length >= 10) selectedWhite = filteredWhite;
-    if (filteredRed.length >= 10) selectedRed = filteredRed;
-  } else if (deckType !== 'all') {
-    const filteredWhite = selectedWhite.filter(c => c.category?.toLowerCase().includes(deckType.toLowerCase()));
-    const filteredRed = selectedRed.filter(c => c.category?.toLowerCase().includes(deckType.toLowerCase()));
-    if (filteredWhite.length >= 20) selectedWhite = filteredWhite;
-    if (filteredRed.length >= 20) selectedRed = filteredRed;
+    selectedWhite = selectedWhite.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
+    selectedRed = selectedRed.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
+  } else if (deckType && deckType !== 'all') {
+    selectedWhite = selectedWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
+    selectedRed = selectedRed.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
   }
 
   return {
@@ -111,3 +106,4 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
     red: shuffleArray(selectedRed)
   };
 }
+

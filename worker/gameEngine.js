@@ -48,18 +48,31 @@ export class GameEngine {
   }
 
   initDecks(customRawDeck = null) {
-    this.deck = getDeck(this.deckType, customRawDeck, this.selectedDecks);
+    if (customRawDeck) this.customRawDeck = customRawDeck;
+    this.deck = getDeck(this.deckType, this.customRawDeck, this.selectedDecks);
     this.usedCardIds = new Set();
   }
 
-  // Draws only fresh, previously unused cards
+  // Draws only fresh cards, reshuffling strictly within selected decks if pile is exhausted
   drawCards(type, count) {
     const cards = [];
-    while (cards.length < count && this.deck[type].length > 0) {
-      const candidate = this.deck[type].pop();
-      if (!this.usedCardIds.has(candidate.id)) {
-        this.usedCardIds.add(candidate.id);
-        cards.push(candidate);
+    let attempts = 0;
+    while (cards.length < count && attempts < 200) {
+      attempts++;
+      if (!this.deck[type] || this.deck[type].length === 0) {
+        const fresh = getDeck(this.deckType, this.customRawDeck, this.selectedDecks);
+        this.deck[type] = shuffleArray(fresh[type] || []);
+        this.usedCardIds.clear();
+      }
+
+      if (this.deck[type] && this.deck[type].length > 0) {
+        const candidate = this.deck[type].pop();
+        if (candidate) {
+          this.usedCardIds.add(candidate.id);
+          cards.push(candidate);
+        }
+      } else {
+        break;
       }
     }
     return cards;

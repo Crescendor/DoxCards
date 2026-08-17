@@ -1,5 +1,5 @@
 // Cards Data Manager for DoxCards
-import rawCardsData from '../../Red_Flags_Turkish_Complete.json';
+import rawCardsData from './defaultDeck.json';
 
 const STORAGE_KEY = 'doxcards_custom_deck_json';
 
