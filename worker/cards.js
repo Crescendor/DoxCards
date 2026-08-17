@@ -86,6 +86,14 @@ export function shuffleArray(array) {
   return arr;
 }
 
+export function normalizeDeckName(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9ğüşıöç]/gi, '')
+    .replace(/(deste|paket|deck|pack)$/i, '')
+    .trim();
+}
+
 // Get shuffled full match deck
 export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = null) {
   const parsed = customRawDeck ? buildCardsFromRaw(customRawDeck) : activeParsed;
@@ -94,11 +102,40 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
 
   if (Array.isArray(selectedDecks) && selectedDecks.length > 0) {
     const lowerDecks = selectedDecks.map(d => (d || '').toLowerCase().trim());
-    selectedWhite = selectedWhite.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
-    selectedRed = selectedRed.filter(c => lowerDecks.includes((c.category || '').toLowerCase().trim()));
+    const normDecks = selectedDecks.map(d => normalizeDeckName(d)).filter(Boolean);
+
+    const filteredWhite = selectedWhite.filter(c => {
+      const cLow = (c.category || '').toLowerCase().trim();
+      const cNorm = normalizeDeckName(c.category);
+      return lowerDecks.includes(cLow) || normDecks.includes(cNorm);
+    });
+
+    const filteredRed = selectedRed.filter(c => {
+      const cLow = (c.category || '').toLowerCase().trim();
+      const cNorm = normalizeDeckName(c.category);
+      return lowerDecks.includes(cLow) || normDecks.includes(cNorm);
+    });
+
+    // If selected decks contain white cards, strictly use them! If not, fallback to core Ana Deste white cards
+    if (filteredWhite.length > 0) {
+      selectedWhite = filteredWhite;
+    } else {
+      const coreWhite = selectedWhite.filter(c => (c.category || '').toLowerCase().includes('ana'));
+      selectedWhite = coreWhite.length > 0 ? coreWhite : selectedWhite;
+    }
+
+    // If selected decks contain red cards, strictly use them! If not, fallback to core Ana Deste red cards
+    if (filteredRed.length > 0) {
+      selectedRed = filteredRed;
+    } else {
+      const coreRed = selectedRed.filter(c => (c.category || '').toLowerCase().includes('ana'));
+      selectedRed = coreRed.length > 0 ? coreRed : selectedRed;
+    }
   } else if (deckType && deckType !== 'all') {
-    selectedWhite = selectedWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
-    selectedRed = selectedRed.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
+    const filteredWhite = selectedWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
+    const filteredRed = selectedRed.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
+    if (filteredWhite.length > 0) selectedWhite = filteredWhite;
+    if (filteredRed.length > 0) selectedRed = filteredRed;
   }
 
   return {
@@ -106,4 +143,5 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
     red: shuffleArray(selectedRed)
   };
 }
+
 

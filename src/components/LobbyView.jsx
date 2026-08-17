@@ -5,6 +5,7 @@ import { sounds } from '../services/soundEffects';
 import { ADMIN_DISCORD_ID } from './AdminPageView';
 import { getDiscordUser } from '../services/discordAuth';
 import { getLocalUserProfile, fetchAppConfig, DEFAULT_CONFIG } from '../services/userService';
+import { DEFAULT_RAW_CARDS } from '../data/cardsData';
 
 const MAX_SLOTS = 6;
 
@@ -24,8 +25,8 @@ export default function LobbyView({
   const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
   const [hoveredLockedDeck, setHoveredLockedDeck] = useState(null);
 
-  const isHost = room.hostId === player.id;
   const players = room.players || [];
+  const isHost = room.hostId === player.id;
   const discordUser = getDiscordUser();
   const userProfile = getLocalUserProfile();
 
@@ -35,9 +36,18 @@ export default function LobbyView({
     });
   }, []);
 
+  const liveDeckKeys = Array.from(new Set([
+    ...Object.keys(DEFAULT_RAW_CARDS?.Perks || {}),
+    ...Object.keys(DEFAULT_RAW_CARDS?.['Red Flags'] || {})
+  ]));
+  const allDecksList = Array.from(new Set([
+    ...(appConfig.allDecks || DEFAULT_CONFIG.allDecks),
+    ...liveDeckKeys
+  ]));
+
   const isMainAdmin = discordUser?.id === ADMIN_DISCORD_ID;
   const availableDecksForHost = isMainAdmin
-    ? (appConfig.allDecks || DEFAULT_CONFIG.allDecks)
+    ? allDecksList
     : (discordUser ? (userProfile?.unlockedDecks || appConfig.discordDecks || DEFAULT_CONFIG.discordDecks) : (appConfig.guestDecks || DEFAULT_CONFIG.guestDecks));
 
   const selectedDecks = room.settings?.selectedDecks || ['Ana Deste'];
@@ -410,7 +420,7 @@ export default function LobbyView({
             </label>
 
             <div className="deck-tags-container">
-              {(appConfig.allDecks || DEFAULT_CONFIG.allDecks).map(deckName => {
+              {allDecksList.map(deckName => {
                 const isSelected = selectedDecks.includes(deckName);
                 const isUnlocked = isHost ? availableDecksForHost.includes(deckName) : true;
                 const meta = appConfig.deckMetadata?.[deckName] || { isSecret: false, lockDescription: '' };
