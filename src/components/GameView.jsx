@@ -3,6 +3,7 @@ import { Target, Hourglass, ArrowRight, ChevronRight, Crown } from 'lucide-react
 import TabletopView from './TabletopView';
 import GameOverModal from './GameOverModal';
 import { sounds } from '../services/soundEffects';
+import { socket } from '../services/socket';
 
 export default function GameView({
   room,
