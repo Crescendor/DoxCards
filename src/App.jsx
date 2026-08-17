@@ -54,7 +54,7 @@ export default function App() {
       avatar: null,
       discordId: null
     });
-    window.location.reload();
+    window.location.replace(window.location.origin + window.location.pathname);
   };
 
   // Toggle Mute
@@ -117,8 +117,7 @@ export default function App() {
 
     socket.on('kicked_from_room', ({ reason }) => {
       alert(reason || 'Oda kurucusu tarafından odadan çıkarıldınız.');
-      window.history.pushState({}, '', window.location.pathname);
-      window.location.reload();
+      window.location.replace(window.location.origin + window.location.pathname);
     });
 
     return () => {
@@ -209,8 +208,9 @@ export default function App() {
     if (currentRoom) {
       socket.emit('leave_room', { roomCode: currentRoom.code, playerId: player.id });
     }
-    window.history.pushState({}, '', window.location.pathname);
-    window.location.reload();
+    setCurrentRoom(null);
+    setGameState(null);
+    window.location.replace(window.location.origin + window.location.pathname);
   };
 
   // Start Game (Host)

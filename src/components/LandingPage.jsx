@@ -105,22 +105,35 @@ export default function LandingPage({
     }
   };
 
-  const handleCreateSubmit = (e) => {
-    e.preventDefault();
-    if (!player.name.trim()) return;
+  const handleCreateDirect = () => {
     sounds.playClick();
+    let activeName = player.name;
+    if (!activeName || !activeName.trim()) {
+      if (discordUser) {
+        activeName = (discordUser.displayName || discordUser.username || 'oyuncu').toLowerCase().slice(0, 19);
+      } else {
+        activeName = 'oyuncu 1';
+      }
+      onUpdatePlayer({ ...player, name: activeName });
+    }
     onCreateRoom({
-      roundLimit: Number(targetScore),
-      targetScore: Number(targetScore),
+      roundLimit: 6,
+      targetScore: 6,
       deckType: 'all'
     });
   };
 
   const handleJoinSubmit = (e) => {
     e.preventDefault();
-    if (!player.name.trim() || !roomCodeInput.trim()) return;
+    if (!roomCodeInput.trim()) return;
     sounds.playClick();
     onJoinRoom(roomCodeInput.trim().toLowerCase());
+  };
+
+  const handleBackToMenu = () => {
+    sounds.playClick();
+    setViewMode('menu');
+    window.history.pushState({}, '', window.location.pathname);
   };
 
   const activeAvatar = player.avatar || discordUser?.avatarUrl || defaultAvatarImg;
@@ -228,14 +241,12 @@ export default function LandingPage({
         {viewMode === 'menu' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
-              onClick={() => {
-                sounds.playClick();
-                setViewMode('create');
-              }}
+              onClick={handleCreateDirect}
+              disabled={isLoading}
               className="btn-primary"
               style={{ width: '100%' }}
             >
-              oda oluştur
+              {isLoading ? 'oda oluşturuluyor...' : 'oda oluştur'}
             </button>
 
             <button
@@ -299,159 +310,13 @@ export default function LandingPage({
           </div>
         )}
 
-        {/* Create Room Form */}
-        {viewMode === 'create' && (
-          <form onSubmit={handleCreateSubmit} className="animate-pop">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setViewMode('menu');
-                }}
-                className="btn-icon"
-                style={{ width: '32px', height: '32px' }}
-                title="geri dön"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>oda oluştur</h3>
-            </div>
-
-            {/* If logged in with Discord: choose name source */}
-            {discordUser ? (
-              <div style={{ marginBottom: '16px', textAlign: 'left' }}>
-                <label className="form-label">isim seçimi</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleNameSource(true)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      background: useDiscordName ? 'rgba(88, 101, 242, 0.2)' : '#262626',
-                      border: useDiscordName ? '1px solid #5865F2' : '1px solid rgba(255, 255, 255, 0.1)',
-                      color: useDiscordName ? '#818cf8' : '#94a3b8',
-                      fontSize: '0.8rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    discord adım
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleNameSource(false)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      background: !useDiscordName ? 'rgba(255, 0, 0, 0.18)' : '#262626',
-                      border: !useDiscordName ? '1px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.1)',
-                      color: !useDiscordName ? '#ff6666' : '#94a3b8',
-                      fontSize: '0.8rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    özel isim
-                  </button>
-                </div>
-
-                {!useDiscordName && (
-                  <input
-                    type="text"
-                    value={player.name}
-                    onChange={handleNameChange}
-                    placeholder="özel oyuncu adı yaz..."
-                    maxLength={19}
-                    className="form-input"
-                    required
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="form-group">
-                <label className="form-label">oyuncu adın</label>
-                <input
-                  type="text"
-                  value={player.name}
-                  onChange={handleNameChange}
-                  placeholder="bir isim yaz..."
-                  maxLength={19}
-                  className="form-input"
-                  autoFocus
-                  required
-                />
-              </div>
-            )}
-
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label">tur limiti</label>
-              <select
-                value={targetScore}
-                onChange={(e) => setTargetScore(e.target.value)}
-                className="form-input"
-              >
-                <option value={6}>6 tur (hızlı)</option>
-                <option value={12}>12 tur (standart)</option>
-                <option value={18}>18 tur (uzun)</option>
-              </select>
-            </div>
-
-            {/* Discord Option if not logged in */}
-            {!discordUser && (
-              <div style={{ marginBottom: '16px' }}>
-                <button
-                  type="button"
-                  onClick={handleDiscordLogin}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '10px',
-                    width: '100%',
-                    padding: '10px 16px',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: '#1e293b',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <DiscordIcon />
-                  <span>continue with discord</span>
-                </button>
-              </div>
-            )}
-
-            {error && (
-              <div style={{ color: '#ef4444', fontSize: '0.86rem', marginBottom: '12px', textAlign: 'center', fontWeight: 600 }}>
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !player.name.trim()}
-              className="btn-primary"
-              style={{ width: '100%' }}
-            >
-              {isLoading ? 'oda oluşturuluyor...' : 'oda oluştur'}
-            </button>
-          </form>
-        )}
-
         {/* Join Room Form */}
         {viewMode === 'join' && (
           <form onSubmit={handleJoinSubmit} className="animate-pop">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
               <button
                 type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setViewMode('menu');
-                }}
+                onClick={handleBackToMenu}
                 className="btn-icon"
                 style={{ width: '32px', height: '32px' }}
                 title="geri dön"
@@ -475,64 +340,14 @@ export default function LandingPage({
                   oda daveti: <span style={{ fontFamily: 'monospace', fontSize: '0.95rem', color: '#ffffff' }}>{urlRoomCode.toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginTop: '2px' }}>
-                  ismini belirleyip doğrudan bu odaya katılabilirsin.
+                  doğrudan bu odaya katılabilirsin.
                 </div>
               </div>
             )}
 
-            {/* If logged in with Discord: choose name source */}
-            {discordUser ? (
-              <div style={{ marginBottom: '16px', textAlign: 'left' }}>
-                <label className="form-label">isim seçimi</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleNameSource(true)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      background: useDiscordName ? 'rgba(88, 101, 242, 0.2)' : '#262626',
-                      border: useDiscordName ? '1px solid #5865F2' : '1px solid rgba(255, 255, 255, 0.1)',
-                      color: useDiscordName ? '#818cf8' : '#94a3b8',
-                      fontSize: '0.8rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    discord adım
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleNameSource(false)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      background: !useDiscordName ? 'rgba(255, 0, 0, 0.18)' : '#262626',
-                      border: !useDiscordName ? '1px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.1)',
-                      color: !useDiscordName ? '#ff6666' : '#94a3b8',
-                      fontSize: '0.8rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    özel isim
-                  </button>
-                </div>
-
-                {!useDiscordName && (
-                  <input
-                    type="text"
-                    value={player.name}
-                    onChange={handleNameChange}
-                    placeholder="özel oyuncu adı yaz..."
-                    maxLength={19}
-                    className="form-input"
-                    required
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="form-group">
+            {/* If visitor (no Discord), allow changing visitor nickname */}
+            {!discordUser && (
+              <div className="form-group" style={{ marginBottom: '16px', textAlign: 'left' }}>
                 <label className="form-label">oyuncu adın</label>
                 <input
                   type="text"
@@ -541,13 +356,12 @@ export default function LandingPage({
                   placeholder="bir isim yaz..."
                   maxLength={19}
                   className="form-input"
-                  autoFocus
                   required
                 />
               </div>
             )}
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
+            <div className="form-group" style={{ marginBottom: '20px', textAlign: 'left' }}>
               <label className="form-label">oda kodu</label>
               <input
                 type="text"
@@ -556,6 +370,7 @@ export default function LandingPage({
                 placeholder="örn: rf7k2"
                 maxLength={5}
                 className="form-input room-code-input"
+                autoFocus
                 required
               />
             </div>
