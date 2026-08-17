@@ -51,6 +51,18 @@ export class GameRoomDO {
     this.sessions = new Map(); // serverWs -> playerId
   }
 
+  async alarm() {
+    if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
+      try {
+        this.room.game.nextRound(this.room.players);
+        this.broadcastGameState();
+        this.checkAndTriggerBotTurn();
+      } catch (err) {
+        console.error('DO Alarm nextRound error:', err);
+      }
+    }
+  }
+
   async getLatestGlobalDeck() {
     if (this.env && this.env.GAME_ROOMS) {
       try {
@@ -835,6 +847,11 @@ export class GameRoomDO {
               }).catch(() => {});
             }
           } else if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
+            if (this.state?.storage?.setAlarm) {
+              try {
+                await this.state.storage.setAlarm(Date.now() + 3500);
+              } catch (e) {}
+            }
             setTimeout(() => {
               try {
                 if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
@@ -845,7 +862,7 @@ export class GameRoomDO {
               } catch (err) {
                 console.error('Auto nextRound error:', err);
               }
-            }, 4000);
+            }, 3500);
           }
 
           sendAck({ success: true });
@@ -1122,13 +1139,22 @@ export class GameRoomDO {
         this.broadcastGameState();
 
         if (this.room.game.phase === PHASES.ROUND_SUMMARY) {
+          if (this.state?.storage?.setAlarm) {
+            try {
+              this.state.storage.setAlarm(Date.now() + 3500);
+            } catch (e) {}
+          }
           setTimeout(() => {
-            if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
-              this.room.game.nextRound(this.room.players);
-              this.broadcastGameState();
-              this.checkAndTriggerBotTurn();
+            try {
+              if (this.room && this.room.game && this.room.game.phase === PHASES.ROUND_SUMMARY) {
+                this.room.game.nextRound(this.room.players);
+                this.broadcastGameState();
+                this.checkAndTriggerBotTurn();
+              }
+            } catch (err) {
+              console.error('Bot auto nextRound error:', err);
             }
-          }, 5500);
+          }, 3500);
         }
       }
     }, 1350);

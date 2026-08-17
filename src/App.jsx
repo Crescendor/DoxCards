@@ -116,6 +116,16 @@ export default function App() {
     };
   }, []);
 
+  // Auto-advance round when phase is ROUND_SUMMARY
+  useEffect(() => {
+    if (gameState?.phase === 'ROUND_SUMMARY' && currentRoom?.code) {
+      const timer = setTimeout(() => {
+        socket.emit('next_round', { roomCode: currentRoom.code });
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState?.phase, currentRoom?.code]);
+
   // Get enriched player with live profile data & tags
   const getEnrichedPlayer = () => ({
     ...player,
