@@ -34,7 +34,6 @@
       "Tiyatroyu seviyor",
       "Hayatında gördüğün en çekici [boşluk] 'e sahip",
       "Tasarımcı kıyafetler yumurtlayan bir kazı var",
-      "Hayat, [boşluk] filminin gerçek hikayesi",
       "Bir bağa sahip",
       "Tüm kusurlarına karşı tamamen kör",
       "İkinizi de her yere sokabilir",
@@ -89,7 +88,7 @@
       "Her zaman sana mükemmel hediyeler alıyor",
       "Onlarla çıktığın sürece hiç hastalanmayacaksın",
       "Şefkatli",
-      "Bir oyuncu/oyuncu seç",
+      "[boşluk] (Bir aktör seç.)",
       "Güzel gözler",
       "Havayolu pilotu",
       "Cömert",
@@ -328,6 +327,15 @@
       "Azgın üniversiteli kızlarla dolu bir yurtta yaşıyor",
       "Fiziksel olarak sonsuza kadar 18 kalacak",
       "Üst düzey bir seks zindanı var"
+    ],
+    "Aktanfell Deste": [
+      "Babü",
+      "Clubber",
+      "Her gece 00:00'da kulağına Purna diye seksi bir şekilde fısıldıyor",
+      "İkinizin Eren Aktan Aboneliğini her ay yeniliyor.",
+      "Eren Aktan top donator",
+      "Aktanfell Discord'unda seninle her oyunu oynar.",
+      "Taylor Swift'i Aktanfell'e katılması için ikna etti. (ilk uçakla geliyor)"
     ]
   },
   "Red Flags": {
@@ -462,7 +470,6 @@
       "Seni kafa atarak selamlıyor",
       "İlk randevuya annesini getiriyor",
       "Sadece motivasyon sözleriyle konuşuyor",
-      "Tam bir felaket",
       "Ağzının içini görebilesin diye pleksiglas yanakları var",
       "Gerçekten her zaman çıplak",
       "Bir hobbit",
@@ -681,7 +688,7 @@
       "Seni öldürüp yeme fantezisi kuruyor. Durmadan bahsediyor",
       "Tüm seks kasedlerini Facebook'a koyuyor",
       "Hollanda fırınında yaşıyor (yatakta yorganı eşinin başına çekerek gaz çıkarma)",
-      "Her göz teması kurduğunda meme uçlarından ateş çıkıyor",
+      "Onunla her göz teması kurduğunda onun meme uçlarından ateş çıkıyor",
       "Cinsel organı örümcek dolu",
       "Herkese KKK'da büyük büyücü olduğunu övünüyor",
       "Gözleri penis",
@@ -717,7 +724,6 @@
       "Huzurevinde çalışıyor çünkü \"yaşlılardan para çalmaya bayılıyor!\"",
       "Terminal hastalığın yoksa seninle çıkmıyor. Devlet hastanesinde sana bir tane ayarlayabilecek birini tanıdığını söylüyor",
       "Ağzına sıçmanı seviyor. Durmadan bahsediyor",
-      "BU TAM BİR KAOS! İki rastgele Kırmızı kartı daha ekle..",
       "Hafta sonları Show TV için tetikçi olarak gönüllü",
       "Evde kalıp bebek yapman gerektiğini düşünüyor. Ayrıca senden daha çok para kazanıyor",
       "Eugenics'in faydaları hakkında PowerPoint'lerini izleyene kadar seninle çıkmıyor",
@@ -777,14 +783,23 @@
       "Tüm evcil hayvanlarından sana kürk manto yapmış. Mutlu yıllar!",
       "Aslında sadece duyarlı bir sülük sürüsünü saklayan bir deri torbası",
       "Seni iPhone yapan bir sweatshop'ta çalışmaya kaydetti. Apple Kolektörleri yarın geliyor",
-      "Bestiality'i denemene izin verene kadar seninle çıkmıyor. İnsanların düşündüğünden daha iyi olduğunu yemin ediyor",
+      "Sen Bestiality'i deneyene kadar seninle çıkmıyor. İnsanların düşündüğünden daha iyi olduğuna yemin ediyor",
       "Az önce aileni kaçırdı. İyi davranırsan iyi muamele göreceklerini söylüyor",
       "Onla çıktığın sürece bebek vücuduna sahip olacaksın.",
-      "Sürekli seni ve tüm arkadaşlarını kafadan sikmeye çalışıyor",
+      "Sürekli seni ve tüm arkadaşlarının beyinlerini sikmeye çalışıyor (gerçekten de sikmek.)",
       "Ölü taklidi yapmazsan seninle seks yapmıyor",
       "Onla çıktığın sürece porno endüstrisinde döl temizleyici olarak çalışmak zorunda kalacaksın",
       "Derisi küflü ezine peyniri gibi görünüyor ve hissettiriyor",
       "Köpek dövüşü işini desteklemek için kanser araştırma vakıflarından para çalıyor"
+    ],
+    "Aktanfell Deste": [
+      "\"Kötü Kötü oldum\" ve \"Ardımız şişecek\" diyerek konuşabiliyor sadece",
+      "Aktanfell'den başka bir discord sunucusu var (her an ban yiyebilir)",
+      "Eren Aktan tarafından IBAN'dan bile banlanmış.",
+      "Kızlar Matinesinde troll yapıyor",
+      "Geçmişte Lynux ile bir sekso durumu olmuş.",
+      "Onunla sevişmek İbrahim Sayacı ile sevişmek gibi",
+      "Aktanfell'de herkese yürüdü. (ban yedi)"
     ]
   }
 }

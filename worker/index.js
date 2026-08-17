@@ -26,7 +26,8 @@ const DEFAULT_CONFIG = {
     'Fenasal Nerd Paket',
     'Sekso Paket',
     'Kara Paket',
-    'Zifiri Paket'
+    'Zifiri Paket',
+    'Aktanfell Deste'
   ],
   deckMetadata: {
     'Ana Deste': { isSecret: false, lockDescription: 'Temel oyun destesi. Herkese açıktır.' },
@@ -35,7 +36,8 @@ const DEFAULT_CONFIG = {
     'Fenasal Nerd Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için VIP yetkisi gereklidir.' },
     'Sekso Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium veya VIP yetkisi gereklidir.' },
     'Kara Paket': { isSecret: false, lockDescription: 'Bu desteye erişmek için Premium yetkisi gereklidir.' },
-    'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' }
+    'Zifiri Paket': { isSecret: true, lockDescription: 'Gizli özel paket. Yalnızca özel davetli kullanıcılara açıktır.' },
+    'Aktanfell Deste': { isSecret: false, lockDescription: 'Aktanfell özel topluluk destesi.' }
   }
 };
 
@@ -46,6 +48,25 @@ export class GameRoomDO {
     this.env = env;
     this.room = null;
     this.sessions = new Map(); // serverWs -> playerId
+  }
+
+  async getLatestGlobalDeck() {
+    if (this.env && this.env.GAME_ROOMS) {
+      try {
+        const id = this.env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
+        const storageObj = this.env.GAME_ROOMS.get(id);
+        const res = await storageObj.fetch(new Request('http://internal/api/deck'));
+        if (res.ok) {
+          const deck = await res.json();
+          if (deck && (deck.Perks || deck.perks || deck['Red Flags'] || deck.red_flags)) {
+            return deck;
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching global deck from DO storage:', err);
+      }
+    }
+    return getActiveRawDeck();
   }
 
   async fetch(request) {
@@ -589,7 +610,9 @@ export class GameRoomDO {
             return;
           }
 
+          const latestDeck = await this.getLatestGlobalDeck();
           this.room.game = new GameEngine(this.room.code, this.room.settings);
+          this.room.game.initDecks(latestDeck);
           this.room.game.startGame(this.room.players);
 
           this.broadcast('game_started', {});

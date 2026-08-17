@@ -120,27 +120,35 @@ export async function syncDeckFromCloudflare() {
 export async function saveActiveDeck(jsonData) {
   saveActiveDeckLocal(jsonData);
   try {
-    await fetch(`${SERVER_URL}/api/deck`, {
+    const res = await fetch(`${SERVER_URL}/api/deck`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deck: jsonData })
     });
+    if (res.ok) {
+      return true;
+    }
   } catch (err) {
     console.error('Failed to sync deck to Cloudflare database:', err);
   }
+  return false;
 }
 
 // Reset customized deck back to original JSON in Cloudflare Database & localStorage
 export async function resetActiveDeck() {
   localStorage.removeItem(STORAGE_KEY);
   try {
-    await fetch(`${SERVER_URL}/api/deck/reset`, {
+    const res = await fetch(`${SERVER_URL}/api/deck/reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
+    if (res.ok) {
+      return true;
+    }
   } catch (err) {
     console.error('Failed to reset deck on Cloudflare database:', err);
   }
+  return false;
 }
 
 export const DEFAULT_RAW_CARDS = rawCardsData;

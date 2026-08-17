@@ -47,8 +47,8 @@ export class GameEngine {
     this.onStateChange = null;
   }
 
-  initDecks() {
-    this.deck = getDeck(this.deckType, null, this.selectedDecks);
+  initDecks(customRawDeck = null) {
+    this.deck = getDeck(this.deckType, customRawDeck, this.selectedDecks);
     this.usedCardIds = new Set();
   }
 
@@ -65,12 +65,14 @@ export class GameEngine {
     return cards;
   }
 
-  startGame(players) {
+  startGame(players, customRawDeck = null) {
     if (players.length < 2) {
       throw new Error('Oyunu başlatmak için en az 2 oyuncu gerekli!');
     }
 
-    this.initDecks();
+    if (!this.deck?.white?.length || customRawDeck) {
+      this.initDecks(customRawDeck);
+    }
     this.currentRound = 0;
     this.singleIndex = 0;
     this.hands = {};
