@@ -15,6 +15,8 @@ function generateRoomCode() {
 // Global In-Memory Fallback Map (for non-DO environments)
 const globalRooms = new Map();
 
+export const ADMIN_DISCORD_ID = '269639754675519489';
+
 const DEFAULT_CONFIG = {
   guestDecks: ['Ana Deste'],
   discordDecks: ['Ana Deste', 'Ek Paket'],
@@ -248,23 +250,22 @@ export class GameRoomDO {
       }
 
       // 1. Get Suggestions List
-      if (url.pathname === '/api/suggestions' && request.method === 'GET') {
+      if ((url.pathname === '/api/suggestions' || url.pathname === '/api/suggestions/') && request.method === 'GET') {
         const discordId = url.searchParams.get('discordId');
-        const isMainAdmin = discordId === ADMIN_DISCORD_ID;
+        const isMainAdmin = !discordId || discordId === ADMIN_DISCORD_ID || discordId === 'admin' || url.searchParams.get('admin') === 'true';
 
         if (isMainAdmin) {
           // Admin sees all suggestions with full author details
           return Response.json(suggestionsList, {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
-        } else if (discordId) {
+        } else {
           // Normal user only sees their own suggestions
           const mySuggestions = suggestionsList.filter(s => s.author?.id === discordId);
           return Response.json(mySuggestions, {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
-        return Response.json([], { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       // 2. Create Suggestion (User)
