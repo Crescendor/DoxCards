@@ -104,6 +104,40 @@ export class GameRoomDO {
     this.env = env;
     this.room = null;
     this.sessions = new Map(); // serverWs -> playerId
+    this.disconnectTimers = new Map(); // playerId -> setTimeout
+  }
+
+  removePlayerFromRoom(playerId) {
+    if (this.disconnectTimers.has(playerId)) {
+      clearTimeout(this.disconnectTimers.get(playerId));
+      this.disconnectTimers.delete(playerId);
+    }
+
+    if (!this.room) return;
+
+    this.room.players = this.room.players.filter(p => p.id !== playerId);
+    if (this.room.players.length === 0) {
+      if (this.room.game) this.room.game.clearTimer();
+      this.room = null;
+    } else {
+      if (this.room.hostId === playerId) {
+        this.room.hostId = this.room.players[0].id;
+        this.room.players[0].isHost = true;
+      }
+
+      if (this.room.game) {
+        this.room.game.removePlayer(playerId, this.room.players);
+        if (this.room.players.length < 2) {
+          this.room.game.clearTimer();
+          this.room.game = null;
+          this.broadcast('game_reset_to_lobby', {});
+        } else {
+          this.broadcastGameState();
+        }
+      }
+
+      this.broadcastRoomUpdate();
+    }
   }
 
   async alarm() {
@@ -551,6 +585,14 @@ export class GameRoomDO {
           }
         };
 
+        // 0. Keep-Alive Ping / Pong
+        if (evt === 'ping') {
+          try {
+            serverWs.send(JSON.stringify({ event: 'pong', data: { time: Date.now() } }));
+          } catch (e) {}
+          return;
+        }
+
         // 1. Create Room
         if (evt === 'create_room') {
           const { player, settings, roomCode } = data;
@@ -573,7 +615,7 @@ export class GameRoomDO {
           this.room = {
             code,
             hostId: player.id,
-            players: [{ ...player, name: cleanPlayerName, isHost: true, isReady: true, score: 0 }],
+            players: [{ ...player, name: cleanPlayerName, isHost: true, isReady: true, connected: true, score: 0 }],
             settings: initialSettings,
             game: null,
             messages: []
@@ -597,19 +639,20 @@ export class GameRoomDO {
           this.broadcastRoomUpdate();
         }
 
-        // 2. Join Room (Only existing active rooms allowed)
+        // 2. Join Room (or Reconnect to existing room)
         else if (evt === 'join_room') {
-          const { player, roomCode } = data;
+          const { player, roomCode, isReconnect } = data;
           const code = (roomCode || '').toLowerCase().trim();
+
+          // Cancel any pending disconnect timer for this player
+          if (this.disconnectTimers.has(player.id)) {
+            clearTimeout(this.disconnectTimers.get(player.id));
+            this.disconnectTimers.delete(player.id);
+          }
 
           // Reject if room does not exist or has no active players
           if (!this.room || !this.room.players || this.room.players.length === 0) {
             sendAck({ error: 'böyle bir oda bulunamadı veya oda kapatılmış.' });
-            return;
-          }
-
-          if (this.room.players.length >= (this.room.settings?.maxPlayers || 6)) {
-            sendAck({ error: 'oda dolu (maksimum 6 oyuncu).' });
             return;
           }
 
@@ -619,13 +662,19 @@ export class GameRoomDO {
           if (existingIdx !== -1) {
             this.room.players[existingIdx].name = cleanPlayerName;
             this.room.players[existingIdx].color = player.color;
+            this.room.players[existingIdx].connected = true;
             if (player.avatar) this.room.players[existingIdx].avatar = player.avatar;
           } else {
+            if (this.room.players.length >= (this.room.settings?.maxPlayers || 6)) {
+              sendAck({ error: 'oda dolu (maksimum 6 oyuncu).' });
+              return;
+            }
             this.room.players.push({
               ...player,
               name: cleanPlayerName,
               isHost: false,
               isReady: false,
+              connected: true,
               score: 0
             });
           }
@@ -976,34 +1025,10 @@ export class GameRoomDO {
           }
         }
 
-        // Leave Room
+        // Leave Room (Explicit user exit)
         else if (evt === 'leave_room') {
           const { playerId: pId } = data;
-          if (!this.room) return;
-
-          this.room.players = this.room.players.filter(p => p.id !== pId);
-          if (this.room.players.length === 0) {
-            if (this.room.game) this.room.game.clearTimer();
-            this.room = null;
-          } else {
-            if (this.room.hostId === pId) {
-              this.room.hostId = this.room.players[0].id;
-              this.room.players[0].isHost = true;
-            }
-
-            if (this.room.game) {
-              this.room.game.removePlayer(pId, this.room.players);
-              if (this.room.players.length < 2) {
-                this.room.game.clearTimer();
-                this.room.game = null;
-                this.broadcast('game_reset_to_lobby', {});
-              } else {
-                this.broadcastGameState();
-              }
-            }
-
-            this.broadcastRoomUpdate();
-          }
+          this.removePlayerFromRoom(pId);
           sendAck({ success: true });
         }
 
@@ -1060,28 +1085,36 @@ export class GameRoomDO {
       try {
         this.sessions.delete(serverWs);
         if (playerId && this.room) {
-          this.room.players = this.room.players.filter(p => p.id !== playerId);
-          if (this.room.players.length === 0) {
-            if (this.room.game) this.room.game.clearTimer();
-            this.room = null;
-          } else {
-            if (this.room.hostId === playerId) {
-              this.room.hostId = this.room.players[0].id;
-              this.room.players[0].isHost = true;
+          // Check if player still has another active connection
+          let stillActive = false;
+          for (const [ws, pId] of this.sessions.entries()) {
+            if (pId === playerId && ws.readyState === 1) {
+              stillActive = true;
+              break;
+            }
+          }
+
+          if (!stillActive) {
+            // Mark player as temporarily disconnected
+            const p = this.room.players.find(pl => pl.id === playerId);
+            if (p) {
+              p.connected = false;
+              this.broadcastRoomUpdate();
             }
 
-            if (this.room.game) {
-              this.room.game.removePlayer(playerId, this.room.players);
-              if (this.room.players.length < 2) {
-                this.room.game.clearTimer();
-                this.room.game = null;
-                this.broadcast('game_reset_to_lobby', {});
-              } else {
-                this.broadcastGameState();
-              }
+            // 25s grace period timer to allow auto-reconnect without disrupting game
+            if (!this.disconnectTimers.has(playerId)) {
+              const timer = setTimeout(() => {
+                this.disconnectTimers.delete(playerId);
+                if (this.room) {
+                  const checkPlayer = this.room.players.find(pl => pl.id === playerId);
+                  if (checkPlayer && checkPlayer.connected === false) {
+                    this.removePlayerFromRoom(playerId);
+                  }
+                }
+              }, 25000);
+              this.disconnectTimers.set(playerId, timer);
             }
-
-            this.broadcastRoomUpdate();
           }
         }
       } catch (err) {

@@ -223,17 +223,15 @@ export default function LobbyView({
 
                       {/* All Tags & Roles */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                        {isAdmin && (
-                          <span className="badge-admin">
-                            <ShieldCheck size={11} /> admin
-                          </span>
-                        )}
                         {slotPlayer.isHost && (
                           <span className="badge-host">
                             <Crown size={11} /> oda kurucusu
                           </span>
                         )}
-                        {(slotPlayer.tags || []).map(t => (
+                        {Array.from(new Set([
+                          ...(isAdmin ? ['admin'] : []),
+                          ...(slotPlayer.tags || [])
+                        ])).map(t => (
                           <TagBadge key={t} tag={t} size="sm" customTags={appConfig?.customTags} />
                         ))}
                       </div>

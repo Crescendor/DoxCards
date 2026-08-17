@@ -44,7 +44,7 @@ function generateClientRoomCode() {
   return code;
 }
 
-// Hybrid Socket Adapter supporting Cloudflare Worker Durable Object WebSockets and Socket.IO
+// Robust Universal Socket Adapter with Heartbeat & Auto-Reconnection
 class UniversalSocket {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
@@ -52,7 +52,13 @@ class UniversalSocket {
     this.listeners = new Map();
     this.pendingAcks = new Map();
     this.currentRoomCode = null;
+    this.lastJoinedRoomCode = null;
+    this.lastJoinedPlayerData = null;
     this.messageQueue = [];
+    this.pingInterval = null;
+    this.reconnectTimer = null;
+    this.reconnectAttempts = 0;
+    this.isIntentionalClose = false;
 
     if (this.isWs) {
       this.initWs('global');
@@ -60,23 +66,36 @@ class UniversalSocket {
       this.io = io(this.baseUrl, {
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: 10,
+        reconnectionAttempts: 15,
         reconnectionDelay: 1000
       });
     }
   }
 
   initWs(roomCode = 'global', onOpenCallback = null) {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+
     if (this.ws) {
       try {
-        this.ws.onclose = null;
+        this.ws.onopen = null;
+        this.ws.onmessage = null;
         this.ws.onerror = null;
+        this.ws.onclose = null;
         this.ws.close();
       } catch (e) {}
     }
 
     const normalizedRoom = (roomCode || 'global').toLowerCase().trim();
     this.currentRoomCode = normalizedRoom;
+    this.isIntentionalClose = false;
 
     let wsUrl = this.baseUrl
       .replace(/^http:\/\//i, 'ws://')
@@ -90,16 +109,46 @@ class UniversalSocket {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
+        this.reconnectAttempts = 0;
+
+        // Start Keep-Alive Ping every 10 seconds (prevents Cloudflare 1006 idle drop)
+        this.startHeartbeat();
+
         if (onOpenCallback) onOpenCallback();
+
+        // If we were previously in a room, re-join/reconnect to keep state synchronized
+        if (this.lastJoinedRoomCode && this.lastJoinedPlayerData && this.lastJoinedRoomCode === this.currentRoomCode) {
+          const reconnectPayload = JSON.stringify({
+            event: 'join_room',
+            data: {
+              roomCode: this.lastJoinedRoomCode,
+              player: this.lastJoinedPlayerData,
+              isReconnect: true
+            }
+          });
+          try {
+            this.ws.send(reconnectPayload);
+          } catch (e) {}
+        }
+
+        // Flush message queue
         while (this.messageQueue.length > 0) {
           const item = this.messageQueue.shift();
-          this.ws.send(item);
+          try {
+            this.ws.send(item);
+          } catch (e) {}
         }
       };
 
       this.ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
+
+          // Ignore pong heartbeats
+          if (msg.event === 'pong') {
+            return;
+          }
+
           if (msg.ackId && this.pendingAcks.has(msg.ackId)) {
             const cb = this.pendingAcks.get(msg.ackId);
             this.pendingAcks.delete(msg.ackId);
@@ -118,11 +167,50 @@ class UniversalSocket {
       };
 
       this.ws.onclose = (e) => {
+        if (this.pingInterval) {
+          clearInterval(this.pingInterval);
+          this.pingInterval = null;
+        }
+
         console.log('[Worker WS Closed]', e.code, e.reason);
+
+        // Auto-reconnect on unexpected closure (e.g. 1006 idle or temporary edge blip)
+        if (!this.isIntentionalClose && this.currentRoomCode && this.currentRoomCode !== 'global') {
+          this.scheduleReconnect();
+        }
       };
     } catch (err) {
       console.error('Failed to init WebSocket:', err);
+      if (!this.isIntentionalClose && this.currentRoomCode && this.currentRoomCode !== 'global') {
+        this.scheduleReconnect();
+      }
     }
+  }
+
+  startHeartbeat() {
+    if (this.pingInterval) clearInterval(this.pingInterval);
+    this.pingInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        try {
+          this.ws.send(JSON.stringify({ event: 'ping', data: { time: Date.now() } }));
+        } catch (e) {}
+      }
+    }, 10000); // 10 seconds keepalive
+  }
+
+  scheduleReconnect() {
+    if (this.reconnectTimer) return;
+
+    this.reconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(1.3, this.reconnectAttempts - 1), 4000);
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (!this.isIntentionalClose && this.currentRoomCode) {
+        console.log(`[Worker WS] Attempting auto-reconnect (${this.reconnectAttempts})...`);
+        this.initWs(this.currentRoomCode);
+      }
+    }, delay);
   }
 
   on(event, callback) {
@@ -159,6 +247,9 @@ class UniversalSocket {
     // 1. Create Room: generate code and connect to that DO room
     if (event === 'create_room') {
       const code = (data.roomCode || generateClientRoomCode()).toLowerCase().trim();
+      this.lastJoinedRoomCode = code;
+      this.lastJoinedPlayerData = data.player;
+
       const sendPayload = JSON.stringify({ event, data: { ...data, roomCode: code }, ackId });
 
       this.initWs(code, () => {
@@ -172,6 +263,9 @@ class UniversalSocket {
     // 2. Join Room: connect to that DO room and join
     if (event === 'join_room') {
       const code = (data.roomCode || '').toLowerCase().trim();
+      this.lastJoinedRoomCode = code;
+      this.lastJoinedPlayerData = data.player;
+
       const sendPayload = JSON.stringify({ event, data: { ...data, roomCode: code }, ackId });
 
       this.initWs(code, () => {
@@ -182,10 +276,26 @@ class UniversalSocket {
       return;
     }
 
-    // 3. General Events
+    // 3. Leave Room: intentional exit
+    if (event === 'leave_room') {
+      this.isIntentionalClose = true;
+      this.lastJoinedRoomCode = null;
+      this.lastJoinedPlayerData = null;
+      const payload = JSON.stringify({ event, data, ackId });
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(payload);
+      }
+      return;
+    }
+
+    // 4. General Events
     const payload = JSON.stringify({ event, data, ackId });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(payload);
+      try {
+        this.ws.send(payload);
+      } catch (e) {
+        this.messageQueue.push(payload);
+      }
     } else {
       this.messageQueue.push(payload);
     }

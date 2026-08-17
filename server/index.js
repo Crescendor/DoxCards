@@ -248,6 +248,10 @@ function broadcastRoomUpdate(room) {
 io.on('connection', (socket) => {
   console.log(`[Socket Connected] ID: ${socket.id}`);
 
+  socket.on('ping', () => {
+    socket.emit('pong', { time: Date.now() });
+  });
+
   // Create Room
   socket.on('create_room', ({ player, settings }, callback) => {
     try {
