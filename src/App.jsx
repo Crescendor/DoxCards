@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { socket, getLocalPlayer, saveLocalPlayer } from './services/socket';
 import { sounds } from './services/soundEffects';
 import LandingPage from './components/LandingPage';
