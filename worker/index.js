@@ -616,8 +616,9 @@ export class GameRoomDO {
             return;
           }
 
+          const liveDeck = await this.getLatestGlobalDeck();
           this.room.game = new GameEngine(this.room.code, this.room.settings);
-          this.room.game.startGame(this.room.players);
+          this.room.game.startGame(this.room.players, liveDeck);
 
           this.broadcast('game_started', {});
           this.broadcastRoomUpdate();
@@ -969,8 +970,9 @@ export class GameRoomDO {
         // 11. Play Again (Host only)
         else if (evt === 'play_again') {
           if (!this.room) return;
+          const liveDeck = await this.getLatestGlobalDeck();
           this.room.game = new GameEngine(this.room.code, this.room.settings);
-          this.room.game.startGame(this.room.players);
+          this.room.game.startGame(this.room.players, liveDeck);
 
           this.broadcast('game_started', {});
           this.broadcastRoomUpdate();
