@@ -93,25 +93,6 @@ export default function ProfileModal({
             <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
               discord id: <b style={{ color: '#cbd5e1' }}>{userProfile.id}</b>
             </span>
-
-            {/* Coin Pill */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(245, 158, 11, 0.15)',
-              border: '1px solid rgba(245, 158, 11, 0.35)',
-              color: '#fbbf24',
-              padding: '3px 10px',
-              borderRadius: '9999px',
-              fontSize: '0.82rem',
-              fontWeight: 800,
-              width: 'fit-content',
-              marginTop: '4px'
-            }}>
-              <Coins size={14} color="#fbbf24" />
-              {(userProfile.coins || 0).toLocaleString('tr-TR')} coin
-            </div>
           </div>
         </div>
 
@@ -120,20 +101,20 @@ export default function ProfileModal({
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8' }}>
             roller ve etiketler:
           </span>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
             {isAdmin && (
-              <span className="badge-admin" style={{ padding: '3px 10px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={12} /> admin
+              <span className="badge-admin">
+                <ShieldCheck size={11} /> admin
               </span>
             )}
             {userProfile.tags?.includes('VIP') && (
-              <span className="badge-vip" style={{ padding: '3px 10px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <Crown size={12} /> VIP
+              <span className="badge-vip">
+                <Crown size={11} /> VIP
               </span>
             )}
             {userProfile.tags?.includes('Premium') && (
-              <span className="badge-premium" style={{ padding: '3px 10px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <Sparkles size={12} /> Premium
+              <span className="badge-premium">
+                <Sparkles size={11} /> Premium
               </span>
             )}
             {(userProfile.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(t => (
@@ -141,10 +122,13 @@ export default function ProfileModal({
                 background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 color: '#e2e8f0',
-                padding: '3px 8px',
-                fontSize: '0.72rem',
+                padding: '0 8px',
+                height: '22px',
+                fontSize: '0.70rem',
                 fontWeight: 700,
-                borderRadius: '6px'
+                borderRadius: '6px',
+                display: 'inline-flex',
+                alignItems: 'center'
               }}>
                 {t}
               </span>
@@ -157,23 +141,23 @@ export default function ProfileModal({
           </div>
         </div>
 
-        {/* 3-Metric Stats Grid */}
+        {/* 2-Metric Stats Grid (NO COIN) */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '10px',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '12px',
           textAlign: 'center'
         }}>
           <div style={{
             background: '#222222',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '12px 8px',
-            borderRadius: '12px'
+            padding: '14px 10px',
+            borderRadius: '14px'
           }}>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, marginBottom: '2px' }}>
-              oyun sayısı
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'lowercase', marginBottom: '4px' }}>
+              toplam oyun
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
               {userProfile.totalGames || 0}
             </div>
           </div>
@@ -181,28 +165,14 @@ export default function ProfileModal({
           <div style={{
             background: '#222222',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '12px 8px',
-            borderRadius: '12px'
+            padding: '14px 10px',
+            borderRadius: '14px'
           }}>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, marginBottom: '2px' }}>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'lowercase', marginBottom: '4px' }}>
               toplam puan
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ef4444' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ef4444', lineHeight: 1 }}>
               {userProfile.totalScore || 0}
-            </div>
-          </div>
-
-          <div style={{
-            background: '#222222',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '12px 8px',
-            borderRadius: '12px'
-          }}>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, marginBottom: '2px' }}>
-              toplam coin
-            </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#fbbf24' }}>
-              {(userProfile.coins || 0).toLocaleString('tr-TR')}
             </div>
           </div>
         </div>

@@ -3264,22 +3264,22 @@ export default function AdminPageView({ onBack, discordUser }) {
                               </span>
                             )}
                             {isMainAdminUser && (
-                              <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                              <span className="badge-admin">
                                 <ShieldCheck size={10} /> ana yönetici
                               </span>
                             )}
                             {user.tags?.includes('admin') && !isMainAdminUser && (
-                              <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                              <span className="badge-admin">
                                 <ShieldCheck size={10} /> admin
                               </span>
                             )}
                             {user.tags?.includes('VIP') && (
-                              <span className="badge-vip" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                              <span className="badge-vip">
                                 <Crown size={10} /> VIP
                               </span>
                             )}
                             {user.tags?.includes('Premium') && (
-                              <span className="badge-premium" style={{ padding: '1px 6px', fontSize: '0.66rem' }}>
+                              <span className="badge-premium">
                                 <Sparkles size={10} /> Premium
                               </span>
                             )}

@@ -176,241 +176,222 @@ export default function LobbyView({
                   onMouseEnter={() => setHoveredSlotPlayerId(slotPlayer.id)}
                   onMouseLeave={() => setHoveredSlotPlayerId(null)}
                 >
-                  {/* Hover Profile Popover Card */}
+                  {/* Hover Profile Popover Card (NO COINS) */}
                   {isHovered && !isBot && (
                     <div style={{
                       position: 'absolute',
-                      bottom: 'calc(100% + 10px)',
+                      bottom: 'calc(100% + 12px)',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '270px',
-                      background: '#1c1c1c',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
+                      width: '260px',
+                      background: '#1a1a1a',
+                      border: '1px solid rgba(255, 255, 255, 0.16)',
                       borderRadius: '16px',
-                      padding: '14px',
-                      boxShadow: '0 16px 36px rgba(0, 0, 0, 0.85)',
+                      padding: '16px',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.9)',
                       zIndex: 100,
                       pointerEvents: 'none',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '10px',
-                      animation: 'fadeIn 0.15s ease'
+                      gap: '12px',
+                      animation: 'popIn 0.15s ease'
                     }}>
                       {/* Avatar & Identifiers */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img
                           src={slotPlayer.avatar || defaultAvatarImg}
                           alt={slotPlayer.name}
                           style={{
-                            width: '42px',
-                            height: '42px',
+                            width: '44px',
+                            height: '44px',
                             borderRadius: '50%',
                             objectFit: 'cover',
-                            border: '2px solid rgba(255, 255, 255, 0.3)'
+                            border: '2px solid rgba(255, 255, 255, 0.25)',
+                            flexShrink: 0
                           }}
                         />
-                        <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                          <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', minWidth: 0 }}>
+                          <span style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {slotPlayer.name}
                           </span>
-                          <span style={{ fontSize: '0.70rem', color: '#94a3b8' }}>
+                          <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
                             {slotPlayer.discordId ? `discord id: ${slotPlayer.discordId}` : 'misafir oyuncu'}
                           </span>
                         </div>
                       </div>
 
                       {/* All Tags & Roles */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                         {isAdmin && (
-                          <span className="badge-admin" style={{ height: '20px', padding: '0 6px', fontSize: '0.65rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <ShieldCheck size={10} /> admin
+                          <span className="badge-admin">
+                            <ShieldCheck size={11} /> admin
                           </span>
                         )}
                         {slotPlayer.isHost && (
-                          <span style={{ background: 'rgba(245, 158, 11, 0.2)', border: '1px solid rgba(245, 158, 11, 0.4)', color: '#fbbf24', fontSize: '0.65rem', fontWeight: 800, height: '20px', padding: '0 6px', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <Crown size={10} /> oda kurucusu
+                          <span className="badge-host">
+                            <Crown size={11} /> oda kurucusu
                           </span>
                         )}
                         {slotPlayer.tags?.includes('VIP') && (
-                          <span className="badge-vip" style={{ height: '20px', padding: '0 6px', fontSize: '0.65rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <Crown size={10} /> VIP
+                          <span className="badge-vip">
+                            <Crown size={11} /> VIP
                           </span>
                         )}
                         {slotPlayer.tags?.includes('Premium') && (
-                          <span className="badge-premium" style={{ height: '20px', padding: '0 6px', fontSize: '0.65rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <Sparkles size={10} /> Premium
+                          <span className="badge-premium">
+                            <Sparkles size={11} /> Premium
                           </span>
                         )}
                         {(slotPlayer.tags || []).filter(t => !['admin', 'VIP', 'Premium'].includes(t)).map(t => (
-                          <span key={t} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#cbd5e1', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                          <span key={t} style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#e2e8f0',
+                            fontSize: '0.70rem',
+                            fontWeight: 700,
+                            height: '22px',
+                            padding: '0 7px',
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}>
                             {t}
                           </span>
                         ))}
                       </div>
 
-                      {/* Stat Metrics Grid */}
+                      {/* Stat Metrics Grid (2 Columns: Toplam Oyun & Toplam Puan - NO COINS) */}
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '6px',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '8px',
                         background: '#242424',
-                        padding: '8px 6px',
-                        borderRadius: '10px',
+                        padding: '10px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
                         textAlign: 'center'
                       }}>
-                        <div>
-                          <div style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>oyun</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#ffffff' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700, textTransform: 'lowercase', marginBottom: '2px' }}>
+                            oyun
+                          </div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
                             {slotPlayer.totalGames || (isMe ? userProfile?.totalGames : 0) || 0}
                           </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>puan</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#ef4444' }}>
-                            {slotPlayer.totalScore || (isMe ? userProfile?.totalScore : 0) || 0}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700, textTransform: 'lowercase', marginBottom: '2px' }}>
+                            puan
                           </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>coin</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
-                            <Coins size={10} color="#fbbf24" />
-                            {(slotPlayer.coins || (isMe ? userProfile?.coins : 0) || 0).toLocaleString('tr-TR')}
+                          <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ef4444', lineHeight: 1 }}>
+                            {slotPlayer.totalScore || (isMe ? userProfile?.totalScore : 0) || 0}
                           </div>
                         </div>
                       </div>
                     </div>
                   )}
 
+                  {/* Player Info Box */}
                   <div className="player-info-wrap">
                     <img
                       src={slotPlayer.avatar || defaultAvatarImg}
                       alt={slotPlayer.name}
                       style={{
-                        width: '32px',
-                        height: '32px',
+                        width: '38px',
+                        height: '38px',
                         borderRadius: '50%',
                         objectFit: 'cover',
-                        border: '1.5px solid rgba(255, 255, 255, 0.25)',
-                        background: '#000'
+                        border: isMe ? '2px solid #38bdf8' : '2px solid rgba(255, 255, 255, 0.2)',
+                        background: '#141414',
+                        flexShrink: 0
                       }}
                     />
-                    <div>
-                      <div className="player-name-text">
-                        {slotPlayer.name} {isMe && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>(sen)</span>}
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'left', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1.2 }}>
+                        <span className="player-name-text">
+                          {slotPlayer.name}
+                        </span>
+                        {isMe && (
+                          <span style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 600 }}>
+                            (sen)
+                          </span>
+                        )}
                       </div>
 
                       {/* On-card tags: ONLY admin, host and bot */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        {isBot && (
-                          <span style={{
-                            background: 'rgba(234, 179, 8, 0.15)',
-                            border: '1px solid rgba(234, 179, 8, 0.45)',
-                            color: '#fde047',
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            height: '22px',
-                            padding: '0 8px',
-                            borderRadius: '9999px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            boxSizing: 'border-box'
-                          }}>
-                            bot
-                          </span>
-                        )}
+                      {(isBot || isAdmin || slotPlayer.isHost) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                          {isBot && (
+                            <span className="badge-bot">
+                              bot
+                            </span>
+                          )}
 
-                        {isAdmin && !isBot && (
-                          <span className="badge-admin" style={{ height: '22px', padding: '0 8px', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px', borderRadius: '9999px', boxSizing: 'border-box' }}>
-                            <ShieldCheck size={11} /> admin
-                          </span>
-                        )}
+                          {isAdmin && !isBot && (
+                            <span className="badge-admin">
+                              <ShieldCheck size={11} /> admin
+                            </span>
+                          )}
 
-                        {slotPlayer.isHost && (
-                          <span style={{
-                            background: 'rgba(245, 158, 11, 0.15)',
-                            border: '1px solid rgba(245, 158, 11, 0.4)',
-                            color: '#fbbf24',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            height: '22px',
-                            padding: '0 8px',
-                            borderRadius: '9999px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            boxSizing: 'border-box'
-                          }}>
-                            <Crown size={11} /> oda kurucusu
-                          </span>
-                        )}
-                      </div>
+                          {slotPlayer.isHost && (
+                            <span className="badge-host">
+                              <Crown size={11} /> oda kurucusu
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     {slotPlayer.isReady ? (
+                      <span className="badge-ready" style={{ height: '28px', padding: '0 12px', fontSize: '0.76rem' }}>
+                        <ShieldCheck size={13} /> hazır
+                      </span>
+                    ) : (
                       <span style={{
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        border: '1px solid rgba(16, 185, 129, 0.4)',
-                        color: '#34d399',
-                        fontSize: '0.74rem',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#f87171',
+                        fontSize: '0.76rem',
                         fontWeight: 700,
-                        height: '26px',
-                        padding: '0 10px',
+                        height: '28px',
+                        padding: '0 12px',
                         borderRadius: '9999px',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '5px',
                         boxSizing: 'border-box'
                       }}>
-                        <ShieldCheck size={12} /> hazır
-                      </span>
-                    ) : (
-                      <span style={{
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        color: '#64748b',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        height: '26px',
-                        padding: '0 10px',
-                        borderRadius: '9999px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        boxSizing: 'border-box'
-                      }}>
-                        bekleniyor
+                        <Hourglass size={12} /> hazırlanıyor
                       </span>
                     )}
 
-                    {/* Kick / Remove Bot Button (Host only) */}
+                    {/* Kick Button (Host only, cannot kick self) */}
                     {isHost && !isMe && (
                       <button
-                        onClick={() => {
-                          if (isBot && onRemoveBot) {
-                            sounds.playClick();
-                            onRemoveBot(slotPlayer.id);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sounds.playClick();
+                          if (isBot) {
+                            if (onRemoveBot) onRemoveBot(slotPlayer.id);
                           } else {
-                            handleKick(slotPlayer.id, slotPlayer.name);
+                            if (window.confirm(`${slotPlayer.name} adlı oyuncuyu odadan atmak istediğinize emin misiniz?`)) {
+                              onKickPlayer(slotPlayer.id);
+                            }
                           }
                         }}
+                        className="btn-icon"
+                        title={isBot ? "botu çıkar" : "oyuncuyu at"}
                         style={{
-                          background: 'rgba(239, 68, 68, 0.12)',
+                          width: '28px',
+                          height: '28px',
+                          background: 'rgba(239, 68, 68, 0.15)',
                           border: '1px solid rgba(239, 68, 68, 0.3)',
-                          color: '#f87171',
-                          cursor: 'pointer',
-                          padding: '5px 8px',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.72rem',
-                          fontWeight: 700
+                          color: '#f87171'
                         }}
-                        title={isBot ? 'botu kaldır' : `${slotPlayer.name} adlı oyuncuyu at`}
                       >
-                        <UserX size={12} /> {isBot ? 'kaldır' : 'at'}
+                        <UserX size={13} />
                       </button>
                     )}
                   </div>

@@ -56,17 +56,20 @@ export default function Navbar({
                 setProfileModalOpen(true);
               }}
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 background: '#1c1c1c',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '9999px',
-                padding: '4px 12px 4px 5px',
+                height: '38px',
+                padding: '0 12px 0 5px',
                 color: '#ffffff',
                 cursor: 'pointer',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                verticalAlign: 'middle',
+                boxSizing: 'border-box'
               }}
             >
               <img
@@ -82,49 +85,57 @@ export default function Navbar({
                   border: '1.5px solid rgba(255, 255, 255, 0.3)',
                   pointerEvents: 'none',
                   userSelect: 'none',
-                  WebkitUserDrag: 'none'
+                  WebkitUserDrag: 'none',
+                  flexShrink: 0
                 }}
               />
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, textTransform: 'lowercase' }}>
-                    {userProfile.displayName || userProfile.username}
-                  </span>
+              <span style={{
+                fontSize: '0.85rem',
+                fontWeight: 800,
+                textTransform: 'lowercase',
+                color: '#ffffff',
+                lineHeight: 1,
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}>
+                {userProfile.displayName || userProfile.username}
+              </span>
 
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '3px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    color: '#fbbf24',
-                    padding: '1px 6px',
-                    borderRadius: '9999px',
-                    fontSize: '0.68rem',
-                    fontWeight: 800
-                  }}>
-                    <Coins size={10} color="#fbbf24" />
-                    {(userProfile.coins || 0).toLocaleString('tr-TR')}
-                  </span>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                color: '#fbbf24',
+                height: '22px',
+                padding: '0 8px',
+                borderRadius: '9999px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                lineHeight: 1,
+                boxSizing: 'border-box'
+              }}>
+                <Coins size={11} color="#fbbf24" />
+                {(userProfile.coins || 0).toLocaleString('tr-TR')}
+              </span>
 
-                  {userProfile.tags?.includes('admin') && (
-                    <span className="badge-admin" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
-                      <ShieldCheck size={9} /> admin
-                    </span>
-                  )}
-                  {userProfile.tags?.includes('VIP') && (
-                    <span className="badge-vip" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
-                      <Crown size={9} /> VIP
-                    </span>
-                  )}
-                  {userProfile.tags?.includes('Premium') && (
-                    <span className="badge-premium" style={{ padding: '1px 6px', fontSize: '0.65rem' }}>
-                      <Sparkles size={9} /> Premium
-                    </span>
-                  )}
-                </div>
-              </div>
+              {userProfile.tags?.includes('admin') && (
+                <span className="badge-admin">
+                  <ShieldCheck size={10} /> admin
+                </span>
+              )}
+              {userProfile.tags?.includes('VIP') && (
+                <span className="badge-vip">
+                  <Crown size={10} /> VIP
+                </span>
+              )}
+              {userProfile.tags?.includes('Premium') && (
+                <span className="badge-premium">
+                  <Sparkles size={10} /> Premium
+                </span>
+              )}
             </button>
           </div>
         )}
