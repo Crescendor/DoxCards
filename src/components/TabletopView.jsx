@@ -927,73 +927,32 @@ export default function TabletopView({
           {topPlayers.map(p => renderDesk(p))}
         </div>
 
-        {/* DoxCards Logo & Round Summary Actions in Center Gap */}
+        {/* DoxCards Logo in Table Header Gap */}
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
+          height: 'clamp(16px, 2.4vh, 26px)',
           padding: '0',
           userSelect: 'none',
-          flexShrink: 0,
-          position: 'relative',
-          zIndex: 70
+          pointerEvents: 'none',
+          flexShrink: 0
         }}>
-          {phase === 'ROUND_SUMMARY' ? (
-            <div style={{
-              background: 'rgba(20, 20, 20, 0.95)',
-              border: '2px solid #10b981',
-              borderRadius: '14px',
-              padding: '8px 20px',
-              boxShadow: '0 0 35px rgba(16, 185, 129, 0.45)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              backdropFilter: 'blur(16px)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 800, fontSize: '0.88rem' }}>
-                <Crown size={17} color="#10b981" />
-                <span>tur tamamlandı! {allRoomPlayers.find(p => p.id === roundWinner)?.name ? `${allRoomPlayers.find(p => p.id === roundWinner)?.name} kazandı` : ''}</span>
-              </div>
-              <button
-                onClick={() => socket.emit('next_round', { roomCode: room?.code })}
-                style={{
-                  background: '#10b981',
-                  color: '#000000',
-                  border: 'none',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  fontWeight: 800,
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>sonraki tur</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          ) : (
-            <div style={{ height: 'clamp(16px, 2.4vh, 26px)' }}>
-              <img
-                src={doxcardsLogoImg}
-                alt="DoxCards"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-                style={{
-                  height: '100%',
-                  objectFit: 'contain',
-                  opacity: 0.85,
-                  filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))',
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  WebkitUserDrag: 'none'
-                }}
-              />
-            </div>
-          )}
+          <img
+            src={doxcardsLogoImg}
+            alt="DoxCards"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+            style={{
+              height: '100%',
+              objectFit: 'contain',
+              opacity: 0.85,
+              filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7))',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              WebkitUserDrag: 'none'
+            }}
+          />
         </div>
 
         {/* BOTTOM ROW: Up to 3 player desks side-by-side */}
