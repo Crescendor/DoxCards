@@ -114,6 +114,8 @@ export default function AdminPageView({ onBack, discordUser }) {
   // Edit card state
   const [editingCardId, setEditingCardId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [editingCardCategory, setEditingCardCategory] = useState('');
+  const [editingCardType, setEditingCardType] = useState('perk');
 
   // Add card form state
   const [newType, setNewType] = useState('perk'); // 'perk' | 'redflag'
@@ -306,26 +308,42 @@ export default function AdminPageView({ onBack, discordUser }) {
     sounds.playClick();
     setEditingCardId(card.id);
     setEditingText(card.text);
+    setEditingCardCategory(card.category);
+    setEditingCardType(card.type);
   };
 
   // Save inline edit
   const handleSaveEdit = (card) => {
     if (!editingText.trim()) return;
     sounds.playClick();
-    const section = card.type === 'perk' ? 'Perks' : 'Red Flags';
+
+    const oldSection = card.type === 'perk' ? 'Perks' : 'Red Flags';
+    const oldCategory = card.category;
+
+    const newSection = editingCardType === 'perk' ? 'Perks' : 'Red Flags';
+    const newCategory = (editingCardCategory || card.category || 'Ana Deste').trim();
+    const newTxt = editingText.trim();
+
     const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
 
-    if (updatedRaw[section] && updatedRaw[section][card.category]) {
-      const list = updatedRaw[section][card.category];
-      const idx = list.findIndex(txt => txt.trim() === card.text.trim());
+    // 1. Remove card from old position
+    if (updatedRaw[oldSection] && updatedRaw[oldSection][oldCategory]) {
+      const oldList = updatedRaw[oldSection][oldCategory];
+      const idx = oldList.findIndex(txt => txt.trim() === card.text.trim());
       if (idx !== -1) {
-        list[idx] = editingText.trim();
-        saveActiveDeck(updatedRaw);
-        setDeckState(parseRawDeck(updatedRaw));
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2000);
+        oldList.splice(idx, 1);
       }
     }
+
+    // 2. Insert card into new destination deck / category
+    updatedRaw[newSection] = updatedRaw[newSection] || {};
+    updatedRaw[newSection][newCategory] = updatedRaw[newSection][newCategory] || [];
+    updatedRaw[newSection][newCategory].push(newTxt);
+
+    saveActiveDeck(updatedRaw);
+    setDeckState(parseRawDeck(updatedRaw));
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
     setEditingCardId(null);
   };
 
@@ -1345,84 +1363,150 @@ export default function AdminPageView({ onBack, discordUser }) {
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                            <span style={{
-                              background: card.type === 'perk' ? '#ffffff' : '#d90429',
-                              color: card.type === 'perk' ? '#000000' : '#ffffff',
-                              fontSize: '0.72rem',
-                              fontWeight: 800,
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.04em'
-                            }}>
-                              {card.type === 'perk' ? 'perk' : 'red flag'}
-                            </span>
-
-                            <span style={{
-                              background: 'rgba(255, 255, 255, 0.08)',
-                              color: '#94a3b8',
-                              fontSize: '0.72rem',
-                              fontWeight: 600,
-                              padding: '3px 8px',
-                              borderRadius: '6px'
-                            }}>
-                              {card.category}
-                            </span>
-
-                            {isBlank && (
-                              <span style={{
-                                background: 'rgba(251, 191, 36, 0.15)',
-                                color: '#fbbf24',
-                                border: '1px solid rgba(251, 191, 36, 0.3)',
-                                fontSize: '0.7rem',
-                                fontWeight: 800,
-                                padding: '2px 7px',
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '3px'
-                              }}>
-                                <Tag size={10} /> boşluklu kart
-                              </span>
-                            )}
-
                             {isEditing ? (
-                              <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
-                                <input
-                                  type="text"
-                                  value={editingText}
-                                  onChange={(e) => setEditingText(e.target.value)}
-                                  className="form-input"
-                                  style={{ padding: '8px 12px', fontSize: '0.9rem' }}
-                                  autoFocus
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingText(prev => (prev ? prev.trim() + ' [boşluk] ' : '[boşluk] '))}
-                                  style={{
-                                    background: 'rgba(251, 191, 36, 0.15)',
-                                    border: '1px solid #fbbf24',
-                                    color: '#fbbf24',
-                                    padding: '6px 10px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  + [boşluk]
-                                </button>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                  {/* Type Switcher */}
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingCardType('perk')}
+                                      style={{
+                                        background: editingCardType === 'perk' ? '#ffffff' : '#141414',
+                                        color: editingCardType === 'perk' ? '#000000' : '#ffffff',
+                                        border: editingCardType === 'perk' ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.2)',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      beyaz (perk)
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingCardType('redflag')}
+                                      style={{
+                                        background: editingCardType === 'redflag' ? '#d90429' : '#141414',
+                                        color: '#ffffff',
+                                        border: editingCardType === 'redflag' ? '1px solid #d90429' : '1px solid rgba(255, 255, 255, 0.2)',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      kırmızı (red flag)
+                                    </button>
+                                  </div>
+
+                                  {/* Deck / Package Selector */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>deste / paket:</span>
+                                    <select
+                                      value={editingCardCategory}
+                                      onChange={(e) => setEditingCardCategory(e.target.value)}
+                                      style={{
+                                        padding: '4px 10px',
+                                        fontSize: '0.78rem',
+                                        background: '#141414',
+                                        border: '1px solid #3b82f6',
+                                        borderRadius: '6px',
+                                        color: '#ffffff',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {combinedDeckList.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Text Input */}
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <input
+                                    type="text"
+                                    value={editingText}
+                                    onChange={(e) => setEditingText(e.target.value)}
+                                    className="form-input"
+                                    style={{ padding: '8px 12px', fontSize: '0.9rem', flex: 1 }}
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingText(prev => (prev ? prev.trim() + ' [boşluk] ' : '[boşluk] '))}
+                                    style={{
+                                      background: 'rgba(251, 191, 36, 0.15)',
+                                      border: '1px solid #fbbf24',
+                                      color: '#fbbf24',
+                                      padding: '6px 10px',
+                                      borderRadius: '8px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    + [boşluk]
+                                  </button>
+                                </div>
                               </div>
                             ) : (
-                              <span style={{
-                                fontSize: '0.92rem',
-                                fontWeight: 600,
-                                color: '#ffffff',
-                                flex: 1
-                              }}>
-                                {card.text}
-                              </span>
+                              <>
+                                <span style={{
+                                  background: card.type === 'perk' ? '#ffffff' : '#d90429',
+                                  color: card.type === 'perk' ? '#000000' : '#ffffff',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.04em'
+                                }}>
+                                  {card.type === 'perk' ? 'perk' : 'red flag'}
+                                </span>
+
+                                <span style={{
+                                  background: 'rgba(255, 255, 255, 0.08)',
+                                  color: '#94a3b8',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  padding: '3px 8px',
+                                  borderRadius: '6px'
+                                }}>
+                                  {card.category}
+                                </span>
+
+                                {isBlank && (
+                                  <span style={{
+                                    background: 'rgba(251, 191, 36, 0.15)',
+                                    color: '#fbbf24',
+                                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 800,
+                                    padding: '2px 7px',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}>
+                                    <Tag size={10} /> boşluklu kart
+                                  </span>
+                                )}
+
+                                <span style={{
+                                  fontSize: '0.92rem',
+                                  fontWeight: 600,
+                                  color: '#ffffff',
+                                  flex: 1
+                                }}>
+                                  {card.text}
+                                </span>
+                              </>
                             )}
                           </div>
 
