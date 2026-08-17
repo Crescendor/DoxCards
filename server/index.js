@@ -40,7 +40,7 @@ let localConfig = {
       bgColor: 'rgba(239, 68, 68, 0.18)',
       borderColor: 'rgba(239, 68, 68, 0.45)',
       glow: 'crimson',
-      animation: 'none',
+      animation: 'crimson_flare',
       permissions: {
         customSounds: true,
         allDecks: true,
@@ -56,7 +56,7 @@ let localConfig = {
       bgColor: 'rgba(168, 85, 247, 0.18)',
       borderColor: 'rgba(168, 85, 247, 0.45)',
       glow: 'neon_purple',
-      animation: 'pulse',
+      animation: 'neon_pulse',
       permissions: {
         customSounds: true,
         allDecks: false,
@@ -72,7 +72,7 @@ let localConfig = {
       bgColor: 'rgba(56, 189, 248, 0.18)',
       borderColor: 'rgba(56, 189, 248, 0.45)',
       glow: 'neon_blue',
-      animation: 'shimmer',
+      animation: 'cyber_scan',
       permissions: {
         customSounds: true,
         allDecks: false,

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb, Link2, Coins } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import ProfileModal from './ProfileModal';
 import TagBadge from './TagBadge';
+import { fetchAppConfig, DEFAULT_CONFIG } from '../services/userService';
 
 export default function Navbar({
   roomCode,
@@ -19,6 +20,13 @@ export default function Navbar({
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
+
+  useEffect(() => {
+    fetchAppConfig().then(cfg => {
+      if (cfg) setAppConfig(cfg);
+    });
+  }, []);
 
   const handleCopyCode = () => {
     if (!roomCode) return;
@@ -123,7 +131,7 @@ export default function Navbar({
               </span>
 
               {(userProfile.tags || []).map(t => (
-                <TagBadge key={t} tag={t} size="sm" />
+                <TagBadge key={t} tag={t} size="sm" customTags={appConfig?.customTags} />
               ))}
             </button>
           </div>

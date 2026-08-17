@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
-import { fetchAppConfig, updateUser, saveLocalUserProfile } from '../services/userService';
+import { fetchAppConfig, updateUser, saveLocalUserProfile, DEFAULT_CONFIG } from '../services/userService';
 import { socket } from '../services/socket';
 import TagBadge from './TagBadge';
 
@@ -32,6 +32,7 @@ export default function ProfileModal({
 }) {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'audio_theme'
   const [customMuted, setCustomMuted] = useState(sounds.customMuted);
+  const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
 
   // Custom sounds configuration for VIP / Premium users
   const [appSounds, setAppSounds] = useState([]);
@@ -46,9 +47,12 @@ export default function ProfileModal({
     if (isOpen) {
       setCustomMuted(sounds.customMuted);
       fetchAppConfig().then(cfg => {
-        if (cfg && Array.isArray(cfg.customSounds)) {
-          setAppSounds(cfg.customSounds);
-          sounds.setCustomSounds(cfg.customSounds);
+        if (cfg) {
+          setAppConfig(cfg);
+          if (Array.isArray(cfg.customSounds)) {
+            setAppSounds(cfg.customSounds);
+            sounds.setCustomSounds(cfg.customSounds);
+          }
         }
       });
       setSelectedWhiteSound(userProfile?.customSounds?.whiteCardSoundId || '');

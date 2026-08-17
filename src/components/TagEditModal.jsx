@@ -66,10 +66,27 @@ const GLOW_OPTIONS = [
 ];
 
 const ANIMATION_OPTIONS = [
-  { id: 'none', label: 'Yok (Sabit)' },
-  { id: 'pulse', label: 'Nabız (Pulse)' },
-  { id: 'shimmer', label: 'Işıltı Dalgası (Shimmer)' },
-  { id: 'bounce', label: 'Süzülme (Float)' }
+  { id: 'none', label: 'Yok (Sabit Rozet)' },
+  { id: 'rgb_outline', label: 'Dönen RGB Kenarlık (RGB Outline)' },
+  { id: 'neon_pulse', label: 'Neon Işık Nabzı (Neon Pulse)' },
+  { id: 'rainbow_flow', label: 'Gökkuşağı Akışı (Rainbow Flow)' },
+  { id: 'gold_radiance', label: 'Altın Işıltısı (Golden Radiance)' },
+  { id: 'cyber_scan', label: 'Siber Tarama (Cyber Scan)' },
+  { id: 'fire_blaze', label: 'Alev Parıltısı (Flame Blaze)' },
+  { id: 'cosmic_pulse', label: 'Kozmik Parlama (Cosmic Pulse)' },
+  { id: 'emerald_spark', label: 'Zümrüt Kıvılcımı (Emerald Spark)' },
+  { id: 'glitch_flicker', label: 'Siber Glitch (Cyber Glitch)' },
+  { id: 'laser_sweep', label: 'Lazer Süpürme (Laser Sweep)' },
+  { id: 'aurora', label: 'Kuzey Işıkları (Aurora Borealis)' },
+  { id: 'plasma_wave', label: 'Plazma Dalgası (Plasma Energy)' },
+  { id: 'ice_shimmer', label: 'Buzul Işıltısı (Glacier Ice)' },
+  { id: 'starlight', label: 'Yıldız Tozu (Starlight Twinkle)' },
+  { id: 'radioactive', label: 'Radyoaktif Işıma (Radioactive)' },
+  { id: 'sunset_flow', label: 'Gün Batımı Akışı (Sunset Flow)' },
+  { id: 'hologram', label: 'Hologram Efekti (Holographic)' },
+  { id: 'disco_glow', label: 'Disko Işık Döngüsü (Disco Strobe)' },
+  { id: 'dark_matter', label: 'Karanlık Madde (Dark Matter)' },
+  { id: 'crimson_flare', label: 'Kızıl Parlama (Crimson Flare)' }
 ];
 
 export default function TagEditModal({

@@ -382,60 +382,218 @@
   }
 }
 
-/* Badge Glow & Animation Presets */
-@keyframes tagPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.88; }
+/* ========================================================================= */
+/* BADGE OPTICAL & LIGHTING ANIMATION PRESETS (NO PHYSICAL TRANSLATION/SCALE) */
+/* ========================================================================= */
+
+/* 1. Dönen RGB Kenarlık (RGB Outline) */
+@keyframes tagRgbOutline {
+  0% { border-color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.65), inset 0 0 5px rgba(255, 0, 85, 0.25); }
+  25% { border-color: #00e5ff; box-shadow: 0 0 10px rgba(0, 229, 255, 0.65), inset 0 0 5px rgba(0, 229, 255, 0.25); }
+  50% { border-color: #00ff66; box-shadow: 0 0 10px rgba(0, 255, 102, 0.65), inset 0 0 5px rgba(0, 255, 102, 0.25); }
+  75% { border-color: #ffea00; box-shadow: 0 0 10px rgba(255, 234, 0, 0.65), inset 0 0 5px rgba(255, 234, 0, 0.25); }
+  100% { border-color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.65), inset 0 0 5px rgba(255, 0, 85, 0.25); }
+}
+.anim-rgb_outline {
+  animation: tagRgbOutline 3s infinite linear;
 }
 
-@keyframes tagFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+/* 2. Neon Işık Nabzı (Neon Pulse) */
+@keyframes tagNeonPulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px currentColor); }
+  50% { filter: brightness(1.4) drop-shadow(0 0 8px currentColor); }
+}
+.anim-neon_pulse {
+  animation: tagNeonPulse 1.8s infinite ease-in-out;
 }
 
-@keyframes tagShimmer {
+/* 3. Gökkuşağı Akışı (Rainbow Flow) */
+@keyframes tagRainbowFlow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+.anim-rainbow_flow {
+  animation: tagRainbowFlow 4s infinite linear;
+}
+
+/* 4. Altın Işıltısı (Golden Radiance) */
+@keyframes tagGoldRadiance {
+  0%, 100% { border-color: rgba(245, 158, 11, 0.45); box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); }
+  50% { border-color: rgba(253, 224, 71, 0.95); box-shadow: 0 0 14px rgba(251, 191, 36, 0.8), inset 0 0 8px rgba(251, 191, 36, 0.4); filter: brightness(1.2); }
+}
+.anim-gold_radiance {
+  animation: tagGoldRadiance 2.2s infinite ease-in-out;
+}
+
+/* 5. Siber Tarama (Cyber Scan) */
+@keyframes tagCyberScan {
+  0%, 100% { border-color: #06b6d4; box-shadow: 0 0 8px rgba(6, 182, 212, 0.5); }
+  50% { border-color: #3b82f6; box-shadow: 0 0 16px rgba(59, 130, 246, 0.8), inset 0 0 6px rgba(6, 182, 212, 0.4); filter: brightness(1.25); }
+}
+.anim-cyber_scan {
+  animation: tagCyberScan 2s infinite ease-in-out;
+}
+
+/* 6. Alev Parıltısı (Flame Blaze) */
+@keyframes tagFireBlaze {
+  0%, 100% { border-color: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+  50% { border-color: #f97316; box-shadow: 0 0 16px rgba(249, 115, 22, 0.85), inset 0 0 6px rgba(234, 179, 8, 0.4); filter: brightness(1.25); }
+}
+.anim-fire_blaze {
+  animation: tagFireBlaze 1.6s infinite ease-in-out;
+}
+
+/* 7. Kozmik Parlama (Cosmic Pulse) */
+@keyframes tagCosmicPulse {
+  0%, 100% { border-color: #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.5); }
+  50% { border-color: #ec4899; box-shadow: 0 0 16px rgba(236, 72, 153, 0.8), inset 0 0 6px rgba(139, 92, 246, 0.4); filter: brightness(1.25); }
+}
+.anim-cosmic_pulse {
+  animation: tagCosmicPulse 2.4s infinite ease-in-out;
+}
+
+/* 8. Zümrüt Kıvılcımı (Emerald Spark) */
+@keyframes tagEmeraldSpark {
+  0%, 100% { border-color: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+  50% { border-color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.85), inset 0 0 7px rgba(16, 185, 129, 0.4); filter: brightness(1.2); }
+}
+.anim-emerald_spark {
+  animation: tagEmeraldSpark 2s infinite ease-in-out;
+}
+
+/* 9. Siber Glitch (Cyber Glitch Glow) */
+@keyframes tagGlitchFlicker {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px currentColor); }
+  90% { opacity: 1; filter: none; }
+  92% { opacity: 0.85; filter: drop-shadow(-1px 0 3px #06b6d4) drop-shadow(1px 0 3px #f43f5e); }
+  94% { opacity: 1; filter: drop-shadow(0 0 6px currentColor); }
+  97% { opacity: 0.9; filter: brightness(1.35); }
+}
+.anim-glitch_flicker {
+  animation: tagGlitchFlicker 3.2s infinite steps(1);
+}
+
+/* 10. Lazer Süpürme (Laser Sweep) */
+@keyframes tagLaserSweep {
   0% { filter: brightness(1); }
-  50% { filter: brightness(1.35) drop-shadow(0 0 4px currentColor); }
+  50% { filter: brightness(1.5) drop-shadow(0 0 8px currentColor); }
   100% { filter: brightness(1); }
 }
-
-.anim-pulse {
-  animation: tagPulse 2s infinite ease-in-out;
+.anim-laser_sweep {
+  animation: tagLaserSweep 1.5s infinite ease-in-out;
 }
 
-.anim-bounce {
-  animation: tagFloat 2.5s infinite ease-in-out;
+/* 11. Kuzey Işıkları (Aurora Borealis) */
+@keyframes tagAurora {
+  0% { border-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+  33% { border-color: #06b6d4; box-shadow: 0 0 12px rgba(6, 182, 212, 0.7); }
+  66% { border-color: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.7); }
+  100% { border-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+}
+.anim-aurora {
+  animation: tagAurora 3.5s infinite linear;
 }
 
-.anim-shimmer {
-  animation: tagShimmer 2.2s infinite ease-in-out;
+/* 12. Plazma Enerjisi (Plasma Energy) */
+@keyframes tagPlasmaWave {
+  0%, 100% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), inset 0 0 4px rgba(168, 85, 247, 0.3); }
+  50% { box-shadow: 0 0 18px rgba(217, 70, 239, 0.9), inset 0 0 10px rgba(168, 85, 247, 0.6); filter: brightness(1.3); }
+}
+.anim-plasma_wave {
+  animation: tagPlasmaWave 1.8s infinite ease-in-out;
 }
 
-.glow-none {
-  box-shadow: none;
+/* 13. Buzul Işıltısı (Glacier Ice Sheen) */
+@keyframes tagIceShimmer {
+  0%, 100% { border-color: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.5); }
+  50% { border-color: #e0f2fe; box-shadow: 0 0 16px rgba(56, 189, 248, 0.9), inset 0 0 8px rgba(125, 211, 252, 0.5); filter: brightness(1.35); }
+}
+.anim-ice_shimmer {
+  animation: tagIceShimmer 2.2s infinite ease-in-out;
 }
 
-.glow-subtle_red {
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+/* 14. Yıldız Tozu (Starlight Twinkle) */
+@keyframes tagStarlight {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)); }
+  45% { filter: brightness(1.05); }
+  50% { filter: brightness(1.7) drop-shadow(0 0 12px #ffffff); }
+  55% { filter: brightness(1.05); }
+}
+.anim-starlight {
+  animation: tagStarlight 2.8s infinite ease-in-out;
 }
 
-.glow-crimson {
-  box-shadow: 0 0 12px rgba(220, 38, 38, 0.55), inset 0 0 6px rgba(220, 38, 38, 0.25);
+/* 15. Radyoaktif Işıma (Radioactive Glow) */
+@keyframes tagRadioactive {
+  0%, 100% { border-color: #84cc16; box-shadow: 0 0 8px rgba(132, 204, 22, 0.5); }
+  50% { border-color: #a3e635; box-shadow: 0 0 18px rgba(163, 230, 53, 0.9), inset 0 0 8px rgba(132, 204, 22, 0.4); filter: brightness(1.3); }
+}
+.anim-radioactive {
+  animation: tagRadioactive 1.7s infinite ease-in-out;
 }
 
-.glow-neon_purple {
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.6), inset 0 0 6px rgba(168, 85, 247, 0.3);
+/* 16. Gün Batımı Akışı (Sunset Flow) */
+@keyframes tagSunsetFlow {
+  0% { border-color: #f43f5e; box-shadow: 0 0 8px rgba(244, 63, 94, 0.6); }
+  50% { border-color: #fb923c; box-shadow: 0 0 14px rgba(251, 146, 60, 0.8); }
+  100% { border-color: #f43f5e; box-shadow: 0 0 8px rgba(244, 63, 94, 0.6); }
+}
+.anim-sunset_flow {
+  animation: tagSunsetFlow 2.6s infinite ease-in-out;
 }
 
-.glow-neon_blue {
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6), inset 0 0 6px rgba(56, 189, 248, 0.3);
+/* 17. Hologram Efekti (Holographic Sheen) */
+@keyframes tagHologram {
+  0% { filter: hue-rotate(0deg) contrast(1.1); }
+  50% { filter: hue-rotate(180deg) contrast(1.3) brightness(1.2); }
+  100% { filter: hue-rotate(360deg) contrast(1.1); }
+}
+.anim-hologram {
+  animation: tagHologram 3s infinite linear;
 }
 
-.glow-golden {
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.6), inset 0 0 6px rgba(245, 158, 11, 0.3);
+/* 18. Disko Işık Döngüsü (Disco Strobe Cycle) */
+@keyframes tagDiscoGlow {
+  0% { box-shadow: 0 0 10px #ef4444; border-color: #ef4444; }
+  25% { box-shadow: 0 0 10px #eab308; border-color: #eab308; }
+  50% { box-shadow: 0 0 10px #22c55e; border-color: #22c55e; }
+  75% { box-shadow: 0 0 10px #3b82f6; border-color: #3b82f6; }
+  100% { box-shadow: 0 0 10px #ef4444; border-color: #ef4444; }
+}
+.anim-disco_glow {
+  animation: tagDiscoGlow 2.5s infinite linear;
 }
 
-.glow-emerald {
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.3);
+/* 19. Karanlık Madde (Dark Matter Aura) */
+@keyframes tagDarkMatter {
+  0%, 100% { border-color: #4c1d95; box-shadow: 0 0 6px rgba(124, 58, 237, 0.5); }
+  50% { border-color: #7c3aed; box-shadow: 0 0 16px rgba(168, 85, 247, 0.8), inset 0 0 8px #4c1d95; filter: brightness(1.2); }
 }
+.anim-dark_matter {
+  animation: tagDarkMatter 2.5s infinite ease-in-out;
+}
+
+/* 20. Kızıl Parlama (Crimson Flare) */
+@keyframes tagCrimsonFlare {
+  0%, 100% { border-color: #dc2626; box-shadow: 0 0 8px rgba(220, 38, 38, 0.5); }
+  50% { border-color: #f87171; box-shadow: 0 0 18px rgba(239, 68, 68, 0.85), inset 0 0 6px rgba(220, 38, 38, 0.5); filter: brightness(1.3); }
+}
+.anim-crimson_flare {
+  animation: tagCrimsonFlare 1.8s infinite ease-in-out;
+}
+
+/* Legacy fallback aliases to prevent any broken classes */
+.anim-pulse { animation: tagNeonPulse 1.8s infinite ease-in-out; }
+.anim-shimmer { animation: tagGoldRadiance 2.2s infinite ease-in-out; }
+.anim-bounce { animation: tagLaserSweep 1.5s infinite ease-in-out; }
+
+/* Glow Utilities */
+.glow-none { box-shadow: none; }
+.glow-subtle_red { box-shadow: 0 0 10px rgba(239, 68, 68, 0.45); }
+.glow-crimson { box-shadow: 0 0 12px rgba(220, 38, 38, 0.55), inset 0 0 6px rgba(220, 38, 38, 0.25); }
+.glow-neon_purple { box-shadow: 0 0 14px rgba(168, 85, 247, 0.6), inset 0 0 6px rgba(168, 85, 247, 0.3); }
+.glow-neon_blue { box-shadow: 0 0 14px rgba(56, 189, 248, 0.6), inset 0 0 6px rgba(56, 189, 248, 0.3); }
+.glow-golden { box-shadow: 0 0 14px rgba(245, 158, 11, 0.6), inset 0 0 6px rgba(245, 158, 11, 0.3); }
+.glow-emerald { box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.3); }
+
 
