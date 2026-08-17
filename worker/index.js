@@ -610,9 +610,7 @@ export class GameRoomDO {
             return;
           }
 
-          const latestDeck = await this.getLatestGlobalDeck();
           this.room.game = new GameEngine(this.room.code, this.room.settings);
-          this.room.game.initDecks(latestDeck);
           this.room.game.startGame(this.room.players);
 
           this.broadcast('game_started', {});
@@ -994,6 +992,13 @@ export class GameRoomDO {
 
           this.broadcastRoomUpdate();
         }
+      } catch (err) {
+        console.error('Error handling WebSocket message:', err);
+        try {
+          if (ackId) {
+            serverWs.send(JSON.stringify({ ackId, response: { error: err.message || 'Bir sunucu hatası oluştu.' } }));
+          }
+        } catch (e) {}
       }
     });
   }
