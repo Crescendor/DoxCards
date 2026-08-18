@@ -488,8 +488,10 @@ export default function TabletopView({
     }
   };
 
-  // Start Card Pointer Drag
-  const startCardDrag = (e, card, type) => {
+  // Pointer Tracking with Distance Threshold for Seamless Tap-to-Play vs Drag
+  const pointerStartRef = useRef(null);
+
+  const handleCardPointerDown = (e, card, type) => {
     if (!isMyTurn) return;
     if (type === 'perk' && (phase !== 'PERKS' || myCandidate?.whiteCardsSubmitted)) return;
     if (type === 'redflag' && (phase !== 'SABOTAGE' || !mySabotageTarget || mySabotageTarget.targetCandidate?.hasRedFlag)) return;
@@ -497,41 +499,58 @@ export default function TabletopView({
     const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
     const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY) ?? 0;
 
-    lastPosRef.current = { x: clientX, y: clientY };
-
-    const initialDrag = {
+    pointerStartRef.current = {
       card,
       type,
-      x: clientX,
-      y: clientY,
-      tilt: 0,
-      targetSlot: null
+      startX: clientX,
+      startY: clientY,
+      startTime: Date.now(),
+      isDragging: false
     };
-
-    dragRef.current = initialDrag;
-    setActiveDrag(initialDrag);
-    sounds.playCardDeal();
-
-    socket.emit('card_drag_motion', {
-      playerId: player.id,
-      playerName: player.name,
-      playerAvatar: player.avatar || null,
-      cardType: type,
-      cardText: card.text,
-      normX: clientX / (window.innerWidth || 1),
-      normY: clientY / (window.innerHeight || 1),
-      tilt: 0,
-      isDragging: true
-    });
+    lastPosRef.current = { x: clientX, y: clientY };
   };
 
-  // Global Pointer tracking for local drag
+  // Global Pointer tracking for local drag & click
   useEffect(() => {
-    if (!activeDrag) return;
-
     const handlePointerMove = (e) => {
+      const pStart = pointerStartRef.current;
+      if (!pStart) return;
+
       const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
       const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY) ?? 0;
+
+      // Check drag distance threshold (8px) before engaging drag
+      if (!pStart.isDragging) {
+        const dist = Math.hypot(clientX - pStart.startX, clientY - pStart.startY);
+        if (dist > 8) {
+          pStart.isDragging = true;
+          const initialDrag = {
+            card: pStart.card,
+            type: pStart.type,
+            x: clientX,
+            y: clientY,
+            tilt: 0,
+            targetSlot: null
+          };
+          dragRef.current = initialDrag;
+          setActiveDrag(initialDrag);
+          sounds.playCardDeal();
+
+          socket.emit('card_drag_motion', {
+            playerId: player.id,
+            playerName: player.name,
+            playerAvatar: player.avatar || null,
+            cardType: pStart.type,
+            cardText: pStart.card.text,
+            normX: clientX / (window.innerWidth || 1),
+            normY: clientY / (window.innerHeight || 1),
+            tilt: 0,
+            isDragging: true
+          });
+        } else {
+          return;
+        }
+      }
 
       const deltaX = clientX - lastPosRef.current.x;
       lastPosRef.current = { x: clientX, y: clientY };
@@ -548,9 +567,9 @@ export default function TabletopView({
         const slotIndex = Number(slotElem.getAttribute('data-slot-index'));
         const slotType = slotElem.getAttribute('data-slot-type');
 
-        if (activeDrag.type === 'perk' && slotType === 'white' && slotPlayerId === player.id && canDropWhite) {
+        if (pStart.type === 'perk' && slotType === 'white' && slotPlayerId === player.id && canDropWhite) {
           targetSlot = { playerId: slotPlayerId, slotIndex, type: 'white' };
-        } else if (activeDrag.type === 'redflag' && slotType === 'red' && slotPlayerId === mySabotageTarget?.targetPlayerId && canDropRed) {
+        } else if (pStart.type === 'redflag' && slotType === 'red' && slotPlayerId === mySabotageTarget?.targetPlayerId && canDropRed) {
           targetSlot = { playerId: slotPlayerId, slotIndex: 2, type: 'red' };
         }
       }
@@ -573,8 +592,8 @@ export default function TabletopView({
           playerId: player.id,
           playerName: player.name,
           playerAvatar: player.avatar || null,
-          cardType: activeDrag.type,
-          cardText: activeDrag.card.text,
+          cardType: pStart.type,
+          cardText: pStart.card.text,
           normX: clientX / (window.innerWidth || 1),
           normY: clientY / (window.innerHeight || 1),
           tilt: targetTilt,
@@ -584,20 +603,26 @@ export default function TabletopView({
     };
 
     const handlePointerUp = () => {
-      const current = dragRef.current;
-      if (!current) return;
+      const pStart = pointerStartRef.current;
+      if (!pStart) return;
 
-      if (current.targetSlot) {
-        handleDropCard(current.targetSlot.type, current.card.id, current.targetSlot.slotIndex);
+      if (pStart.isDragging) {
+        const current = dragRef.current;
+        if (current?.targetSlot) {
+          handleDropCard(current.targetSlot.type, current.card.id, current.targetSlot.slotIndex);
+        }
+        dragRef.current = null;
+        setActiveDrag(null);
+        socket.emit('card_drag_motion', {
+          playerId: player.id,
+          isDragging: false
+        });
+      } else {
+        // Pure click/tap without dragging!
+        handleCardClick(pStart.card, pStart.type);
       }
 
-      dragRef.current = null;
-      setActiveDrag(null);
-
-      socket.emit('card_drag_motion', {
-        playerId: player.id,
-        isDragging: false
-      });
+      pointerStartRef.current = null;
     };
 
     window.addEventListener('pointermove', handlePointerMove, { passive: false });
@@ -609,7 +634,7 @@ export default function TabletopView({
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [activeDrag, player.id, player.name, player.avatar, canDropWhite, canDropRed, mySabotageTarget]);
+  }, [player.id, player.name, player.avatar, canDropWhite, canDropRed, mySabotageTarget, isMyTurn, phase, myCandidate?.whiteCardsSubmitted]);
 
   // DETERMINISTIC 3 TOP + 3 BOTTOM SEATING (Identical arrangement for all players in room!)
   const allRoomPlayers = players && players.length > 0 ? players : [player];
@@ -1214,10 +1239,9 @@ export default function TabletopView({
               return (
                 <div
                   key={card.id}
-                  onPointerDown={(e) => startCardDrag(e, card, 'perk')}
+                  onPointerDown={(e) => handleCardPointerDown(e, card, 'perk')}
                   onMouseEnter={() => setHoveredCardId(card.id)}
                   onMouseLeave={() => setHoveredCardId(null)}
-                  onClick={() => !activeDrag && handleCardClick(card, 'perk')}
                   style={{
                     position: 'relative',
                     width: '136px',
@@ -1272,10 +1296,9 @@ export default function TabletopView({
               return (
                 <div
                   key={card.id}
-                  onPointerDown={(e) => startCardDrag(e, card, 'redflag')}
+                  onPointerDown={(e) => handleCardPointerDown(e, card, 'redflag')}
                   onMouseEnter={() => setHoveredCardId(card.id)}
                   onMouseLeave={() => setHoveredCardId(null)}
-                  onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
                   style={{
                     position: 'relative',
                     width: '136px',

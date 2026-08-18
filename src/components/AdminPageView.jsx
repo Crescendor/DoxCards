@@ -74,6 +74,7 @@ import { socket } from '../services/socket';
 import TagBadge from './TagBadge';
 import TagEditModal from './TagEditModal';
 import ThemeEditModal from './ThemeEditModal';
+import ThemeEditorPageView from './ThemeEditorPageView';
 import SoundEditModal from './SoundEditModal';
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
@@ -1385,6 +1386,27 @@ export default function AdminPageView({ onBack, discordUser }) {
            (u.displayName || '').toLowerCase().includes(q) ||
            (u.id || '').includes(q);
   });
+
+  // Dedicated Full-Screen Theme Editor Page View
+  if (themeModalOpen) {
+    return (
+      <ThemeEditorPageView
+        theme={editingTheme}
+        isNew={isNewTheme}
+        onBack={() => {
+          setThemeModalOpen(false);
+          setEditingTheme(null);
+          setIsNewTheme(false);
+        }}
+        onSave={async (savedTheme) => {
+          await handleSaveTheme(savedTheme);
+          setThemeModalOpen(false);
+          setEditingTheme(null);
+          setIsNewTheme(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div style={{
