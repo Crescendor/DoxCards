@@ -1079,26 +1079,28 @@ export default function TabletopView({
           overflow: 'hidden'
         }}
       >
-        {/* Drawer Pull Tab Bar Header */}
+        {/* Drawer Pull Tab Bar Header (Full-width 3-Column Grid) */}
         <div
           onClick={() => setIsHandDrawerOpen(prev => !prev)}
           style={{
-            position: 'relative',
+            width: '100%',
             height: '46px',
-            display: 'flex',
+            minHeight: '46px',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 24px',
+            padding: '0 28px',
             cursor: 'pointer',
             borderBottom: (!activeDrag && isHandDrawerOpen) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
             userSelect: 'none',
             background: (!activeDrag && isHandDrawerOpen) ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             borderTopLeftRadius: '22px',
-            borderTopRightRadius: '22px'
+            borderTopRightRadius: '22px',
+            boxSizing: 'border-box'
           }}
         >
           {/* Left: Destem badge & counters */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%', zIndex: 2 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%', justifySelf: 'start' }}>
             <span style={{
               fontSize: '0.9rem',
               fontWeight: 800,
@@ -1145,13 +1147,9 @@ export default function TabletopView({
             </span>
           </div>
 
-          {/* Middle Action Hint - ALWAYS ABSOLUTELY CENTERED */}
+          {/* Middle Action Hint - ALWAYS MATHEMATICALLY CENTERED */}
           <div style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            fontSize: '0.78rem',
+            fontSize: '0.8rem',
             fontWeight: 700,
             color: isMyTurn ? '#34d399' : '#94a3b8',
             display: 'flex',
@@ -1160,7 +1158,8 @@ export default function TabletopView({
             gap: '6px',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
-            zIndex: 1
+            justifySelf: 'center',
+            padding: '0 16px'
           }}>
             {isMyTurn && phase === 'PERKS' && <span>kartını masana sürükle veya tıkla</span>}
             {isMyTurn && phase === 'SABOTAGE' && <span>kırmızı kartını hedef masaya sürükle</span>}
@@ -1176,7 +1175,7 @@ export default function TabletopView({
             fontSize: '0.8rem',
             fontWeight: 700,
             lineHeight: 1,
-            zIndex: 2
+            justifySelf: 'end'
           }}>
             {(!activeDrag && isHandDrawerOpen) ? (
               <>
