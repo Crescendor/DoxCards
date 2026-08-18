@@ -5112,42 +5112,51 @@ export default function AdminPageView({ onBack, discordUser }) {
 
             {/* 2. ÖZEL SESLER ALT SEKMESİ */}
             {marketSubTab === 'sounds' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Add Sound Card */}
                 <form onSubmit={handleAddMarketSound} style={{
-                  background: '#1c1c1c',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '20px',
+                  background: '#181818',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '18px',
+                  padding: '22px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '14px'
+                  gap: '16px',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)'
                 }}>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Plus size={16} color="#ef4444" /> markete yeni özel ses / müzik efekti ekle
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+                    <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Volume2 size={18} color="#ef4444" /> markete yeni özel ses / müzik efekti ekle
+                    </div>
+                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                      oyuncuların marketten satın alıp oyun içi aksiyonlarında kullanacağı sesler
+                    </span>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                  {/* Row 1: Temel Bilgiler */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
                     {/* Ses Adı */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.74rem' }}>ses adı:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>ses adı:</label>
                       <input
                         type="text"
                         placeholder="Örn: Siber Kart Dağıtımı"
                         value={newMarketSoundName}
                         onChange={e => setNewMarketSoundName(e.target.value)}
-                        className="input-box"
+                        className="form-input"
+                        style={{ width: '100%', background: '#121212', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                         required
                       />
                     </div>
 
                     {/* Kategori */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.74rem' }}>kategori:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>kategori:</label>
                       <select
                         value={newMarketSoundCategory}
                         onChange={e => setNewMarketSoundCategory(e.target.value)}
-                        className="select-box"
+                        className="form-input"
+                        style={{ width: '100%', background: '#121212', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                       >
                         <option value="white_card">Beyaz Kart Dağıtımı</option>
                         <option value="red_card">Kırmızı Kart Sabotajı</option>
@@ -5157,23 +5166,25 @@ export default function AdminPageView({ onBack, discordUser }) {
 
                     {/* Coin Fiyatı */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.74rem' }}>coin fiyatı:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>coin fiyatı:</label>
                       <input
                         type="number"
                         min="0"
                         value={newMarketSoundPrice}
                         onChange={e => setNewMarketSoundPrice(e.target.value)}
-                        className="input-box"
+                        className="form-input"
+                        style={{ width: '100%', background: '#121212', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                       />
                     </div>
 
                     {/* Kaynak Türü */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.74rem' }}>ses kaynağı:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>ses kaynağı:</label>
                       <select
                         value={newMarketSoundSourceType}
                         onChange={e => setNewMarketSoundSourceType(e.target.value)}
-                        className="select-box"
+                        className="form-input"
+                        style={{ width: '100%', background: '#121212', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                       >
                         <option value="file">Dosya Yolu / MP3 Web Linki</option>
                         <option value="youtube">YouTube Video / Klip Linki</option>
@@ -5181,72 +5192,94 @@ export default function AdminPageView({ onBack, discordUser }) {
                     </div>
                   </div>
 
-                  {/* URL Inputs */}
-                  <div style={{ display: 'grid', gridTemplateColumns: newMarketSoundSourceType === 'youtube' ? '2fr 1fr 1fr' : '1fr 1fr', gap: '12px' }}>
+                  {/* Row 2: Kaynak Detayları */}
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '12px',
+                    padding: '14px'
+                  }}>
                     {newMarketSoundSourceType === 'youtube' ? (
-                      <>
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '14px' }}>
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.74rem' }}>youtube video linki:</label>
+                          <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#ef4444', fontWeight: 800 }}>youtube video linki:</label>
                           <input
                             type="text"
                             placeholder="https://www.youtube.com/watch?v=..."
                             value={newMarketSoundYtUrl}
                             onChange={e => setNewMarketSoundYtUrl(e.target.value)}
-                            className="input-box"
+                            className="form-input"
+                            style={{ width: '100%', background: '#141414', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                           />
                         </div>
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.74rem' }}>başlangıç (sn):</label>
+                          <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>başlangıç (sn):</label>
                           <input
                             type="number"
                             min="0"
                             step="0.1"
                             value={newMarketSoundStartSec}
                             onChange={e => setNewMarketSoundStartSec(e.target.value)}
-                            className="input-box"
+                            className="form-input"
+                            style={{ width: '100%', background: '#141414', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                           />
                         </div>
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.74rem' }}>bitiş (sn):</label>
+                          <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>bitiş (sn):</label>
                           <input
                             type="number"
                             min="0.1"
                             step="0.1"
                             value={newMarketSoundEndSec}
                             onChange={e => setNewMarketSoundEndSec(e.target.value)}
-                            className="input-box"
+                            className="form-input"
+                            style={{ width: '100%', background: '#141414', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                           />
                         </div>
-                      </>
+                      </div>
                     ) : (
-                      <>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.74rem' }}>ses url / dosya yolu:</label>
+                          <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>ses url / dosya yolu:</label>
                           <input
                             type="text"
                             placeholder="Örn: /sounds/deal.mp3 veya https://...mp3"
                             value={newMarketSoundUrl}
                             onChange={e => setNewMarketSoundUrl(e.target.value)}
-                            className="input-box"
+                            className="form-input"
+                            style={{ width: '100%', background: '#141414', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                           />
                         </div>
                         <div>
-                          <label className="form-label" style={{ fontSize: '0.74rem' }}>kare kapak görseli url (opsiyonel):</label>
+                          <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '6px', display: 'block', color: '#cbd5e1' }}>kare kapak görseli url (opsiyonel):</label>
                           <input
                             type="text"
                             placeholder="Örn: https://.../square.png"
                             value={newMarketSoundCoverImage}
                             onChange={e => setNewMarketSoundCoverImage(e.target.value)}
-                            className="input-box"
+                            className="form-input"
+                            style={{ width: '100%', background: '#141414', border: '1px solid rgba(255, 255, 255, 0.14)', color: '#ffffff', borderRadius: '10px', padding: '9px 12px', fontSize: '0.84rem' }}
                           />
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                    <button type="submit" className="btn-primary" style={{ padding: '10px 22px', fontSize: '0.84rem' }}>
-                      <Plus size={15} /> market sesini kaydet
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      style={{
+                        padding: '11px 26px',
+                        fontSize: '0.86rem',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        borderRadius: '12px'
+                      }}
+                    >
+                      <Plus size={16} /> market sesini kaydet
                     </button>
                   </div>
                 </form>

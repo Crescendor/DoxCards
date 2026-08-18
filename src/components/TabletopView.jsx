@@ -1079,7 +1079,7 @@ export default function TabletopView({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 28px',
+              padding: '0 24px',
               cursor: 'pointer',
               borderBottom: (isHandDrawerOpen || activeDrag) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
               userSelect: 'none',
@@ -1103,46 +1103,73 @@ export default function TabletopView({
               </span>
 
               <span style={{
-                width: '88px',
-                minWidth: '88px',
-                maxWidth: '88px',
-                height: '26px',
+                padding: '4px 12px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: '#ffffff',
                 color: '#1e1e1e',
                 fontWeight: 800,
-                fontSize: '0.76rem',
+                fontSize: '0.74rem',
                 lineHeight: 1,
                 borderRadius: '9999px',
-                boxSizing: 'border-box',
-                textAlign: 'center',
                 flexShrink: 0
               }}>
                 {availableWhiteCards.length} beyaz
               </span>
 
               <span style={{
-                width: '88px',
-                minWidth: '88px',
-                maxWidth: '88px',
-                height: '26px',
+                padding: '4px 12px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: '#FF0000',
                 color: '#ffffff',
                 fontWeight: 800,
-                fontSize: '0.76rem',
+                fontSize: '0.74rem',
                 lineHeight: 1,
                 borderRadius: '9999px',
-                boxSizing: 'border-box',
-                textAlign: 'center',
                 flexShrink: 0
               }}>
                 {availableRedCards.length} kırmızı
               </span>
+
+              {/* Theme Indicator Badge */}
+              {(() => {
+                const currentTheme = (appConfig?.market?.themes || []).find(t => t.id === (player?.equippedTheme || 'stocks'));
+                if (!currentTheme) return null;
+                return (
+                  <span style={{
+                    padding: '4px 10px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    color: '#fca5a5',
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    borderRadius: '8px',
+                    flexShrink: 0
+                  }}>
+                    <Sparkles size={11} color="#ef4444" />
+                    <span>tema: {currentTheme.name}</span>
+                  </span>
+                );
+              })()}
+            </div>
+
+            {/* Middle Action Hint */}
+            <div style={{
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              color: isMyTurn ? '#34d399' : '#94a3b8',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              {isMyTurn && phase === 'PERKS' && <span>kartını masana sürükle veya tıkla</span>}
+              {isMyTurn && phase === 'SABOTAGE' && <span>kırmızı kartını hedef masaya sürükle</span>}
             </div>
 
             <div style={{
@@ -1162,34 +1189,31 @@ export default function TabletopView({
               ) : (
                 <>
                   <ChevronUp size={15} />
-                  <span>kartlarını görmek veya sürüklemek için üzerine gel</span>
+                  <span>kartlarını açmak için tıkla / üzerine gel</span>
                 </>
               )}
             </div>
           </div>
 
-          {/* Fanned Cards Container */}
+          {/* Spacious Horizontal Cards Rack Container */}
           <div style={{
             display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            height: '280px',
-            position: 'relative',
+            alignItems: 'center',
+            justifyContent: (availableWhiteCards.length + availableRedCards.length) <= 6 ? 'center' : 'flex-start',
+            gap: '14px',
             width: '100%',
-            maxWidth: '1300px',
-            margin: '0 auto',
-            paddingTop: '20px'
+            overflowX: 'auto',
+            overflowY: 'visible',
+            padding: '16px 28px 16px 28px',
+            boxSizing: 'border-box',
+            scrollbarWidth: 'thin',
+            minHeight: '270px'
           }}>
-            {/* White Perks */}
+            {/* White Perk Cards */}
             {availableWhiteCards.map((card, index) => {
-              const total = availableWhiteCards.length + availableRedCards.length;
-              const globalIndex = index;
-              const mid = (total - 1) / 2;
-              const offset = globalIndex - mid;
-              const rot = offset * 2.8;
-              const translateY = Math.abs(offset) * 3;
               const isHovered = hoveredCardId === card.id;
               const isBeingDragged = activeDrag?.card?.id === card.id;
+              const canPlay = isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted;
 
               return (
                 <div
@@ -1199,18 +1223,21 @@ export default function TabletopView({
                   onMouseLeave={() => setHoveredCardId(null)}
                   onClick={() => !activeDrag && handleCardClick(card, 'perk')}
                   style={{
-                    position: 'absolute',
-                    left: `calc(50% + ${offset * 72}px - 90px)`,
-                    bottom: 0,
+                    position: 'relative',
+                    width: '156px',
+                    minWidth: '156px',
+                    maxWidth: '156px',
+                    height: '218px',
                     zIndex: isHovered ? 50 : 10 + index,
                     transform: isHovered
-                      ? `translateY(-48px) scale(1.12) rotate(0deg)`
-                      : `translateY(${translateY}px) rotate(${rot}deg)`,
-                    transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    cursor: (isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted) ? 'grab' : 'default',
+                      ? 'translateY(-14px) scale(1.05)'
+                      : 'translateY(0px) scale(1)',
+                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    cursor: canPlay ? 'grab' : 'default',
                     opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
                     touchAction: 'none',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    flexShrink: 0
                   }}
                 >
                   <CardItem
@@ -1224,16 +1251,23 @@ export default function TabletopView({
               );
             })}
 
-            {/* Red Flag Sabotages */}
+            {/* Divider between White and Red cards if both exist */}
+            {availableWhiteCards.length > 0 && availableRedCards.length > 0 && (
+              <div style={{
+                width: '2px',
+                height: '180px',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.1), rgba(239, 68, 68, 0.4), rgba(255,255,255,0.1))',
+                margin: '0 6px',
+                flexShrink: 0,
+                borderRadius: '9999px'
+              }} />
+            )}
+
+            {/* Red Flag Sabotage Cards */}
             {availableRedCards.map((card, index) => {
-              const total = availableWhiteCards.length + availableRedCards.length;
-              const globalIndex = availableWhiteCards.length + index;
-              const mid = (total - 1) / 2;
-              const offset = globalIndex - mid;
-              const rot = offset * 2.8;
-              const translateY = Math.abs(offset) * 3;
               const isHovered = hoveredCardId === card.id;
               const isBeingDragged = activeDrag?.card?.id === card.id;
+              const canPlay = isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag;
 
               return (
                 <div
@@ -1243,18 +1277,21 @@ export default function TabletopView({
                   onMouseLeave={() => setHoveredCardId(null)}
                   onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
                   style={{
-                    position: 'absolute',
-                    left: `calc(50% + ${offset * 72}px - 90px)`,
-                    bottom: 0,
+                    position: 'relative',
+                    width: '156px',
+                    minWidth: '156px',
+                    maxWidth: '156px',
+                    height: '218px',
                     zIndex: isHovered ? 50 : 25 + index,
                     transform: isHovered
-                      ? `translateY(-48px) scale(1.12) rotate(0deg)`
-                      : `translateY(${translateY}px) rotate(${rot}deg)`,
-                    transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    cursor: (isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag) ? 'grab' : 'default',
+                      ? 'translateY(-14px) scale(1.05)'
+                      : 'translateY(0px) scale(1)',
+                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    cursor: canPlay ? 'grab' : 'default',
                     opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
                     touchAction: 'none',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    flexShrink: 0
                   }}
                 >
                   <CardItem

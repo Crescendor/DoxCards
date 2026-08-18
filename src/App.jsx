@@ -446,7 +446,9 @@ export default function App() {
           <GameView
             room={currentRoom}
             gameState={gameState}
-            player={player}
+            player={getEnrichedPlayer()}
+            appConfig={appConfig}
+            userProfile={userProfile}
             onPlaceWhiteCard={handlePlaceWhiteCard}
             onSubmitPerks={handleSubmitPerks}
             onSubmitSabotage={handleSubmitSabotage}

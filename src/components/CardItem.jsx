@@ -1,4 +1,5 @@
 import React from 'react';
+import { DEFAULT_CONFIG } from '../services/userService';
 
 export default function CardItem({
   card,
@@ -18,7 +19,9 @@ export default function CardItem({
   const resolvedTheme = (() => {
     if (theme && typeof theme === 'object') return theme;
     const themeId = (typeof theme === 'string' && theme) || card.theme || card.equippedTheme || 'stocks';
-    const themes = appConfig?.market?.themes || [];
+    const themes = (appConfig?.market?.themes && appConfig.market.themes.length > 0)
+      ? appConfig.market.themes
+      : (DEFAULT_CONFIG?.market?.themes || []);
     return themes.find(t => t.id === themeId) || null;
   })();
 
