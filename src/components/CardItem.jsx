@@ -25,10 +25,10 @@ export default function CardItem({
     return themes.find(t => t.id === themeId) || null;
   })();
 
-  const redBackUrl = resolvedTheme?.images?.redBack || '/themes/stocks/1.png';
-  const whiteBackUrl = resolvedTheme?.images?.whiteBack || '/themes/stocks/2.png';
-  const redFrontUrl = resolvedTheme?.images?.redFront || '/themes/stocks/3.png';
-  const whiteFrontUrl = resolvedTheme?.images?.whiteFront || '/themes/stocks/4.png';
+  const redBackUrl = resolvedTheme?.redBack || resolvedTheme?.images?.redBack || '/themes/stocks/1.png';
+  const whiteBackUrl = resolvedTheme?.whiteBack || resolvedTheme?.images?.whiteBack || '/themes/stocks/2.png';
+  const redFrontUrl = resolvedTheme?.redFront || resolvedTheme?.images?.redFront || '/themes/stocks/3.png';
+  const whiteFrontUrl = resolvedTheme?.whiteFront || resolvedTheme?.images?.whiteFront || '/themes/stocks/4.png';
 
   const fontColor = isWhite
     ? (resolvedTheme?.fontColorWhite || '#000000')
@@ -81,7 +81,7 @@ export default function CardItem({
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'fill',
+            objectFit: 'cover',
             display: 'block',
             pointerEvents: 'none',
             userSelect: 'none',
@@ -138,7 +138,7 @@ export default function CardItem({
           inset: 0,
           width: '100%',
           height: '100%',
-          objectFit: 'fill',
+          objectFit: 'cover',
           pointerEvents: 'none',
           zIndex: 1,
           userSelect: 'none',

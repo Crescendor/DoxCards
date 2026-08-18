@@ -28,8 +28,8 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
     return themes.find(t => t.id === themeId) || null;
   })();
 
-  const whiteBackUrl = resolvedTheme?.images?.whiteBack || whiteCardBackImg;
-  const redBackUrl = resolvedTheme?.images?.redBack || redCardBackImg;
+  const whiteBackUrl = resolvedTheme?.whiteBack || resolvedTheme?.images?.whiteBack || whiteCardBackImg;
+  const redBackUrl = resolvedTheme?.redBack || resolvedTheme?.images?.redBack || redCardBackImg;
   const themeAnim = resolvedTheme?.animation || 'none';
   const themeGlow = resolvedTheme?.glow || 'none';
 
@@ -38,24 +38,24 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
   for (let r = 0; r < safeRed; r++) cards.push('red');
   for (let w = 0; w < safeWhite; w++) cards.push('white');
 
-  const cardWidth = 94; // Significantly larger (was 64)
-  const step = Math.min(34, Math.max(16, 280 / Math.max(1, cards.length)));
+  const cardWidth = 112; // Substantially larger and prominent
+  const step = Math.min(32, Math.max(16, 260 / Math.max(1, cards.length)));
   const totalWidth = (cards.length - 1) * step + cardWidth;
   const centerIdx = (cards.length - 1) / 2;
 
-  const glowShadow = themeGlow === 'crimson' ? '0 8px 24px rgba(239, 68, 68, 0.45)' :
-                     themeGlow === 'golden' ? '0 8px 24px rgba(251, 191, 36, 0.45)' :
-                     themeGlow === 'neon_purple' ? '0 8px 24px rgba(168, 85, 247, 0.45)' :
-                     themeGlow === 'neon_blue' ? '0 8px 24px rgba(56, 189, 248, 0.45)' :
-                     themeGlow === 'emerald' ? '0 8px 24px rgba(52, 211, 153, 0.45)' :
-                     '0 8px 22px rgba(0, 0, 0, 0.85)';
+  const glowShadow = themeGlow === 'crimson' ? '0 10px 28px rgba(239, 68, 68, 0.45)' :
+                     themeGlow === 'golden' ? '0 10px 28px rgba(251, 191, 36, 0.45)' :
+                     themeGlow === 'neon_purple' ? '0 10px 28px rgba(168, 85, 247, 0.45)' :
+                     themeGlow === 'neon_blue' ? '0 10px 28px rgba(56, 189, 248, 0.45)' :
+                     themeGlow === 'emerald' ? '0 10px 28px rgba(52, 211, 153, 0.45)' :
+                     '0 8px 24px rgba(0, 0, 0, 0.85)';
 
   return (
     <div style={{
       position: 'relative',
       width: `${totalWidth}px`,
-      height: '125px',
-      minHeight: '125px',
+      height: '156px',
+      minHeight: '156px',
       margin: '6px auto 10px auto',
       display: 'flex',
       alignItems: 'center',
@@ -64,8 +64,8 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
     }}>
       {cards.map((type, i) => {
         const offset = i - centerIdx;
-        const rot = offset * 4.6;
-        const translateY = Math.abs(offset) * 3.8;
+        const rot = offset * 4.2;
+        const translateY = Math.abs(offset) * 3.2;
         const isWhiteBack = type === 'white';
 
         return (
@@ -77,12 +77,14 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
               left: `${i * step}px`,
               width: `${cardWidth}px`,
               aspectRatio: '5 / 7',
-              borderRadius: '13px',
+              borderRadius: '12px',
               overflow: 'hidden',
               boxShadow: glowShadow,
               transform: `rotate(${rot}deg) translateY(${translateY}px)`,
               zIndex: i,
-              border: isWhiteBack ? '1.5px solid rgba(255, 255, 255, 0.4)' : '1.5px solid rgba(239, 68, 68, 0.5)',
+              background: isWhiteBack ? '#ffffff' : '#dc2626',
+              border: isWhiteBack ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(239, 68, 68, 0.5)',
+              boxSizing: 'border-box',
               transition: 'all 0.25s ease'
             }}
           >
@@ -91,7 +93,15 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
               alt="card back"
               draggable={false}
               onDragStart={(e) => e.preventDefault()}
-              style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserDrag: 'none'
+              }}
             />
           </div>
         );
@@ -823,7 +833,7 @@ export default function TabletopView({
                 const themes = appConfig?.market?.themes || [];
                 return themes.find(t => t.id === tId) || null;
               })();
-              const bekRedBack = bekTheme?.images?.redBack || redCardBackImg;
+              const bekRedBack = bekTheme?.redBack || bekTheme?.images?.redBack || redCardBackImg;
               const bekGlow = bekTheme?.glow || 'golden';
               const bekAnim = bekTheme?.animation || 'none';
 
@@ -881,7 +891,7 @@ export default function TabletopView({
                       alt="bekar destesi"
                       draggable={false}
                       onDragStart={(e) => e.preventDefault()}
-                      style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
                     />
                   </div>
                 </div>
@@ -1036,277 +1046,254 @@ export default function TabletopView({
         </div>
       </div>
 
-      {/* PEEK & SLIDE HOVER HAND DRAWER */}
-      {!isSingle && (
+      {/* PEEK & SLIDE HOVER HAND DRAWER (Available to all players including Single) */}
+      <div
+        className="player-hand-drawer"
+        onMouseEnter={() => setIsHandDrawerOpen(true)}
+        onMouseLeave={() => setIsHandDrawerOpen(false)}
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          transform: `translateX(-50%) translateY(${
+            (!activeDrag && isHandDrawerOpen) ? '0%' : 'calc(100% - 46px)'
+          })`,
+          transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
+          zIndex: 85,
+          width: '96%',
+          maxWidth: '1500px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'rgba(18, 18, 18, 0.96)',
+          backdropFilter: 'blur(20px)',
+          borderTopLeftRadius: '22px',
+          borderTopRightRadius: '22px',
+          border: '1px solid rgba(255, 255, 255, 0.16)',
+          borderBottom: 'none',
+          boxShadow: (!activeDrag && isHandDrawerOpen)
+            ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 0, 0, 0.3)'
+            : '0 -4px 18px rgba(0, 0, 0, 0.7)',
+          boxSizing: 'border-box',
+          paddingBottom: '10px',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Pull Tab Bar */}
         <div
-          className="player-hand-drawer"
-          onMouseEnter={() => setIsHandDrawerOpen(true)}
-          onMouseLeave={() => setIsHandDrawerOpen(false)}
+          onClick={() => setIsHandDrawerOpen(prev => !prev)}
           style={{
-            position: 'fixed',
-            bottom: 0,
-            left: '50%',
-            transform: `translateX(-50%) translateY(${
-              (isHandDrawerOpen || activeDrag) ? '0%' : 'calc(100% - 46px)'
-            })`,
-            transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
-            zIndex: 85,
-            width: '96%',
-            maxWidth: '1500px',
+            width: '100%',
+            height: '46px',
+            minHeight: '46px',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            background: 'rgba(18, 18, 18, 0.96)',
-            backdropFilter: 'blur(20px)',
+            justifyContent: 'space-between',
+            padding: '0 24px',
+            cursor: 'pointer',
+            borderBottom: (!activeDrag && isHandDrawerOpen) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+            userSelect: 'none',
+            background: (!activeDrag && isHandDrawerOpen) ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             borderTopLeftRadius: '22px',
-            borderTopRightRadius: '22px',
-            border: '1px solid rgba(255, 255, 255, 0.16)',
-            borderBottom: 'none',
-            boxShadow: (isHandDrawerOpen || activeDrag)
-              ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 0, 0, 0.3)'
-              : '0 -4px 18px rgba(0, 0, 0, 0.7)',
-            boxSizing: 'border-box',
-            paddingBottom: '16px'
+            borderTopRightRadius: '22px'
           }}
         >
-          {/* Pull Tab Bar with Perfectly Aligned Badges */}
-          <div
-            onClick={() => setIsHandDrawerOpen(prev => !prev)}
-            style={{
-              width: '100%',
-              height: '46px',
-              minHeight: '46px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 24px',
-              cursor: 'pointer',
-              borderBottom: (isHandDrawerOpen || activeDrag) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
-              userSelect: 'none',
-              background: (isHandDrawerOpen || activeDrag) ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
-              borderTopLeftRadius: '22px',
-              borderTopRightRadius: '22px'
-            }}
-          >
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%' }}>
-              <span style={{
-                fontSize: '0.9rem',
-                fontWeight: 800,
-                color: '#ffffff',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                lineHeight: 1
-              }}>
-                <Layers size={17} color="#FF0000" />
-                <span>destem</span>
-              </span>
-
-              <span style={{
-                padding: '4px 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#ffffff',
-                color: '#1e1e1e',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                lineHeight: 1,
-                borderRadius: '9999px',
-                flexShrink: 0
-              }}>
-                {availableWhiteCards.length} beyaz
-              </span>
-
-              <span style={{
-                padding: '4px 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#FF0000',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                lineHeight: 1,
-                borderRadius: '9999px',
-                flexShrink: 0
-              }}>
-                {availableRedCards.length} kırmızı
-              </span>
-
-              {/* Theme Indicator Badge */}
-              {(() => {
-                const currentTheme = (appConfig?.market?.themes || []).find(t => t.id === (player?.equippedTheme || 'stocks'));
-                if (!currentTheme) return null;
-                return (
-                  <span style={{
-                    padding: '4px 10px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                    color: '#fca5a5',
-                    fontWeight: 800,
-                    fontSize: '0.72rem',
-                    borderRadius: '8px',
-                    flexShrink: 0
-                  }}>
-                    <Sparkles size={11} color="#ef4444" />
-                    <span>tema: {currentTheme.name}</span>
-                  </span>
-                );
-              })()}
-            </div>
-
-            {/* Middle Action Hint */}
-            <div style={{
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              color: isMyTurn ? '#34d399' : '#94a3b8',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              {isMyTurn && phase === 'PERKS' && <span>kartını masana sürükle veya tıkla</span>}
-              {isMyTurn && phase === 'SABOTAGE' && <span>kırmızı kartını hedef masaya sürükle</span>}
-            </div>
-
-            <div style={{
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%' }}>
+            <span style={{
+              fontSize: '0.9rem',
+              fontWeight: 800,
+              color: '#ffffff',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              color: (isHandDrawerOpen || activeDrag) ? '#94a3b8' : '#ffffff',
-              fontSize: '0.8rem',
-              fontWeight: 700,
               lineHeight: 1
             }}>
-              {(isHandDrawerOpen || activeDrag) ? (
-                <>
-                  <ChevronDown size={15} />
-                  <span>desteyi gizle</span>
-                </>
-              ) : (
-                <>
-                  <ChevronUp size={15} />
-                  <span>kartlarını açmak için tıkla / üzerine gel</span>
-                </>
-              )}
-            </div>
+              <Layers size={17} color="#FF0000" />
+              <span>destem</span>
+            </span>
+
+            <span style={{
+              padding: '4px 12px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#ffffff',
+              color: '#1e1e1e',
+              fontWeight: 800,
+              fontSize: '0.74rem',
+              lineHeight: 1,
+              borderRadius: '9999px',
+              flexShrink: 0
+            }}>
+              {availableWhiteCards.length} beyaz
+            </span>
+
+            <span style={{
+              padding: '4px 12px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#FF0000',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.74rem',
+              lineHeight: 1,
+              borderRadius: '9999px',
+              flexShrink: 0
+            }}>
+              {availableRedCards.length} kırmızı
+            </span>
           </div>
 
-          {/* Spacious Horizontal Cards Rack Container */}
+          {/* Middle Action Hint */}
           <div style={{
+            fontSize: '0.76rem',
+            fontWeight: 700,
+            color: isMyTurn ? '#34d399' : '#94a3b8',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: (availableWhiteCards.length + availableRedCards.length) <= 6 ? 'center' : 'flex-start',
-            gap: '14px',
-            width: '100%',
-            overflowX: 'auto',
-            overflowY: 'visible',
-            padding: '16px 28px 16px 28px',
-            boxSizing: 'border-box',
-            scrollbarWidth: 'thin',
-            minHeight: '270px'
+            gap: '6px'
           }}>
-            {/* White Perk Cards */}
-            {availableWhiteCards.map((card, index) => {
-              const isHovered = hoveredCardId === card.id;
-              const isBeingDragged = activeDrag?.card?.id === card.id;
-              const canPlay = isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted;
+            {isMyTurn && phase === 'PERKS' && <span>kartını masana sürükle veya tıkla</span>}
+            {isMyTurn && phase === 'SABOTAGE' && <span>kırmızı kartını hedef masaya sürükle</span>}
+            {isSingle && (phase === 'VOTING' || phase === 'REVEAL') && <span>kazanan masayı seçmek için üzerine tıkla</span>}
+          </div>
 
-              return (
-                <div
-                  key={card.id}
-                  onPointerDown={(e) => startCardDrag(e, card, 'perk')}
-                  onMouseEnter={() => setHoveredCardId(card.id)}
-                  onMouseLeave={() => setHoveredCardId(null)}
-                  onClick={() => !activeDrag && handleCardClick(card, 'perk')}
-                  style={{
-                    position: 'relative',
-                    width: '156px',
-                    minWidth: '156px',
-                    maxWidth: '156px',
-                    height: '218px',
-                    zIndex: isHovered ? 50 : 10 + index,
-                    transform: isHovered
-                      ? 'translateY(-14px) scale(1.05)'
-                      : 'translateY(0px) scale(1)',
-                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    cursor: canPlay ? 'grab' : 'default',
-                    opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
-                    touchAction: 'none',
-                    userSelect: 'none',
-                    flexShrink: 0
-                  }}
-                >
-                  <CardItem
-                    card={card}
-                    type="perk"
-                    isSelected={isHovered}
-                    theme={player?.equippedTheme}
-                    appConfig={appConfig}
-                  />
-                </div>
-              );
-            })}
-
-            {/* Divider between White and Red cards if both exist */}
-            {availableWhiteCards.length > 0 && availableRedCards.length > 0 && (
-              <div style={{
-                width: '2px',
-                height: '180px',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.1), rgba(239, 68, 68, 0.4), rgba(255,255,255,0.1))',
-                margin: '0 6px',
-                flexShrink: 0,
-                borderRadius: '9999px'
-              }} />
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: (!activeDrag && isHandDrawerOpen) ? '#94a3b8' : '#ffffff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            lineHeight: 1
+          }}>
+            {(!activeDrag && isHandDrawerOpen) ? (
+              <>
+                <ChevronDown size={15} />
+                <span>desteyi gizle</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp size={15} />
+                <span>kartlarını açmak için tıkla / üzerine gel</span>
+              </>
             )}
-
-            {/* Red Flag Sabotage Cards */}
-            {availableRedCards.map((card, index) => {
-              const isHovered = hoveredCardId === card.id;
-              const isBeingDragged = activeDrag?.card?.id === card.id;
-              const canPlay = isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag;
-
-              return (
-                <div
-                  key={card.id}
-                  onPointerDown={(e) => startCardDrag(e, card, 'redflag')}
-                  onMouseEnter={() => setHoveredCardId(card.id)}
-                  onMouseLeave={() => setHoveredCardId(null)}
-                  onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
-                  style={{
-                    position: 'relative',
-                    width: '156px',
-                    minWidth: '156px',
-                    maxWidth: '156px',
-                    height: '218px',
-                    zIndex: isHovered ? 50 : 25 + index,
-                    transform: isHovered
-                      ? 'translateY(-14px) scale(1.05)'
-                      : 'translateY(0px) scale(1)',
-                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    cursor: canPlay ? 'grab' : 'default',
-                    opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
-                    touchAction: 'none',
-                    userSelect: 'none',
-                    flexShrink: 0
-                  }}
-                >
-                  <CardItem
-                    card={card}
-                    type="redflag"
-                    isSelected={isHovered}
-                    theme={player?.equippedTheme}
-                    appConfig={appConfig}
-                  />
-                </div>
-              );
-            })}
           </div>
         </div>
-      )}
+
+        {/* Spacious Horizontal Cards Rack Container */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: (availableWhiteCards.length + availableRedCards.length) <= 7 ? 'center' : 'flex-start',
+          gap: '14px',
+          width: '100%',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          padding: '16px 28px 16px 28px',
+          boxSizing: 'border-box',
+          scrollbarWidth: 'thin',
+          minHeight: '252px',
+          pointerEvents: activeDrag ? 'none' : 'auto'
+        }}>
+          {/* White Perk Cards */}
+          {availableWhiteCards.map((card, index) => {
+            const isHovered = hoveredCardId === card.id;
+            const isBeingDragged = activeDrag?.card?.id === card.id;
+            const canPlay = isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted;
+
+            return (
+              <div
+                key={card.id}
+                onPointerDown={(e) => startCardDrag(e, card, 'perk')}
+                onMouseEnter={() => setHoveredCardId(card.id)}
+                onMouseLeave={() => setHoveredCardId(null)}
+                onClick={() => !activeDrag && handleCardClick(card, 'perk')}
+                style={{
+                  position: 'relative',
+                  width: '148px',
+                  minWidth: '148px',
+                  maxWidth: '148px',
+                  height: '208px',
+                  zIndex: isHovered ? 50 : 10 + index,
+                  transform: isHovered
+                    ? 'translateY(-10px) scale(1.04)'
+                    : 'translateY(0px) scale(1)',
+                  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  cursor: canPlay ? 'grab' : 'default',
+                  opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
+                  touchAction: 'none',
+                  userSelect: 'none',
+                  flexShrink: 0
+                }}
+              >
+                <CardItem
+                  card={card}
+                  type="perk"
+                  isSelected={isHovered}
+                  theme={player?.equippedTheme}
+                  appConfig={appConfig}
+                />
+              </div>
+            );
+          })}
+
+          {/* Divider between White and Red cards if both exist */}
+          {availableWhiteCards.length > 0 && availableRedCards.length > 0 && (
+            <div style={{
+              width: '2px',
+              height: '170px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.1), rgba(239, 68, 68, 0.4), rgba(255,255,255,0.1))',
+              margin: '0 6px',
+              flexShrink: 0,
+              borderRadius: '9999px'
+            }} />
+          )}
+
+          {/* Red Flag Sabotage Cards */}
+          {availableRedCards.map((card, index) => {
+            const isHovered = hoveredCardId === card.id;
+            const isBeingDragged = activeDrag?.card?.id === card.id;
+            const canPlay = isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag;
+
+            return (
+              <div
+                key={card.id}
+                onPointerDown={(e) => startCardDrag(e, card, 'redflag')}
+                onMouseEnter={() => setHoveredCardId(card.id)}
+                onMouseLeave={() => setHoveredCardId(null)}
+                onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
+                style={{
+                  position: 'relative',
+                  width: '148px',
+                  minWidth: '148px',
+                  maxWidth: '148px',
+                  height: '208px',
+                  zIndex: isHovered ? 50 : 25 + index,
+                  transform: isHovered
+                    ? 'translateY(-10px) scale(1.04)'
+                    : 'translateY(0px) scale(1)',
+                  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  cursor: canPlay ? 'grab' : 'default',
+                  opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
+                  touchAction: 'none',
+                  userSelect: 'none',
+                  flexShrink: 0
+                }}
+              >
+                <CardItem
+                  card={card}
+                  type="redflag"
+                  isSelected={isHovered}
+                  theme={player?.equippedTheme}
+                  appConfig={appConfig}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* REALTIME FLOATING DRAG CARD FOR LOCAL PLAYER */}
       {activeDrag && (
@@ -1343,8 +1330,8 @@ export default function TabletopView({
         const isWhite = info.cardType === 'perk';
         const rPlayer = players.find(p => p.id === rPlayerId);
         const rTheme = (appConfig?.market?.themes || []).find(t => t.id === rPlayer?.equippedTheme) || null;
-        const rWhiteBackUrl = rTheme?.images?.whiteBack || whiteCardBackImg;
-        const rRedBackUrl = rTheme?.images?.redBack || redCardBackImg;
+        const rWhiteBackUrl = rTheme?.whiteBack || rTheme?.images?.whiteBack || whiteCardBackImg;
+        const rRedBackUrl = rTheme?.redBack || rTheme?.images?.redBack || redCardBackImg;
 
         return (
           <div
@@ -1397,7 +1384,7 @@ export default function TabletopView({
               <img
                 src={isWhite ? rWhiteBackUrl : rRedBackUrl}
                 alt="remote card"
-                style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
           </div>
