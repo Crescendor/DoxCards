@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import HowToPlayModal from './components/HowToPlayModal';
 import RightSidebarDrawer from './components/RightSidebarDrawer';
 import AdminPageView from './components/AdminPageView';
+import MarketPageView from './components/MarketPageView';
 import { getDiscordUser, logoutDiscord } from './services/discordAuth';
 import { syncUserProfile, getLocalUserProfile, fetchAppConfig } from './services/userService';
 
@@ -20,6 +21,7 @@ export default function App() {
   const [soundMuted, setSoundMuted] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAdminView, setIsAdminView] = useState(window.location.search.includes('admin'));
+  const [isMarketView, setIsMarketView] = useState(window.location.search.includes('market'));
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -382,6 +384,25 @@ export default function App() {
     );
   }
 
+  // Full-Screen Dedicated Market Page View
+  if (isMarketView) {
+    return (
+      <MarketPageView
+        onBack={() => {
+          setIsMarketView(false);
+          window.history.pushState({}, '', window.location.pathname);
+        }}
+        userProfile={userProfile}
+        onUserUpdated={(updated) => {
+          setUserProfile(updated);
+          if (updated?.equippedTheme) {
+            setPlayer(prev => ({ ...prev, equippedTheme: updated.equippedTheme }));
+          }
+        }}
+      />
+    );
+  }
+
   const isGameActive = gameState && gameState.phase && gameState.phase !== 'LOBBY';
   const isHost = currentRoom?.hostId === player.id;
 
@@ -402,6 +423,10 @@ export default function App() {
           isGameActive={isGameActive}
           onLeave={handleLeaveRoom}
           onOpenHelp={() => setIsHelpOpen(true)}
+          onOpenMarket={() => {
+            setIsMarketView(true);
+            window.history.pushState({}, '', '?market=true');
+          }}
           soundMuted={soundMuted}
           onToggleSound={handleToggleSound}
           userProfile={userProfile}
@@ -423,6 +448,10 @@ export default function App() {
             onUpdatePlayer={handleUpdatePlayer}
             onCreateRoom={handleCreateRoom}
             onJoinRoom={handleJoinRoom}
+            onOpenMarket={() => {
+              setIsMarketView(true);
+              window.history.pushState({}, '', '?market=true');
+            }}
             onOpenAdmin={() => {
               setIsAdminView(true);
               window.history.pushState({}, '', '?admin=true');

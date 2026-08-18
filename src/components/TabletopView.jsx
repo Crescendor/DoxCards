@@ -1059,8 +1059,8 @@ export default function TabletopView({
           transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
           zIndex: 85,
           width: 'fit-content',
-          minWidth: 'clamp(520px, 58vw, 840px)',
-          maxWidth: '860px',
+          minWidth: 'clamp(780px, 80vw, 1180px)',
+          maxWidth: '1220px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1075,7 +1075,7 @@ export default function TabletopView({
             : '0 -4px 18px rgba(0, 0, 0, 0.7)',
           boxSizing: 'border-box',
           paddingBottom: '8px',
-          overflow: 'hidden'
+          overflow: 'visible'
         }}
       >
         {/* Drawer Pull Tab Bar Header (Full-width 3-Column Grid) */}
@@ -1088,7 +1088,7 @@ export default function TabletopView({
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
-            padding: '0 20px',
+            padding: '0 24px',
             cursor: 'pointer',
             borderBottom: (!activeDrag && isHandDrawerOpen) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
             userSelect: 'none',
@@ -1196,12 +1196,11 @@ export default function TabletopView({
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          padding: '28px 24px 12px 24px',
+          overflowX: 'visible',
+          overflowY: 'visible',
+          padding: '30px 32px 14px 32px',
           boxSizing: 'border-box',
-          scrollbarWidth: 'thin',
-          minHeight: '236px',
+          minHeight: '246px',
           pointerEvents: activeDrag ? 'none' : 'auto'
         }}>
           {/* White Perk Cards (Held Overlapping Deck) */}
@@ -1221,11 +1220,11 @@ export default function TabletopView({
                   onClick={() => !activeDrag && handleCardClick(card, 'perk')}
                   style={{
                     position: 'relative',
-                    width: '134px',
-                    minWidth: '134px',
-                    maxWidth: '134px',
-                    height: '188px',
-                    marginRight: isLast ? '0px' : '-22px',
+                    width: '136px',
+                    minWidth: '136px',
+                    maxWidth: '136px',
+                    height: '190px',
+                    marginRight: isLast ? '0px' : '-20px',
                     zIndex: isHovered ? 120 : 10 + index,
                     transform: isHovered ? 'translateY(-28px)' : 'translateY(0px)',
                     transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease',
@@ -1279,11 +1278,11 @@ export default function TabletopView({
                   onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
                   style={{
                     position: 'relative',
-                    width: '134px',
-                    minWidth: '134px',
-                    maxWidth: '134px',
-                    height: '188px',
-                    marginRight: isLast ? '0px' : '-22px',
+                    width: '136px',
+                    minWidth: '136px',
+                    maxWidth: '136px',
+                    height: '190px',
+                    marginRight: isLast ? '0px' : '-20px',
                     zIndex: isHovered ? 120 : 30 + index,
                     transform: isHovered ? 'translateY(-28px)' : 'translateY(0px)',
                     transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease',

@@ -32,6 +32,7 @@ export default function Navbar({
   isGameActive,
   onLeave,
   onOpenHelp,
+  onOpenMarket,
   soundMuted,
   onToggleSound,
   userProfile,
@@ -78,6 +79,40 @@ export default function Navbar({
         gap: '10px',
         zIndex: 100
       }}>
+        {/* Dedicated Market Button (To the Left of Profile) */}
+        <button
+          onClick={() => {
+            sounds.playClick();
+            if (onOpenMarket) {
+              onOpenMarket();
+            } else {
+              setMarketModalOpen(true);
+            }
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '7px',
+            background: isGameActive ? 'rgba(239, 68, 68, 0.25)' : '#1c1c1c',
+            border: isGameActive ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '9999px',
+            height: '38px',
+            padding: '0 14px',
+            color: '#ffffff',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+            transition: 'all 0.2s ease',
+            verticalAlign: 'middle',
+            boxSizing: 'border-box'
+          }}
+          title="doxcards market"
+        >
+          <Store size={16} color="#ef4444" />
+          <span>market</span>
+        </button>
+
         {/* Discord Profile Pill (Opens Profile Modal) */}
         {userProfile && (
           <div>
@@ -158,24 +193,6 @@ export default function Navbar({
             </button>
           </div>
         )}
-
-        {/* Market / Shop Button */}
-        <button
-          onClick={() => {
-            sounds.playClick();
-            setMarketModalOpen(true);
-          }}
-          className="btn-icon"
-          title="doxcards market"
-          style={{
-            background: isGameActive ? 'rgba(255, 255, 255, 0.12)' : '#ffffff',
-            border: isGameActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1.5px solid #000000',
-            color: isGameActive ? '#ffffff' : '#000000',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
-          }}
-        >
-          <Store size={18} color="#ef4444" />
-        </button>
 
         {/* Room Code Badge (only when inside a room) */}
         {roomCode && (
@@ -294,18 +311,12 @@ export default function Navbar({
         onClose={() => setProfileModalOpen(false)}
         userProfile={userProfile}
         onUpdateProfile={onUpdateProfile}
-        onOpenMarket={() => setMarketModalOpen(true)}
+        onOpenMarket={() => {
+          setProfileModalOpen(false);
+          if (onOpenMarket) onOpenMarket();
+          else setMarketModalOpen(true);
+        }}
         onLogout={onLogout}
-      />
-
-      {/* Market Modal */}
-      <MarketModal
-        isOpen={marketModalOpen}
-        onClose={() => setMarketModalOpen(false)}
-        discordUser={getDiscordUser()}
-        userProfile={userProfile}
-        appConfig={appConfig}
-        onUserUpdated={onUpdateProfile}
       />
     </>
   );
