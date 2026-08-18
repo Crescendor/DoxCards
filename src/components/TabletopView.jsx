@@ -170,8 +170,8 @@ function TableSlotsRow({
   };
 
   const whiteSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: 'clamp(96px, 8.5vw, 136px)',
-    height: 'clamp(136px, 18.5vh, 190px)',
+    height: '100%',
+    aspectRatio: '5 / 7',
     borderRadius: '14px',
     border: hasCard
       ? 'none'
@@ -191,17 +191,16 @@ function TableSlotsRow({
     alignItems: 'center',
     justifyContent: 'center',
     boxSizing: 'border-box',
-    overflow: 'hidden',
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+    transform: isHovered ? 'scale(1.04)' : 'scale(1)',
     boxShadow: isHovered ? '0 0 28px rgba(255, 255, 255, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.3)' : 'none'
   });
 
   const redSlotStyle = (hasCard, isHovered, isActionable) => ({
-    width: 'clamp(96px, 8.5vw, 136px)',
-    height: 'clamp(136px, 18.5vh, 190px)',
+    height: '100%',
+    aspectRatio: '5 / 7',
     borderRadius: '14px',
     border: hasCard
       ? 'none'
@@ -221,11 +220,10 @@ function TableSlotsRow({
     alignItems: 'center',
     justifyContent: 'center',
     boxSizing: 'border-box',
-    overflow: 'hidden',
     flexShrink: 0,
     position: 'relative',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+    transform: isHovered ? 'scale(1.04)' : 'scale(1)',
     boxShadow: isHovered ? '0 0 32px rgba(255, 0, 0, 0.85), inset 0 0 15px rgba(255, 0, 0, 0.4)' : 'none'
   });
 
@@ -235,12 +233,12 @@ function TableSlotsRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
-        width: '100%',
+        gap: '10px',
+        width: 'fit-content',
         maxWidth: '460px',
         height: 'clamp(148px, 20vh, 202px)',
         margin: '0 auto',
-        padding: '6px',
+        padding: '6px 10px',
         boxSizing: 'border-box',
         borderRadius: '16px',
         background: isTarget && canDropRed && isMyTurn ? 'rgba(255, 0, 0, 0.18)' : 'rgba(15, 15, 15, 0.85)',
@@ -1056,12 +1054,13 @@ export default function TabletopView({
           bottom: 0,
           left: '50%',
           transform: `translateX(-50%) translateY(${
-            (!activeDrag && isHandDrawerOpen) ? '0%' : 'calc(100% - 46px)'
+            (!activeDrag && isHandDrawerOpen) ? '0%' : 'calc(100% - 42px)'
           })`,
           transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease',
           zIndex: 85,
-          width: '96%',
-          maxWidth: '1500px',
+          width: 'fit-content',
+          minWidth: 'clamp(520px, 58vw, 840px)',
+          maxWidth: '860px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1075,7 +1074,7 @@ export default function TabletopView({
             ? '0 -14px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 0, 0, 0.3)'
             : '0 -4px 18px rgba(0, 0, 0, 0.7)',
           boxSizing: 'border-box',
-          paddingBottom: '10px',
+          paddingBottom: '8px',
           overflow: 'hidden'
         }}
       >
@@ -1084,12 +1083,12 @@ export default function TabletopView({
           onClick={() => setIsHandDrawerOpen(prev => !prev)}
           style={{
             width: '100%',
-            height: '46px',
-            minHeight: '46px',
+            height: '42px',
+            minHeight: '42px',
             display: 'grid',
             gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
-            padding: '0 28px',
+            padding: '0 20px',
             cursor: 'pointer',
             borderBottom: (!activeDrag && isHandDrawerOpen) ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
             userSelect: 'none',
@@ -1100,9 +1099,9 @@ export default function TabletopView({
           }}
         >
           {/* Left: Destem badge & counters */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%', justifySelf: 'start' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', height: '100%', justifySelf: 'start' }}>
             <span style={{
-              fontSize: '0.9rem',
+              fontSize: '0.86rem',
               fontWeight: 800,
               color: '#ffffff',
               display: 'inline-flex',
@@ -1110,19 +1109,19 @@ export default function TabletopView({
               gap: '6px',
               lineHeight: 1
             }}>
-              <Layers size={17} color="#FF0000" />
+              <Layers size={16} color="#FF0000" />
               <span>destem</span>
             </span>
 
             <span style={{
-              padding: '4px 12px',
+              padding: '3px 10px',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               background: '#ffffff',
               color: '#1e1e1e',
               fontWeight: 800,
-              fontSize: '0.74rem',
+              fontSize: '0.72rem',
               lineHeight: 1,
               borderRadius: '9999px',
               flexShrink: 0
@@ -1131,14 +1130,14 @@ export default function TabletopView({
             </span>
 
             <span style={{
-              padding: '4px 12px',
+              padding: '3px 10px',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               background: '#FF0000',
               color: '#ffffff',
               fontWeight: 800,
-              fontSize: '0.74rem',
+              fontSize: '0.72rem',
               lineHeight: 1,
               borderRadius: '9999px',
               flexShrink: 0
@@ -1149,7 +1148,7 @@ export default function TabletopView({
 
           {/* Middle Action Hint - ALWAYS MATHEMATICALLY CENTERED */}
           <div style={{
-            fontSize: '0.8rem',
+            fontSize: '0.78rem',
             fontWeight: 700,
             color: isMyTurn ? '#34d399' : '#94a3b8',
             display: 'flex',
@@ -1159,7 +1158,7 @@ export default function TabletopView({
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
             justifySelf: 'center',
-            padding: '0 16px'
+            padding: '0 14px'
           }}>
             {isMyTurn && phase === 'PERKS' && <span>kartını masana sürükle veya tıkla</span>}
             {isMyTurn && phase === 'SABOTAGE' && <span>kırmızı kartını hedef masaya sürükle</span>}
@@ -1172,37 +1171,37 @@ export default function TabletopView({
             alignItems: 'center',
             gap: '6px',
             color: (!activeDrag && isHandDrawerOpen) ? '#94a3b8' : '#ffffff',
-            fontSize: '0.8rem',
+            fontSize: '0.78rem',
             fontWeight: 700,
             lineHeight: 1,
             justifySelf: 'end'
           }}>
             {(!activeDrag && isHandDrawerOpen) ? (
               <>
-                <ChevronDown size={15} />
+                <ChevronDown size={14} />
                 <span>desteyi gizle</span>
               </>
             ) : (
               <>
-                <ChevronUp size={15} />
+                <ChevronUp size={14} />
                 <span>kartlarını açmak için tıkla / üzerine gel</span>
               </>
             )}
           </div>
         </div>
 
-        {/* Spacious Horizontal Cards Rack Container (Overlapping Real Held Deck Hand) */}
+        {/* Snug Horizontal Cards Rack Container (Overlapping Real Held Deck Hand) */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: (availableWhiteCards.length + availableRedCards.length) <= 7 ? 'center' : 'flex-start',
+          justifyContent: 'center',
           width: '100%',
           overflowX: 'auto',
           overflowY: 'hidden',
-          padding: '36px 36px 18px 36px',
+          padding: '28px 24px 12px 24px',
           boxSizing: 'border-box',
           scrollbarWidth: 'thin',
-          minHeight: '266px',
+          minHeight: '236px',
           pointerEvents: activeDrag ? 'none' : 'auto'
         }}>
           {/* White Perk Cards (Held Overlapping Deck) */}
@@ -1222,13 +1221,13 @@ export default function TabletopView({
                   onClick={() => !activeDrag && handleCardClick(card, 'perk')}
                   style={{
                     position: 'relative',
-                    width: '148px',
-                    minWidth: '148px',
-                    maxWidth: '148px',
-                    height: '208px',
-                    marginRight: isLast ? '0px' : '-34px',
+                    width: '134px',
+                    minWidth: '134px',
+                    maxWidth: '134px',
+                    height: '188px',
+                    marginRight: isLast ? '0px' : '-22px',
                     zIndex: isHovered ? 120 : 10 + index,
-                    transform: isHovered ? 'translateY(-32px)' : 'translateY(0px)',
+                    transform: isHovered ? 'translateY(-28px)' : 'translateY(0px)',
                     transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease',
                     boxShadow: isHovered ? '0 18px 40px rgba(0, 0, 0, 0.9), 0 0 22px rgba(255, 255, 255, 0.45)' : '0 6px 18px rgba(0, 0, 0, 0.65)',
                     borderRadius: '14px',
@@ -1255,9 +1254,9 @@ export default function TabletopView({
           {availableWhiteCards.length > 0 && availableRedCards.length > 0 && (
             <div style={{
               width: '2px',
-              height: '170px',
+              height: '150px',
               background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(239, 68, 68, 0.45), rgba(255,255,255,0.08))',
-              margin: '0 24px',
+              margin: '0 20px',
               flexShrink: 0,
               borderRadius: '9999px'
             }} />
@@ -1280,13 +1279,13 @@ export default function TabletopView({
                   onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
                   style={{
                     position: 'relative',
-                    width: '148px',
-                    minWidth: '148px',
-                    maxWidth: '148px',
-                    height: '208px',
-                    marginRight: isLast ? '0px' : '-34px',
+                    width: '134px',
+                    minWidth: '134px',
+                    maxWidth: '134px',
+                    height: '188px',
+                    marginRight: isLast ? '0px' : '-22px',
                     zIndex: isHovered ? 120 : 30 + index,
-                    transform: isHovered ? 'translateY(-32px)' : 'translateY(0px)',
+                    transform: isHovered ? 'translateY(-28px)' : 'translateY(0px)',
                     transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease',
                     boxShadow: isHovered ? '0 18px 40px rgba(0, 0, 0, 0.9), 0 0 22px rgba(239, 68, 68, 0.55)' : '0 6px 18px rgba(0, 0, 0, 0.65)',
                     borderRadius: '14px',
