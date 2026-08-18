@@ -502,8 +502,8 @@ export default function MarketModal({
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                             <Coins size={15} color="#fbbf24" />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 900, color: theme.price === 0 ? '#34d399' : '#fbbf24' }}>
-                              {theme.price === 0 ? 'ücretsiz' : `${theme.price.toLocaleString('tr-TR')} coin`}
+                            <span style={{ fontSize: '0.9rem', fontWeight: 900, color: (Number(theme.price) || 0) === 0 ? '#34d399' : '#fbbf24' }}>
+                              {(Number(theme.price) || 0) === 0 ? 'ücretsiz' : `${(Number(theme.price) || 0).toLocaleString('tr-TR')} coin`}
                             </span>
                           </div>
 
@@ -649,7 +649,7 @@ export default function MarketModal({
                             <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <Coins size={12} color="#fbbf24" />
                               <span style={{ color: '#fbbf24', fontWeight: 700 }}>
-                                {sound.price.toLocaleString('tr-TR')} coin
+                                {(Number(sound.price) || 0).toLocaleString('tr-TR')} coin
                               </span>
                             </div>
                           </div>

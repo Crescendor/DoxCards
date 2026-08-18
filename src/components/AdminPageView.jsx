@@ -1628,10 +1628,20 @@ export default function AdminPageView({ onBack, discordUser }) {
           )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* SECTION A: KARTLAR VE DESTELER (WITH HORIZONTAL TABS FROM IMAGE 2) */}
+        {/* SECTION A: KARTLAR VE DESTELER                                          */}
         {/* ----------------------------------------------------------------------- */}
         {mainNav === 'cards' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+            {/* Standard Section Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0, textTransform: 'lowercase' }}>
+                kart & deste yönetimi
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
+                oyundaki beyaz (perk) ve kırmızı (flag) kartları, varsayılan desteleri, Discord sunucu destelerini ve oyuncu kart önerilerini yönetin.
+              </p>
+            </div>
+
             {/* Stats Cards */}
             <div style={{
               display: 'grid',
@@ -1699,123 +1709,130 @@ export default function AdminPageView({ onBack, discordUser }) {
               </div>
             </div>
 
-            {/* Horizontal Sub-Tabs (Image 2 style) */}
+            {/* Horizontal Sub-Tabs (Unified Pill Style) */}
             <div style={{
               display: 'flex',
-              gap: '10px',
-              background: '#1c1c1c',
+              gap: '8px',
+              background: '#181818',
               padding: '6px',
               borderRadius: '14px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
               <button
                 onClick={() => { sounds.playClick(); setActiveTab('list'); }}
                 style={{
                   flex: 1,
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  background: activeTab === 'list' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: activeTab === 'list' ? '#ef4444' : 'transparent',
+                  color: activeTab === 'list' ? '#ffffff' : '#94a3b8',
+                  fontWeight: activeTab === 'list' ? 800 : 700,
+                  fontSize: '0.86rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: activeTab === 'list' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <Layers size={18} /> kart yönetimi ({deckState.allCards.length})
+                <Layers size={17} /> kart yönetimi ({deckState.allCards.length})
               </button>
 
               <button
                 onClick={() => { sounds.playClick(); setActiveTab('categories'); }}
                 style={{
                   flex: 1,
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  background: activeTab === 'categories' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: activeTab === 'categories' ? '#ef4444' : 'transparent',
+                  color: activeTab === 'categories' ? '#ffffff' : '#94a3b8',
+                  fontWeight: activeTab === 'categories' ? 800 : 700,
+                  fontSize: '0.86rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: activeTab === 'categories' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <FolderEdit size={18} /> desteler ve izinler ({combinedDeckList.length})
+                <FolderEdit size={17} /> desteler ve izinler ({combinedDeckList.length})
               </button>
 
               <button
                 onClick={() => { sounds.playClick(); setActiveTab('add'); }}
                 style={{
                   flex: 1,
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  background: activeTab === 'add' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: activeTab === 'add' ? '#ef4444' : 'transparent',
+                  color: activeTab === 'add' ? '#ffffff' : '#94a3b8',
+                  fontWeight: activeTab === 'add' ? 800 : 700,
+                  fontSize: '0.86rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: activeTab === 'add' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <Plus size={18} /> yeni kart ekle
+                <Plus size={17} /> yeni kart ekle
               </button>
 
               <button
                 onClick={() => { sounds.playClick(); setActiveTab('json'); }}
                 style={{
                   flex: 1,
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  background: activeTab === 'json' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: activeTab === 'json' ? '#ef4444' : 'transparent',
+                  color: activeTab === 'json' ? '#ffffff' : '#94a3b8',
+                  fontWeight: activeTab === 'json' ? 800 : 700,
+                  fontSize: '0.86rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: activeTab === 'json' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <FileCode size={18} /> json düzenleyici & içe/dışa aktar
+                <FileCode size={17} /> json düzenleyici
               </button>
 
               <button
                 onClick={() => { sounds.playClick(); setActiveTab('suggestions'); loadSuggestions(); }}
                 style={{
                   flex: 1,
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  background: activeTab === 'suggestions' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: activeTab === 'suggestions' ? '#ef4444' : 'transparent',
+                  color: activeTab === 'suggestions' ? '#ffffff' : '#94a3b8',
+                  fontWeight: activeTab === 'suggestions' ? 800 : 700,
+                  fontSize: '0.86rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: activeTab === 'suggestions' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <Lightbulb size={18} /> önerilen kart & desteler ({suggestionsList.length})
+                <Lightbulb size={17} /> öneriler ({suggestionsList.length})
               </button>
             </div>
 
@@ -3526,16 +3543,16 @@ export default function AdminPageView({ onBack, discordUser }) {
         )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* SECTION B: KULLANICILAR (DISCORD USERS, TAGS & DECK PERMISSIONS) */}
+        {/* SECTION B: KULLANICI YÖNETİMİ                                           */}
         {/* ----------------------------------------------------------------------- */}
         {mainNav === 'users' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
-                  kayıtlı discord kullanıcıları ({usersList.length})
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0, textTransform: 'lowercase' }}>
+                  kullanıcı yönetimi ({usersList.length})
                 </h2>
-                <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
+                <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
                   discord ile giriş yapan oyuncuları görüntüleyin, düzenleme modalı üzerinden etiket, deste ve ses tercihlerini yönetin.
                 </p>
               </div>
@@ -3706,18 +3723,30 @@ export default function AdminPageView({ onBack, discordUser }) {
         )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* SECTION C: ARAYÜZ AYARLARI (UI SETTINGS: SOUNDS & TAGS)                 */}
+        {/* SECTION C: ARAYÜZ AYARLARI (SESLER & ETİKETLER)                         */}
         {/* ----------------------------------------------------------------------- */}
         {mainNav === 'ui_settings' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-            {/* Top Horizontal Sub-Navbar */}
+            {/* Standard Section Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0, textTransform: 'lowercase' }}>
+                ses efektleri & arayüz yönetimi
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
+                beyaz kart atarken, kırmızı kart atarken ve oyun kazanıldığında çalacak sesleri ekleyin. yerel mp3/wav yükleyebilir veya youtube video linki verip saniye aralığı belirleyebilirsiniz.
+              </p>
+            </div>
+
+            {/* Horizontal Sub-Tabs (Unified Pill Style) */}
             <div style={{
               display: 'flex',
-              gap: '10px',
-              background: '#1c1c1c',
+              gap: '8px',
+              background: '#181818',
               padding: '6px',
               borderRadius: '14px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
               <button
                 onClick={() => { sounds.playClick(); setUiTab('sounds'); }}
@@ -3725,20 +3754,21 @@ export default function AdminPageView({ onBack, discordUser }) {
                   flex: 1,
                   padding: '12px 18px',
                   borderRadius: '10px',
-                  background: uiTab === 'sounds' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: uiTab === 'sounds' ? '#ef4444' : 'transparent',
+                  color: uiTab === 'sounds' ? '#ffffff' : '#94a3b8',
+                  fontWeight: uiTab === 'sounds' ? 800 : 700,
+                  fontSize: '0.88rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: uiTab === 'sounds' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <Volume2 size={18} /> ses ayarları ({(appConfig.customSounds || []).length})
+                <Volume2 size={17} /> ses ayarları ({(appConfig.customSounds || []).length})
               </button>
 
               <button
@@ -3747,34 +3777,27 @@ export default function AdminPageView({ onBack, discordUser }) {
                   flex: 1,
                   padding: '12px 18px',
                   borderRadius: '10px',
-                  background: uiTab === 'tags' ? '#d90429' : 'transparent',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.92rem',
+                  background: uiTab === 'tags' ? '#ef4444' : 'transparent',
+                  color: uiTab === 'tags' ? '#ffffff' : '#94a3b8',
+                  fontWeight: uiTab === 'tags' ? 800 : 700,
+                  fontSize: '0.88rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: uiTab === 'tags' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
                 }}
               >
-                <Tag size={18} /> etiketler & roller ({(appConfig.customTags || DEFAULT_CONFIG.customTags || []).length})
+                <Tag size={17} /> etiketler & roller ({(appConfig.customTags || DEFAULT_CONFIG.customTags || []).length})
               </button>
             </div>
 
             {/* SUB-TAB 1: SES AYARLARI */}
             {uiTab === 'sounds' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1000px' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
-                    ses efektleri & müzik yönetimi
-                  </h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>
-                    beyaz kart atarken, kırmızı kart atarken ve oyun kazanıldığında çalacak sesleri ekleyin. yerel mp3/wav yükleyebilir veya youtube video linki verip saniye aralığı belirleyebilirsiniz.
-                  </p>
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
 
                 {/* 1. YENİ SES EKLEME FORMU */}
                 <div style={{
@@ -4375,7 +4398,17 @@ export default function AdminPageView({ onBack, discordUser }) {
         {/* SECTION D: COIN DÜZENLEME & KATSAYI YÖNETİMİ                            */}
         {/* ----------------------------------------------------------------------- */}
         {mainNav === 'coins' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+            {/* Standard Section Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0, textTransform: 'lowercase' }}>
+                coin & puan katsayıları
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
+                oyuncuların maç kazanarak veya oynayarak kazandığı coin miktarlarını, rol katsayılarını ve market ekonomisini yapılandırın.
+              </p>
+            </div>
+
             {/* Header / Info Banner */}
             <div style={{
               background: '#1c1c1c',
@@ -4905,71 +4938,73 @@ export default function AdminPageView({ onBack, discordUser }) {
         {/* SECTION E: MARKET YÖNETİMİ (KART TEMALARI & SESLER)                     */}
         {/* ----------------------------------------------------------------------- */}
         {mainNav === 'market' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Header / Sub-tabs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+            {/* Standard Section Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0, textTransform: 'lowercase' }}>
+                market & vitrin yönetimi
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
+                oyuncuların coinleriyle satın alabileceği kart temalarını ve özel ses efektlerini yönetin, yeni temalar ve youtube sesleri ekleyin.
+              </p>
+            </div>
+
+            {/* Horizontal Sub-Tabs (Unified Pill Style) */}
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: '#1c1c1c',
-              padding: '16px 20px',
-              borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              gap: '8px',
+              background: '#181818',
+              padding: '6px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Store size={22} color="#ef4444" />
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#ffffff' }}>
-                    market ve tema yönetimi
-                  </h3>
-                  <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                    kart temalarını, fiyatlarını, optik animasyonlarını ve market seslerini özelleştirin
-                  </span>
-                </div>
-              </div>
+              <button
+                onClick={() => { sounds.playClick(); setMarketSubTab('themes'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: marketSubTab === 'themes' ? '#ef4444' : 'transparent',
+                  color: marketSubTab === 'themes' ? '#ffffff' : '#94a3b8',
+                  fontWeight: marketSubTab === 'themes' ? 800 : 700,
+                  fontSize: '0.88rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'all 0.2s',
+                  boxShadow: marketSubTab === 'themes' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
+                }}
+              >
+                <Layers size={17} /> kart temaları ({(appConfig.market?.themes || []).length})
+              </button>
 
-              {/* Sub-tabs Pills */}
-              <div style={{ display: 'flex', gap: '8px', background: '#141414', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <button
-                  onClick={() => { sounds.playClick(); setMarketSubTab('themes'); }}
-                  style={{
-                    background: marketSubTab === 'themes' ? '#ef4444' : 'transparent',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <Layers size={14} /> kart temaları ({(appConfig.market?.themes || []).length})
-                </button>
-
-                <button
-                  onClick={() => { sounds.playClick(); setMarketSubTab('sounds'); }}
-                  style={{
-                    background: marketSubTab === 'sounds' ? '#ef4444' : 'transparent',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <Volume2 size={14} /> özel sesler ({(appConfig.market?.sounds || []).length})
-                </button>
-              </div>
+              <button
+                onClick={() => { sounds.playClick(); setMarketSubTab('sounds'); }}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: marketSubTab === 'sounds' ? '#ef4444' : 'transparent',
+                  color: marketSubTab === 'sounds' ? '#ffffff' : '#94a3b8',
+                  fontWeight: marketSubTab === 'sounds' ? 800 : 700,
+                  fontSize: '0.88rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'all 0.2s',
+                  boxShadow: marketSubTab === 'sounds' ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
+                }}
+              >
+                <Volume2 size={17} /> özel sesler ({(appConfig.customSounds || []).length})
+              </button>
             </div>
 
             {/* 1. KART TEMALARI ALT SEKMESİ */}
@@ -5000,188 +5035,119 @@ export default function AdminPageView({ onBack, discordUser }) {
                         background: '#1c1c1c',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '16px',
-                        padding: '18px',
+                        padding: '16px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '14px',
-                        position: 'relative'
+                        gap: '12px'
                       }}
                     >
-                      {/* Theme Header & Status */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#ffffff' }}>
-                              {th.name}
-                            </h4>
-                            {th.isDefault && (
-                              <span style={{
-                                background: 'rgba(56, 189, 248, 0.15)',
-                                border: '1px solid #38bdf8',
-                                color: '#38bdf8',
-                                fontSize: '0.66rem',
-                                fontWeight: 800,
-                                padding: '2px 6px',
-                                borderRadius: '6px'
-                              }}>
-                                varsayılan
-                              </span>
-                            )}
-                          </div>
-                          <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#94a3b8' }}>
-                            {th.description || 'Açıklama girilmedi.'}
-                          </p>
+                      {/* Theme Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Sparkles size={16} color={th.effects?.glowColor || '#ef4444'} />
+                          <span style={{ fontWeight: 800, fontSize: '0.96rem', color: '#ffffff' }}>
+                            {th.name}
+                          </span>
+                          {th.isDefault && (
+                            <span style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              color: '#f87171',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.68rem',
+                              fontWeight: 800
+                            }}>
+                              varsayılan
+                            </span>
+                          )}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(251, 191, 36, 0.12)', padding: '4px 8px', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
-                          <Coins size={14} color="#fbbf24" />
-                          <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#fbbf24' }}>
-                            {th.price === 0 ? 'ücretsiz' : `${th.price} coin`}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => handleOpenEditTheme(th)}
+                            className="btn-secondary"
+                            style={{ padding: '6px 12px', fontSize: '0.76rem' }}
+                          >
+                            <Edit2 size={12} /> düzenle
+                          </button>
+                          {!th.isDefault && (
+                            <button
+                              onClick={() => handleDeleteTheme(th.id)}
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#f87171',
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                fontSize: '0.76rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Trash2 size={12} /> sil
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Theme 4 Cards Preview Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <img
+                            src={th.redBack || '/themes/stocks/1.png'}
+                            alt="1"
+                            style={{ width: '100%', height: '84px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 0, 0, 0.3)' }}
+                          />
+                          <span style={{ fontSize: '0.66rem', color: '#f87171', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                            1: Kırm. Arka
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <img
+                            src={th.whiteBack || '/themes/stocks/2.png'}
+                            alt="2"
+                            style={{ width: '100%', height: '84px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.2)' }}
+                          />
+                          <span style={{ fontSize: '0.66rem', color: '#cbd5e1', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                            2: Bey. Arka
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <img
+                            src={th.redFront || '/themes/stocks/3.png'}
+                            alt="3"
+                            style={{ width: '100%', height: '84px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 0, 0, 0.3)' }}
+                          />
+                          <span style={{ fontSize: '0.66rem', color: '#f87171', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                            3: Kırm. Ön
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <img
+                            src={th.whiteFront || '/themes/stocks/4.png'}
+                            alt="4"
+                            style={{ width: '100%', height: '84px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.2)' }}
+                          />
+                          <span style={{ fontSize: '0.66rem', color: '#cbd5e1', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                            4: Bey. Ön
                           </span>
                         </div>
                       </div>
 
-                      {/* 4 Cards Live Preview */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, 1fr)',
-                        gap: '6px',
-                        background: '#141414',
-                        padding: '8px',
-                        borderRadius: '10px',
-                        border: '1px solid rgba(255, 255, 255, 0.04)'
-                      }}>
-                        {/* 1. Red Back */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                          <div style={{
-                            width: '100%',
-                            aspectRatio: '0.68',
-                            borderRadius: '6px',
-                            backgroundImage: `url(${th.images?.redBack || '/themes/stocks/1.png'})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            border: '1px solid rgba(239, 68, 68, 0.3)'
-                          }} />
-                          <span style={{ fontSize: '0.60rem', color: '#ef4444', fontWeight: 700 }}>1. kırmızı arka</span>
+                      {/* Theme Meta Details */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem', color: '#94a3b8', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '8px' }}>
+                        <div>
+                          <span>Fiyat: </span>
+                          <span style={{ color: '#fbbf24', fontWeight: 800 }}>{(Number(th.price) || 0)} coin</span>
                         </div>
-
-                        {/* 2. White Back */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                          <div style={{
-                            width: '100%',
-                            aspectRatio: '0.68',
-                            borderRadius: '6px',
-                            backgroundImage: `url(${th.images?.whiteBack || '/themes/stocks/2.png'})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            border: '1px solid rgba(255, 255, 255, 0.2)'
-                          }} />
-                          <span style={{ fontSize: '0.60rem', color: '#e2e8f0', fontWeight: 700 }}>2. beyaz arka</span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {th.effects?.animation && th.effects.animation !== 'none' && (
+                            <span style={{ color: '#38bdf8', fontWeight: 700 }}>• {th.effects.animation}</span>
+                          )}
+                          {th.effects?.glow && (
+                            <span style={{ color: '#a855f7', fontWeight: 700 }}>• parlama</span>
+                          )}
                         </div>
-
-                        {/* 3. Red Front */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                          <div style={{
-                            width: '100%',
-                            aspectRatio: '0.68',
-                            borderRadius: '6px',
-                            backgroundImage: `url(${th.images?.redFront || '/themes/stocks/3.png'})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '4px'
-                          }}>
-                            <span style={{ fontSize: '0.54rem', color: th.fontColorRed || '#ffffff', fontWeight: 800, textAlign: 'center' }}>
-                              red flag
-                            </span>
-                          </div>
-                          <span style={{ fontSize: '0.60rem', color: '#ef4444', fontWeight: 700 }}>3. kırmızı ön</span>
-                        </div>
-
-                        {/* 4. White Front */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                          <div style={{
-                            width: '100%',
-                            aspectRatio: '0.68',
-                            borderRadius: '6px',
-                            backgroundImage: `url(${th.images?.whiteFront || '/themes/stocks/4.png'})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '4px'
-                          }}>
-                            <span style={{ fontSize: '0.54rem', color: th.fontColorWhite || '#000000', fontWeight: 800, textAlign: 'center' }}>
-                              perk
-                            </span>
-                          </div>
-                          <span style={{ fontSize: '0.60rem', color: '#e2e8f0', fontWeight: 700 }}>4. beyaz ön</span>
-                        </div>
-                      </div>
-
-                      {/* Theme Meta Info (Colors, Glow, Anim) */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '0.72rem' }}>
-                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
-                          kırmızı font: <b style={{ color: th.fontColorRed || '#ffffff' }}>{th.fontColorRed || '#ffffff'}</b>
-                        </span>
-                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
-                          beyaz font: <b style={{ color: th.fontColorWhite || '#000000' }}>{th.fontColorWhite || '#000000'}</b>
-                        </span>
-                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
-                          parlama: <b>{th.glow || 'none'}</b>
-                        </span>
-                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
-                          animasyon: <b>{th.animation || 'none'}</b>
-                        </span>
-                      </div>
-
-                      {/* Actions */}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditTheme(th)}
-                          style={{
-                            background: '#222222',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: '#ffffff',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            fontSize: '0.76rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <Edit2 size={12} /> düzenle
-                        </button>
-                        {!th.isDefault && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTheme(th.id)}
-                            style={{
-                              background: 'rgba(239, 68, 68, 0.15)',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                              color: '#f87171',
-                              padding: '6px 10px',
-                              borderRadius: '8px',
-                              fontSize: '0.76rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <Trash2 size={12} /> sil
-                          </button>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -5191,7 +5157,7 @@ export default function AdminPageView({ onBack, discordUser }) {
 
             {/* 2. ÖZEL SESLER ALT SEKMESİ */}
             {marketSubTab === 'sounds' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
                 {/* Add Sound Card */}
                 <form onSubmit={handleAddMarketSound} style={{
                   background: '#181818',
@@ -5363,14 +5329,15 @@ export default function AdminPageView({ onBack, discordUser }) {
                   </div>
                 </form>
 
-                {/* Sounds Grid */}
+                {/* Sounds Full-Width List */}
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                  gap: '14px'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  width: '100%'
                 }}>
                   {(!appConfig.customSounds || appConfig.customSounds.length === 0) ? (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '0.88rem' }}>
+                    <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '0.88rem' }}>
                       henüz market için ses efekti eklenmedi. yukarıdaki formdan ilk sesinizi ekleyebilirsiniz.
                     </div>
                   ) : (
@@ -5381,71 +5348,112 @@ export default function AdminPageView({ onBack, discordUser }) {
                           background: '#1c1c1c',
                           border: '1px solid rgba(255, 255, 255, 0.08)',
                           borderRadius: '14px',
-                          padding: '14px',
+                          padding: '12px 18px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '12px'
+                          gap: '14px',
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {snd.coverImage ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleTestPlay(snd)}
+                            style={{
+                              width: '38px',
+                              height: '38px',
+                              borderRadius: '50%',
+                              background: playingSoundId === snd.id ? '#ef4444' : 'rgba(255, 255, 255, 0.1)',
+                              border: 'none',
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              flexShrink: 0
+                            }}
+                            title="Çal / Test Et"
+                          >
+                            {playingSoundId === snd.id ? <Square size={14} fill="#ffffff" /> : <Play size={14} fill="#ffffff" />}
+                          </button>
+
+                          {snd.coverImage && (
                             <img
                               src={snd.coverImage}
                               alt={snd.name}
-                              style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
+                              style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(255, 255, 255, 0.1)' }}
                             />
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleTestPlay(snd)}
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '10px',
-                                background: 'rgba(239, 68, 68, 0.15)',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                color: '#ef4444',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer'
-                              }}
-                              title="Dinle / Test Et"
-                            >
-                              <Play size={14} />
-                            </button>
                           )}
 
-                          <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left', minWidth: 0 }}>
+                            <span style={{ fontWeight: 800, fontSize: '0.94rem', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {snd.name}
-                            </div>
-                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>{snd.category}</span>
-                              <span>•</span>
-                              <span style={{ color: '#fbbf24', fontWeight: 700 }}>{snd.price || 200} coin</span>
-                              {snd.type === 'youtube' && <span style={{ color: '#ef4444', fontWeight: 700 }}>• YouTube</span>}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{
+                                background: snd.category === 'white_card' ? '#ffffff' : (snd.category === 'red_card' ? '#FF0000' : '#eab308'),
+                                color: snd.category === 'white_card' ? '#000000' : (snd.category === 'red_card' ? '#ffffff' : '#000000'),
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.68rem',
+                                fontWeight: 800
+                              }}>
+                                {snd.category === 'white_card' ? 'beyaz kart' : (snd.category === 'red_card' ? 'kırmızı kart' : (snd.category === 'game_win' ? 'zafer / skorbord' : 'genel'))}
+                              </span>
+
+                              <span style={{
+                                background: 'rgba(251, 191, 36, 0.15)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                padding: '1px 6px',
+                                borderRadius: '5px',
+                                fontSize: '0.68rem',
+                                fontWeight: 800
+                              }}>
+                                {(Number(snd.price) || 0)} coin
+                              </span>
+
+                              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                                {snd.type === 'youtube' ? `youtube (${snd.startSec || 0}s - ${snd.endSec || 3}s)` :
+                                 snd.type === 'local' ? `dosya (${snd.startSec || 0}s - ${snd.endSec || 3}s)` :
+                                 `url (${snd.startSec || 0}s - ${snd.endSec || 3}s)`}
+                              </span>
+
+                              {snd.isDefault && (
+                                <span style={{
+                                  background: 'rgba(255, 0, 0, 0.2)',
+                                  color: '#ff6666',
+                                  border: '1px solid #FF0000',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800
+                                }}>
+                                  varsayılan
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                           <button
                             type="button"
                             onClick={() => handleOpenEditSoundModal(snd)}
                             className="btn-secondary"
                             style={{
-                              padding: '6px 10px',
-                              fontSize: '0.74rem',
-                              fontWeight: 700,
-                              borderRadius: '8px',
+                              padding: '6px 12px',
+                              fontSize: '0.76rem',
+                              height: '32px',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '4px',
+                              borderRadius: '8px'
                             }}
                           >
-                            <Edit2 size={13} /> düzenle
+                            <Edit2 size={12} /> düzenle
                           </button>
 
                           <button
@@ -5460,6 +5468,7 @@ export default function AdminPageView({ onBack, discordUser }) {
                               fontSize: '0.74rem',
                               fontWeight: 700,
                               cursor: 'pointer',
+                              height: '32px',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '4px'
