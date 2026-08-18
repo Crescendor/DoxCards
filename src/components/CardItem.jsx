@@ -94,16 +94,13 @@ export default function CardItem({
 
   return (
     <div
-      className={animationClass}
       onClick={disabled ? undefined : onClick}
       style={{
         position: 'relative',
-        width: isSmall ? '100%' : '180px',
-        maxWidth: isSmall ? '100%' : '180px',
-        height: isSmall ? '100%' : '252px',
-        maxHeight: isSmall ? '100%' : '252px',
+        width: '100%',
+        height: '100%',
         aspectRatio: '5 / 7',
-        borderRadius: isSmall ? '10px' : '16px',
+        borderRadius: isSmall ? '10px' : '14px',
         overflow: 'hidden',
         boxSizing: 'border-box',
         cursor: onClick && !disabled ? 'pointer' : 'default',
@@ -111,12 +108,10 @@ export default function CardItem({
           ? (isWhite ? '0 0 24px rgba(255, 255, 255, 0.9)' : '0 0 24px rgba(217, 4, 41, 0.95)')
           : (glowShadow
               ? `${glowShadow}, 0 6px 18px rgba(0, 0, 0, 0.4)`
-              : (isWhite ? '0 6px 18px rgba(0, 0, 0, 0.4)' : '0 6px 20px rgba(217, 4, 41, 0.45)')),
+              : (isWhite ? '0 4px 14px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(217, 4, 41, 0.45)')),
         userSelect: 'none',
         WebkitUserDrag: 'none',
         flexShrink: 0,
-        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
-        transform: isSelected ? 'translateY(-12px)' : 'none',
         outline: isSelected
           ? (isWhite ? '3px solid #ffffff' : '3px solid #FF0000')
           : 'none',

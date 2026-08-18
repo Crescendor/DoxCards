@@ -1182,116 +1182,123 @@ export default function TabletopView({
           </div>
         </div>
 
-        {/* Spacious Horizontal Cards Rack Container */}
+        {/* Spacious Horizontal Cards Rack Container (Overlapping Real Held Deck Hand) */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: (availableWhiteCards.length + availableRedCards.length) <= 7 ? 'center' : 'flex-start',
-          gap: '14px',
           width: '100%',
           overflowX: 'auto',
           overflowY: 'hidden',
-          padding: '16px 28px 16px 28px',
+          padding: '36px 36px 18px 36px',
           boxSizing: 'border-box',
           scrollbarWidth: 'thin',
-          minHeight: '252px',
+          minHeight: '266px',
           pointerEvents: activeDrag ? 'none' : 'auto'
         }}>
-          {/* White Perk Cards */}
-          {availableWhiteCards.map((card, index) => {
-            const isHovered = hoveredCardId === card.id;
-            const isBeingDragged = activeDrag?.card?.id === card.id;
-            const canPlay = isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted;
+          {/* White Perk Cards (Held Overlapping Deck) */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+            {availableWhiteCards.map((card, index) => {
+              const isHovered = hoveredCardId === card.id;
+              const isBeingDragged = activeDrag?.card?.id === card.id;
+              const canPlay = isMyTurn && phase === 'PERKS' && !myCandidate?.whiteCardsSubmitted;
+              const isLast = index === availableWhiteCards.length - 1;
 
-            return (
-              <div
-                key={card.id}
-                onPointerDown={(e) => startCardDrag(e, card, 'perk')}
-                onMouseEnter={() => setHoveredCardId(card.id)}
-                onMouseLeave={() => setHoveredCardId(null)}
-                onClick={() => !activeDrag && handleCardClick(card, 'perk')}
-                style={{
-                  position: 'relative',
-                  width: '148px',
-                  minWidth: '148px',
-                  maxWidth: '148px',
-                  height: '208px',
-                  zIndex: isHovered ? 50 : 10 + index,
-                  transform: isHovered
-                    ? 'translateY(-10px) scale(1.04)'
-                    : 'translateY(0px) scale(1)',
-                  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  cursor: canPlay ? 'grab' : 'default',
-                  opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
-                  touchAction: 'none',
-                  userSelect: 'none',
-                  flexShrink: 0
-                }}
-              >
-                <CardItem
-                  card={card}
-                  type="perk"
-                  isSelected={isHovered}
-                  theme={player?.equippedTheme}
-                  appConfig={appConfig}
-                />
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={card.id}
+                  onPointerDown={(e) => startCardDrag(e, card, 'perk')}
+                  onMouseEnter={() => setHoveredCardId(card.id)}
+                  onMouseLeave={() => setHoveredCardId(null)}
+                  onClick={() => !activeDrag && handleCardClick(card, 'perk')}
+                  style={{
+                    position: 'relative',
+                    width: '148px',
+                    minWidth: '148px',
+                    maxWidth: '148px',
+                    height: '208px',
+                    marginRight: isLast ? '0px' : '-34px',
+                    zIndex: isHovered ? 120 : 10 + index,
+                    transform: isHovered ? 'translateY(-32px)' : 'translateY(0px)',
+                    transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease',
+                    boxShadow: isHovered ? '0 18px 40px rgba(0, 0, 0, 0.9), 0 0 22px rgba(255, 255, 255, 0.45)' : '0 6px 18px rgba(0, 0, 0, 0.65)',
+                    borderRadius: '14px',
+                    cursor: canPlay ? 'grab' : 'default',
+                    opacity: (phase !== 'PERKS' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    flexShrink: 0
+                  }}
+                >
+                  <CardItem
+                    card={card}
+                    type="perk"
+                    isSelected={isHovered}
+                    theme={player?.equippedTheme}
+                    appConfig={appConfig}
+                  />
+                </div>
+              );
+            })}
+          </div>
 
           {/* Divider between White and Red cards if both exist */}
           {availableWhiteCards.length > 0 && availableRedCards.length > 0 && (
             <div style={{
               width: '2px',
               height: '170px',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.1), rgba(239, 68, 68, 0.4), rgba(255,255,255,0.1))',
-              margin: '0 6px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(239, 68, 68, 0.45), rgba(255,255,255,0.08))',
+              margin: '0 24px',
               flexShrink: 0,
               borderRadius: '9999px'
             }} />
           )}
 
-          {/* Red Flag Sabotage Cards */}
-          {availableRedCards.map((card, index) => {
-            const isHovered = hoveredCardId === card.id;
-            const isBeingDragged = activeDrag?.card?.id === card.id;
-            const canPlay = isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag;
+          {/* Red Flag Sabotage Cards (Held Overlapping Deck) */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+            {availableRedCards.map((card, index) => {
+              const isHovered = hoveredCardId === card.id;
+              const isBeingDragged = activeDrag?.card?.id === card.id;
+              const canPlay = isMyTurn && phase === 'SABOTAGE' && mySabotageTarget && !mySabotageTarget.targetCandidate?.hasRedFlag;
+              const isLast = index === availableRedCards.length - 1;
 
-            return (
-              <div
-                key={card.id}
-                onPointerDown={(e) => startCardDrag(e, card, 'redflag')}
-                onMouseEnter={() => setHoveredCardId(card.id)}
-                onMouseLeave={() => setHoveredCardId(null)}
-                onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
-                style={{
-                  position: 'relative',
-                  width: '148px',
-                  minWidth: '148px',
-                  maxWidth: '148px',
-                  height: '208px',
-                  zIndex: isHovered ? 50 : 25 + index,
-                  transform: isHovered
-                    ? 'translateY(-10px) scale(1.04)'
-                    : 'translateY(0px) scale(1)',
-                  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  cursor: canPlay ? 'grab' : 'default',
-                  opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
-                  touchAction: 'none',
-                  userSelect: 'none',
-                  flexShrink: 0
-                }}
-              >
-                <CardItem
-                  card={card}
-                  type="redflag"
-                  isSelected={isHovered}
-                  theme={player?.equippedTheme}
-                  appConfig={appConfig}
-                />
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={card.id}
+                  onPointerDown={(e) => startCardDrag(e, card, 'redflag')}
+                  onMouseEnter={() => setHoveredCardId(card.id)}
+                  onMouseLeave={() => setHoveredCardId(null)}
+                  onClick={() => !activeDrag && handleCardClick(card, 'redflag')}
+                  style={{
+                    position: 'relative',
+                    width: '148px',
+                    minWidth: '148px',
+                    maxWidth: '148px',
+                    height: '208px',
+                    marginRight: isLast ? '0px' : '-34px',
+                    zIndex: isHovered ? 120 : 30 + index,
+                    transform: isHovered ? 'translateY(-32px)' : 'translateY(0px)',
+                    transition: 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease',
+                    boxShadow: isHovered ? '0 18px 40px rgba(0, 0, 0, 0.9), 0 0 22px rgba(239, 68, 68, 0.55)' : '0 6px 18px rgba(0, 0, 0, 0.65)',
+                    borderRadius: '14px',
+                    cursor: canPlay ? 'grab' : 'default',
+                    opacity: (phase !== 'SABOTAGE' && isMyTurn) ? 0.6 : (isBeingDragged ? 0.2 : 1),
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    flexShrink: 0
+                  }}
+                >
+                  <CardItem
+                    card={card}
+                    type="redflag"
+                    isSelected={isHovered}
+                    theme={player?.equippedTheme}
+                    appConfig={appConfig}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
