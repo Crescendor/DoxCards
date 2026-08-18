@@ -17,6 +17,25 @@ const globalRooms = new Map();
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
 
+function sanitizeUserSounds(user, validSoundIds) {
+  if (!user) return user;
+  if (user.customSounds && typeof user.customSounds === 'object') {
+    if (user.customSounds.whiteCardSoundId && !validSoundIds.has(user.customSounds.whiteCardSoundId)) {
+      user.customSounds.whiteCardSoundId = null;
+    }
+    if (user.customSounds.redCardSoundId && !validSoundIds.has(user.customSounds.redCardSoundId)) {
+      user.customSounds.redCardSoundId = null;
+    }
+    if (user.customSounds.gameWinSoundId && !validSoundIds.has(user.customSounds.gameWinSoundId)) {
+      user.customSounds.gameWinSoundId = null;
+    }
+  }
+  if (Array.isArray(user.ownedSounds)) {
+    user.ownedSounds = user.ownedSounds.filter(id => validSoundIds.has(id));
+  }
+  return user;
+}
+
 export const DEFAULT_CARD_THEMES = [
   {
     id: 'stocks',
@@ -267,25 +286,6 @@ export class GameRoomDO {
             return deck;
           }
         }
-function sanitizeUserSounds(user, validSoundIds) {
-  if (!user) return user;
-  if (user.customSounds && typeof user.customSounds === 'object') {
-    if (user.customSounds.whiteCardSoundId && !validSoundIds.has(user.customSounds.whiteCardSoundId)) {
-      user.customSounds.whiteCardSoundId = null;
-    }
-    if (user.customSounds.redCardSoundId && !validSoundIds.has(user.customSounds.redCardSoundId)) {
-      user.customSounds.redCardSoundId = null;
-    }
-    if (user.customSounds.gameWinSoundId && !validSoundIds.has(user.customSounds.gameWinSoundId)) {
-      user.customSounds.gameWinSoundId = null;
-    }
-  }
-  if (Array.isArray(user.ownedSounds)) {
-    user.ownedSounds = user.ownedSounds.filter(id => validSoundIds.has(id));
-  }
-  return user;
-}
-
       } catch (err) {
         console.error('Error fetching global deck from DO storage:', err);
       }
