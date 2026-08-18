@@ -325,11 +325,19 @@ class SoundEngine {
   playTriggerSound(triggerCategory, playerObj = null, customSoundsList = []) {
     if (this.muted) return;
 
+    // If custom sounds are muted by player, play standard procedural sound immediately
+    if (this.customMuted) {
+      if (triggerCategory === 'white_card') this.playCardDeal();
+      else if (triggerCategory === 'red_card') this.playSabotage();
+      else if (triggerCategory === 'game_win') this.playWin();
+      return;
+    }
+
     const activeSounds = (Array.isArray(customSoundsList) && customSoundsList.length > 0)
       ? customSoundsList
       : (this.customSoundsList || []);
 
-    // 1. Check if the player has a custom sound chosen in profile
+    // 1. Check if the player has a custom sound chosen in profile that exists in active sounds
     const customSoundId = playerObj?.customSounds?.[
       triggerCategory === 'white_card' ? 'whiteCardSoundId' :
       triggerCategory === 'red_card' ? 'redCardSoundId' :
@@ -338,22 +346,22 @@ class SoundEngine {
 
     if (customSoundId && Array.isArray(activeSounds)) {
       const matched = activeSounds.find(s => s.id === customSoundId);
-      if (matched) {
+      if (matched && (matched.url || matched.ytId || matched.dataUrl)) {
         this.playCustomAudio(matched);
         return;
       }
     }
 
-    // 2. Check if there is an admin default sound for this category
+    // 2. Check if there is an admin default sound for this category with valid audio
     if (Array.isArray(activeSounds)) {
       const defaultSound = activeSounds.find(s => s.category === triggerCategory && s.isDefault);
-      if (defaultSound && (defaultSound.url || defaultSound.ytId)) {
+      if (defaultSound && (defaultSound.url || defaultSound.ytId || defaultSound.dataUrl)) {
         this.playCustomAudio(defaultSound);
         return;
       }
     }
 
-    // 3. Fallback to procedural sound
+    // 3. Fallback to procedural clean sound
     if (triggerCategory === 'white_card') {
       this.playCardDeal();
     } else if (triggerCategory === 'red_card') {

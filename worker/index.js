@@ -296,6 +296,25 @@ export class GameRoomDO {
         }
         if (!config) config = DEFAULT_CONFIG;
 
+function sanitizeUserSounds(user, validSoundIds) {
+  if (!user) return user;
+  if (user.customSounds && typeof user.customSounds === 'object') {
+    if (user.customSounds.whiteCardSoundId && !validSoundIds.has(user.customSounds.whiteCardSoundId)) {
+      user.customSounds.whiteCardSoundId = null;
+    }
+    if (user.customSounds.redCardSoundId && !validSoundIds.has(user.customSounds.redCardSoundId)) {
+      user.customSounds.redCardSoundId = null;
+    }
+    if (user.customSounds.gameWinSoundId && !validSoundIds.has(user.customSounds.gameWinSoundId)) {
+      user.customSounds.gameWinSoundId = null;
+    }
+  }
+  if (Array.isArray(user.ownedSounds)) {
+    user.ownedSounds = user.ownedSounds.filter(id => validSoundIds.has(id));
+  }
+  return user;
+}
+
         // Unify customSounds and market.sounds
         const unifiedSounds = Array.isArray(config.customSounds)
           ? config.customSounds
@@ -325,6 +344,26 @@ export class GameRoomDO {
 
         if (this.state?.storage) {
           await this.state.storage.put('app_config', newConfig);
+
+          // Clean up deleted sounds from all existing users in storage
+          const validSoundIds = new Set((newConfig.customSounds || []).map(s => s.id));
+          let usersMap = (await this.state.storage.get('users_map')) || {};
+          let mapChanged = false;
+          for (const uid of Object.keys(usersMap)) {
+            const u = usersMap[uid];
+            if (u) {
+              const oldJson = JSON.stringify(u.customSounds || {});
+              sanitizeUserSounds(u, validSoundIds);
+              const newJson = JSON.stringify(u.customSounds || {});
+              if (oldJson !== newJson) {
+                mapChanged = true;
+                u.updatedAt = Date.now();
+              }
+            }
+          }
+          if (mapChanged) {
+            await this.state.storage.put('users_map', usersMap);
+          }
         }
         return Response.json({ success: true, config: newConfig }, {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -339,8 +378,15 @@ export class GameRoomDO {
         usersMap = (await this.state.storage.get('users_map')) || {};
       }
 
+      let config = DEFAULT_CONFIG;
+      if (this.state?.storage) {
+        config = (await this.state.storage.get('app_config')) || DEFAULT_CONFIG;
+      }
+      const validSoundIds = new Set((config.customSounds || []).map(s => s.id));
+
       // 1. Get all users
       if (url.pathname === '/api/users' || url.pathname === '/api/users/') {
+        Object.values(usersMap).forEach(u => sanitizeUserSounds(u, validSoundIds));
         return Response.json(Object.values(usersMap), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -351,11 +397,6 @@ export class GameRoomDO {
         const data = await request.json();
         const { id, username, displayName, avatar } = data;
         if (!id) return Response.json({ error: 'ID required' }, { status: 400, headers: corsHeaders });
-
-        let config = DEFAULT_CONFIG;
-        if (this.state?.storage) {
-          config = (await this.state.storage.get('app_config')) || DEFAULT_CONFIG;
-        }
 
         const isMainAdmin = id === '269639754675519489';
         let user = usersMap[id];
@@ -371,6 +412,7 @@ export class GameRoomDO {
           if (isMainAdmin && !user.tags.includes('admin')) {
             user.tags = ['admin', ...user.tags];
           }
+          sanitizeUserSounds(user, validSoundIds);
           user.updatedAt = Date.now();
         } else {
           user = {
@@ -418,6 +460,7 @@ export class GameRoomDO {
         if (typeof equippedTheme === 'string') user.equippedTheme = equippedTheme;
         if (Array.isArray(ownedSounds)) user.ownedSounds = ownedSounds;
         Object.assign(user, rest);
+        sanitizeUserSounds(user, validSoundIds);
         user.updatedAt = Date.now();
 
         usersMap[userId] = user;

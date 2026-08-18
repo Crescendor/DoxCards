@@ -24,11 +24,42 @@ export default function SoundSettingsModal({
         if (cfg && Array.isArray(cfg.customSounds)) {
           setAppSounds(cfg.customSounds);
           sounds.setCustomSounds(cfg.customSounds);
+
+          const validWhiteIds = new Set(cfg.customSounds.filter(s => s.category === 'white_card' || s.category === 'general').map(s => s.id));
+          const validRedIds = new Set(cfg.customSounds.filter(s => s.category === 'red_card' || s.category === 'general').map(s => s.id));
+          const validWinIds = new Set(cfg.customSounds.filter(s => s.category === 'game_win' || s.category === 'general').map(s => s.id));
+
+          const curWhite = userProfile?.customSounds?.whiteCardSoundId || '';
+          const curRed = userProfile?.customSounds?.redCardSoundId || '';
+          const curWin = userProfile?.customSounds?.gameWinSoundId || '';
+
+          const cleanWhite = validWhiteIds.has(curWhite) ? curWhite : '';
+          const cleanRed = validRedIds.has(curRed) ? curRed : '';
+          const cleanWin = validWinIds.has(curWin) ? curWin : '';
+
+          setSelectedWhiteSound(cleanWhite);
+          setSelectedRedSound(cleanRed);
+          setSelectedWinSound(cleanWin);
+
+          // If a sound was deleted, automatically clean profile and persist
+          if (curWhite !== cleanWhite || curRed !== cleanRed || curWin !== cleanWin) {
+            const cleanedCustomSounds = {
+              whiteCardSoundId: cleanWhite || null,
+              redCardSoundId: cleanRed || null,
+              gameWinSoundId: cleanWin || null
+            };
+            const updated = {
+              ...userProfile,
+              customSounds: cleanedCustomSounds
+            };
+            saveLocalUserProfile(updated);
+            if (onUpdateProfile) onUpdateProfile(updated);
+            if (userProfile?.id) {
+              updateUser(userProfile.id, { customSounds: cleanedCustomSounds });
+            }
+          }
         }
       });
-      setSelectedWhiteSound(userProfile?.customSounds?.whiteCardSoundId || '');
-      setSelectedRedSound(userProfile?.customSounds?.redCardSoundId || '');
-      setSelectedWinSound(userProfile?.customSounds?.gameWinSoundId || '');
     }
   }, [isOpen, userProfile]);
 

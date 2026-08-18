@@ -31,6 +31,33 @@ export default function App() {
       if (cfg) {
         setAppConfig(cfg);
         if (cfg.customSounds) sounds.setCustomSounds(cfg.customSounds);
+
+        // Sanitize local cached user profile against live customSounds
+        const cached = getLocalUserProfile();
+        if (cached?.customSounds && Array.isArray(cfg.customSounds)) {
+          const validIds = new Set(cfg.customSounds.map(s => s.id));
+          const w = cached.customSounds.whiteCardSoundId;
+          const r = cached.customSounds.redCardSoundId;
+          const g = cached.customSounds.gameWinSoundId;
+
+          const cleanW = (w && validIds.has(w)) ? w : null;
+          const cleanR = (r && validIds.has(r)) ? r : null;
+          const cleanG = (g && validIds.has(g)) ? g : null;
+
+          if (w !== cleanW || r !== cleanR || g !== cleanG) {
+            const updated = {
+              ...cached,
+              customSounds: {
+                whiteCardSoundId: cleanW,
+                redCardSoundId: cleanR,
+                gameWinSoundId: cleanG
+              }
+            };
+            saveLocalUserProfile(updated);
+            setUserProfile(updated);
+            setPlayer(prev => ({ ...prev, customSounds: updated.customSounds }));
+          }
+        }
       }
     });
 
