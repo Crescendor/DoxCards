@@ -267,6 +267,25 @@ export class GameRoomDO {
             return deck;
           }
         }
+function sanitizeUserSounds(user, validSoundIds) {
+  if (!user) return user;
+  if (user.customSounds && typeof user.customSounds === 'object') {
+    if (user.customSounds.whiteCardSoundId && !validSoundIds.has(user.customSounds.whiteCardSoundId)) {
+      user.customSounds.whiteCardSoundId = null;
+    }
+    if (user.customSounds.redCardSoundId && !validSoundIds.has(user.customSounds.redCardSoundId)) {
+      user.customSounds.redCardSoundId = null;
+    }
+    if (user.customSounds.gameWinSoundId && !validSoundIds.has(user.customSounds.gameWinSoundId)) {
+      user.customSounds.gameWinSoundId = null;
+    }
+  }
+  if (Array.isArray(user.ownedSounds)) {
+    user.ownedSounds = user.ownedSounds.filter(id => validSoundIds.has(id));
+  }
+  return user;
+}
+
       } catch (err) {
         console.error('Error fetching global deck from DO storage:', err);
       }
@@ -287,46 +306,28 @@ export class GameRoomDO {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Config API (/api/config)
-    if (url.pathname === '/api/config' || url.pathname === '/api/config/') {
-      if (request.method === 'GET') {
-        let config = null;
-        if (this.state?.storage) {
-          config = await this.state.storage.get('app_config');
+    try {
+      // Config API (/api/config)
+      if (url.pathname === '/api/config' || url.pathname === '/api/config/') {
+        if (request.method === 'GET') {
+          let config = null;
+          if (this.state?.storage) {
+            config = await this.state.storage.get('app_config');
+          }
+          if (!config) config = DEFAULT_CONFIG;
+
+          // Unify customSounds and market.sounds
+          const unifiedSounds = Array.isArray(config.customSounds)
+            ? config.customSounds
+            : (Array.isArray(config.market?.sounds) ? config.market.sounds : []);
+          config.customSounds = unifiedSounds;
+          if (!config.market) config.market = { themes: [], sounds: [] };
+          config.market.sounds = unifiedSounds;
+
+          return Response.json(config, {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
         }
-        if (!config) config = DEFAULT_CONFIG;
-
-function sanitizeUserSounds(user, validSoundIds) {
-  if (!user) return user;
-  if (user.customSounds && typeof user.customSounds === 'object') {
-    if (user.customSounds.whiteCardSoundId && !validSoundIds.has(user.customSounds.whiteCardSoundId)) {
-      user.customSounds.whiteCardSoundId = null;
-    }
-    if (user.customSounds.redCardSoundId && !validSoundIds.has(user.customSounds.redCardSoundId)) {
-      user.customSounds.redCardSoundId = null;
-    }
-    if (user.customSounds.gameWinSoundId && !validSoundIds.has(user.customSounds.gameWinSoundId)) {
-      user.customSounds.gameWinSoundId = null;
-    }
-  }
-  if (Array.isArray(user.ownedSounds)) {
-    user.ownedSounds = user.ownedSounds.filter(id => validSoundIds.has(id));
-  }
-  return user;
-}
-
-        // Unify customSounds and market.sounds
-        const unifiedSounds = Array.isArray(config.customSounds)
-          ? config.customSounds
-          : (Array.isArray(config.market?.sounds) ? config.market.sounds : []);
-        config.customSounds = unifiedSounds;
-        if (!config.market) config.market = { themes: [], sounds: [] };
-        config.market.sounds = unifiedSounds;
-
-        return Response.json(config, {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
       if (request.method === 'POST') {
         const body = await request.json();
         const currentConfig = (this.state?.storage ? await this.state.storage.get('app_config') : null) || DEFAULT_CONFIG;
@@ -823,6 +824,18 @@ function sanitizeUserSounds(user, validSoundIds) {
         'Access-Control-Allow-Origin': '*'
       }
     });
+    } catch (err) {
+      console.error('DO fetch error:', err);
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    }
   }
 
   setupSocket(serverWs) {

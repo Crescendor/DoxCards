@@ -10,7 +10,7 @@ import RightSidebarDrawer from './components/RightSidebarDrawer';
 import AdminPageView from './components/AdminPageView';
 import MarketPageView from './components/MarketPageView';
 import { getDiscordUser, logoutDiscord } from './services/discordAuth';
-import { syncUserProfile, getLocalUserProfile, fetchAppConfig } from './services/userService';
+import { syncUserProfile, getLocalUserProfile, fetchAppConfig, saveLocalUserProfile } from './services/userService';
 
 export default function App() {
   const [player, setPlayer] = useState(getLocalPlayer());
