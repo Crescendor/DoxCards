@@ -331,27 +331,37 @@ export default function ProfileModal({
                 </div>
               </div>
 
-              {/* Roles and Tags */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8' }}>
-                  roller ve etiketler:
-                </span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                  {isAdmin && (
-                    <span className="badge-admin">
-                      <ShieldCheck size={11} /> admin
+              {/* Roles and Tags (Max 4 per row, deduplicated) */}
+              {(() => {
+                const profileTags = Array.from(new Set([
+                  ...(isAdmin ? ['admin'] : []),
+                  ...(userProfile.tags || [])
+                ]));
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8' }}>
+                      roller ve etiketler:
                     </span>
-                  )}
-                  {(userProfile.tags || []).map(t => (
-                    <TagBadge key={t} tag={t} size="md" customTags={appConfig?.customTags} />
-                  ))}
-                  {!isAdmin && (!userProfile.tags || userProfile.tags.length === 0) && (
-                    <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                      özel bir rol veya etiket bulunmuyor.
-                    </span>
-                  )}
-                </div>
-              </div>
+                    {profileTags.length > 0 ? (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, max-content)',
+                        gap: '6px 8px',
+                        alignItems: 'center'
+                      }}>
+                        {profileTags.map(t => (
+                          <TagBadge key={t} tag={t} size="md" customTags={appConfig?.customTags} />
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                        özel bir rol veya etiket bulunmuyor.
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* 2-Metric Stats Grid (NO COIN) */}
               <div style={{

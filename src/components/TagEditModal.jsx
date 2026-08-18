@@ -89,13 +89,29 @@ const ANIMATION_OPTIONS = [
   { id: 'crimson_flare', label: 'Kızıl Parlama (Crimson Flare)' }
 ];
 
+const DEFAULT_DECK_NAMES = [
+  'Ana Deste',
+  'Ek Paket',
+  'Nerd Paket',
+  'Fenasal Nerd Paket',
+  'Sekso Paket',
+  'Kara Paket',
+  'Zifiri Paket',
+  'Aktanfell Paket'
+];
+
 export default function TagEditModal({
   isOpen,
   onClose,
   tag,
   isNew = false,
+  availableDecks = [],
   onSave
 }) {
+  const effectiveDecks = (Array.isArray(availableDecks) && availableDecks.length > 0)
+    ? availableDecks
+    : DEFAULT_DECK_NAMES;
+
   const [name, setName] = useState('');
   const [tagId, setTagId] = useState('');
   const [icon, setIcon] = useState('Tag');
@@ -108,6 +124,7 @@ export default function TagEditModal({
   // Permissions
   const [permCustomSounds, setPermCustomSounds] = useState(false);
   const [permAllDecks, setPermAllDecks] = useState(false);
+  const [permUnlockedDecks, setPermUnlockedDecks] = useState(['Ana Deste']);
   const [permAdminAccess, setPermAdminAccess] = useState(false);
   const [permMultiplier, setPermMultiplier] = useState(10);
 
@@ -125,6 +142,11 @@ export default function TagEditModal({
       const perms = tag.permissions || {};
       setPermCustomSounds(!!perms.customSounds);
       setPermAllDecks(!!perms.allDecks);
+      setPermUnlockedDecks(
+        Array.isArray(perms.unlockedDecks) && perms.unlockedDecks.length > 0
+          ? perms.unlockedDecks
+          : (perms.allDecks ? effectiveDecks : ['Ana Deste'])
+      );
       setPermAdminAccess(!!perms.adminAccess);
       setPermMultiplier(Number(perms.multiplier) || 10);
     } else {
@@ -138,6 +160,7 @@ export default function TagEditModal({
       setAnimation('none');
       setPermCustomSounds(false);
       setPermAllDecks(false);
+      setPermUnlockedDecks(['Ana Deste']);
       setPermAdminAccess(false);
       setPermMultiplier(10);
     }
@@ -174,6 +197,7 @@ export default function TagEditModal({
       permissions: {
         customSounds: permCustomSounds,
         allDecks: permAllDecks,
+        unlockedDecks: permAllDecks ? effectiveDecks : permUnlockedDecks,
         adminAccess: permAdminAccess,
         multiplier: Number(permMultiplier) || 10
       }
@@ -473,6 +497,70 @@ export default function TagEditModal({
                   }}
                 />
               </div>
+            </div>
+
+            {/* Açık Paketler / Desteler Seçimi */}
+            <div style={{
+              marginTop: '6px',
+              padding: '12px',
+              background: '#181818',
+              borderRadius: '10px',
+              border: '1px solid rgba(255, 255, 255, 0.06)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={13} color="#38bdf8" /> açık olan paketler & desteler
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                  {permAllDecks ? 'tüm paketler açık' : `${permUnlockedDecks.length} paket seçili`}
+                </span>
+              </div>
+
+              {permAllDecks ? (
+                <div style={{ fontSize: '0.72rem', color: '#34d399', padding: '4px 0', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Check size={13} color="#34d399" /> "Tüm destelere erişebilir" aktif olduğu için tüm mevcut ve yeni eklenecek paketler bu etikete açıktır.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', maxHeight: '140px', overflowY: 'auto' }}>
+                  {effectiveDecks.map(deckName => {
+                    const isChecked = permUnlockedDecks.includes(deckName);
+                    return (
+                      <label
+                        key={deckName}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 8px',
+                          background: isChecked ? 'rgba(56, 189, 248, 0.12)' : '#222222',
+                          border: isChecked ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '0.72rem',
+                          color: isChecked ? '#ffffff' : '#94a3b8',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setPermUnlockedDecks(permUnlockedDecks.filter(d => d !== deckName));
+                            } else {
+                              setPermUnlockedDecks([...permUnlockedDecks, deckName]);
+                            }
+                          }}
+                          style={{ width: '14px', height: '14px', accentColor: '#38bdf8' }}
+                        />
+                        <span style={{ fontWeight: isChecked ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {deckName}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 

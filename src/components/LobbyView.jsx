@@ -48,9 +48,35 @@ export default function LobbyView({
   ]));
 
   const isMainAdmin = discordUser?.id === ADMIN_DISCORD_ID;
-  const availableDecksForHost = isMainAdmin
-    ? allDecksList
-    : (discordUser ? (userProfile?.unlockedDecks || appConfig.discordDecks || DEFAULT_CONFIG.discordDecks) : (appConfig.guestDecks || DEFAULT_CONFIG.guestDecks));
+  const availableDecksForHost = (() => {
+    if (isMainAdmin) return allDecksList;
+    const unlockedSet = new Set();
+    const userTagsList = userProfile?.tags || [];
+    const customTags = appConfig?.customTags || DEFAULT_CONFIG.customTags || [];
+
+    let hasAllDecks = false;
+    userTagsList.forEach(tagId => {
+      const tagObj = customTags.find(t => t.id === tagId || t.name === tagId);
+      if (tagObj?.permissions?.allDecks) {
+        hasAllDecks = true;
+      }
+      if (Array.isArray(tagObj?.permissions?.unlockedDecks)) {
+        tagObj.permissions.unlockedDecks.forEach(d => unlockedSet.add(d));
+      }
+    });
+
+    if (hasAllDecks) {
+      allDecksList.forEach(d => unlockedSet.add(d));
+    }
+
+    if (discordUser) {
+      (userProfile?.unlockedDecks || appConfig.discordDecks || DEFAULT_CONFIG.discordDecks || []).forEach(d => unlockedSet.add(d));
+    } else {
+      (appConfig.guestDecks || DEFAULT_CONFIG.guestDecks || ['Ana Deste']).forEach(d => unlockedSet.add(d));
+    }
+
+    return Array.from(unlockedSet);
+  })();
 
   const selectedDecks = room.settings?.selectedDecks || ['Ana Deste'];
 
@@ -221,20 +247,26 @@ export default function LobbyView({
                         </div>
                       </div>
 
-                      {/* All Tags & Roles */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                        {slotPlayer.isHost && (
-                          <span className="badge-host">
-                            <Crown size={11} /> oda kurucusu
-                          </span>
-                        )}
-                        {Array.from(new Set([
+                      {/* All Tags & Roles (Max 2 per row, host badge excluded) */}
+                      {(() => {
+                        const popoverTags = Array.from(new Set([
                           ...(isAdmin ? ['admin'] : []),
                           ...(slotPlayer.tags || [])
-                        ])).map(t => (
-                          <TagBadge key={t} tag={t} size="sm" customTags={appConfig?.customTags} />
-                        ))}
-                      </div>
+                        ]));
+                        if (popoverTags.length === 0) return null;
+                        return (
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, max-content)',
+                            gap: '6px 8px',
+                            alignItems: 'center'
+                          }}>
+                            {popoverTags.map(t => (
+                              <TagBadge key={t} tag={t} size="sm" customTags={appConfig?.customTags} />
+                            ))}
+                          </div>
+                        );
+                      })()}
 
                       {/* Stat Metrics Grid (2 Columns: Toplam Oyun & Toplam Puan - NO COINS) */}
                       <div style={{

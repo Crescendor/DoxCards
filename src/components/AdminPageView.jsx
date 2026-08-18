@@ -52,6 +52,7 @@ import {
   resetActiveDeck,
   syncDeckFromCloudflare,
   parseRawDeck,
+  standardizeBlankTokens,
   DEFAULT_RAW_CARDS
 } from '../data/cardsData';
 import {
@@ -392,22 +393,37 @@ export default function AdminPageView({ onBack, discordUser }) {
     reader.readAsText(file);
   };
 
-  // Delete single card
-  const handleDeleteCard = (card) => {
+  // Delete single card (Robust across all sections and categories)
+  const handleDeleteCard = async (card) => {
+    if (!card) return;
     if (window.confirm(`"${card.text}" kartını silmek istediğinize emin misiniz?`)) {
       sounds.playClick();
-      const section = card.type === 'perk' ? 'Perks' : 'Red Flags';
       const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
+      const targetNorm = standardizeBlankTokens(card.text).trim().toLowerCase();
+      const targetRaw = (card.text || '').trim();
 
-      if (updatedRaw[section] && updatedRaw[section][card.category]) {
-        updatedRaw[section][card.category] = updatedRaw[section][card.category].filter(
-          txt => txt.trim() !== card.text.trim()
-        );
-        saveActiveDeck(updatedRaw);
-        setDeckState(parseRawDeck(updatedRaw));
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2000);
+      // Search all sections and categories
+      for (const sec of Object.keys(updatedRaw)) {
+        if (sec === 'deckNotes') continue;
+        const sectionObj = updatedRaw[sec];
+        if (typeof sectionObj === 'object' && sectionObj !== null) {
+          for (const catKey of Object.keys(sectionObj)) {
+            if (Array.isArray(sectionObj[catKey])) {
+              sectionObj[catKey] = sectionObj[catKey].filter(txt => {
+                const norm = standardizeBlankTokens(txt || '').trim().toLowerCase();
+                const raw = (txt || '').trim();
+                const isMatch = norm === targetNorm || raw === targetRaw;
+                return !isMatch;
+              });
+            }
+          }
+        }
       }
+
+      await saveActiveDeck(updatedRaw);
+      setDeckState(parseRawDeck(updatedRaw));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
     }
   };
 
@@ -420,35 +436,43 @@ export default function AdminPageView({ onBack, discordUser }) {
     setEditingCardType(card.type);
   };
 
-  // Save inline edit
-  const handleSaveEdit = (card) => {
+  // Save inline edit (Robust across all sections and categories)
+  const handleSaveEdit = async (card) => {
     if (!editingText.trim()) return;
     sounds.playClick();
-
-    const oldSection = card.type === 'perk' ? 'Perks' : 'Red Flags';
-    const oldCategory = card.category;
 
     const newSection = editingCardType === 'perk' ? 'Perks' : 'Red Flags';
     const newCategory = (editingCardCategory || card.category || 'Ana Deste').trim();
     const newTxt = editingText.trim();
+    const targetNorm = standardizeBlankTokens(card.text).trim().toLowerCase();
+    const targetRaw = (card.text || '').trim();
 
     const updatedRaw = JSON.parse(JSON.stringify(deckState.raw));
 
-    // 1. Remove card from old position
-    if (updatedRaw[oldSection] && updatedRaw[oldSection][oldCategory]) {
-      const oldList = updatedRaw[oldSection][oldCategory];
-      const idx = oldList.findIndex(txt => txt.trim() === card.text.trim());
-      if (idx !== -1) {
-        oldList.splice(idx, 1);
+    // 1. Remove old card instance from wherever it was
+    for (const sec of Object.keys(updatedRaw)) {
+      if (sec === 'deckNotes') continue;
+      const sectionObj = updatedRaw[sec];
+      if (typeof sectionObj === 'object' && sectionObj !== null) {
+        for (const catKey of Object.keys(sectionObj)) {
+          if (Array.isArray(sectionObj[catKey])) {
+            sectionObj[catKey] = sectionObj[catKey].filter(txt => {
+              const norm = standardizeBlankTokens(txt || '').trim().toLowerCase();
+              const raw = (txt || '').trim();
+              return !(norm === targetNorm || raw === targetRaw);
+            });
+          }
+        }
       }
     }
 
-    // 2. Insert card into new destination deck / category
+    // 2. Insert edited card into destination section & category
     updatedRaw[newSection] = updatedRaw[newSection] || {};
-    updatedRaw[newSection][newCategory] = updatedRaw[newSection][newCategory] || [];
-    updatedRaw[newSection][newCategory].push(newTxt);
+    let destCatKey = Object.keys(updatedRaw[newSection]).find(k => k.toLowerCase() === newCategory.toLowerCase()) || newCategory;
+    updatedRaw[newSection][destCatKey] = updatedRaw[newSection][destCatKey] || [];
+    updatedRaw[newSection][destCatKey].push(newTxt);
 
-    saveActiveDeck(updatedRaw);
+    await saveActiveDeck(updatedRaw);
     setDeckState(parseRawDeck(updatedRaw));
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
@@ -5078,6 +5102,12 @@ export default function AdminPageView({ onBack, discordUser }) {
         onClose={() => setTagModalOpen(false)}
         tag={editingTag}
         isNew={isNewTag}
+        availableDecks={Array.from(new Set([
+          ...Object.keys(deckState.raw?.Perks || {}),
+          ...Object.keys(deckState.raw?.['Red Flags'] || {}),
+          ...Object.keys(deckState.raw?.perks || {}),
+          ...Object.keys(deckState.raw?.red_flags || {})
+        ])).filter(Boolean)}
         onSave={handleSaveTag}
       />
     </div>
