@@ -1,10 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, HelpCircle, Copy, Check, LogOut, ShieldCheck, Crown, Sparkles, Star, User, ChevronDown, Music, Lightbulb, Link2, Coins } from 'lucide-react';
+import {
+  Volume2,
+  VolumeX,
+  HelpCircle,
+  Copy,
+  Check,
+  LogOut,
+  ShieldCheck,
+  Crown,
+  Sparkles,
+  Star,
+  User,
+  ChevronDown,
+  Music,
+  Lightbulb,
+  Link2,
+  Coins,
+  Store,
+  ShoppingBag
+} from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import ProfileModal from './ProfileModal';
+import MarketModal from './MarketModal';
 import TagBadge from './TagBadge';
 import { fetchAppConfig, DEFAULT_CONFIG } from '../services/userService';
+import { getDiscordUser } from '../services/discordAuth';
 
 export default function Navbar({
   roomCode,
@@ -20,6 +41,7 @@ export default function Navbar({
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [marketModalOpen, setMarketModalOpen] = useState(false);
   const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
 
   useEffect(() => {
@@ -136,6 +158,24 @@ export default function Navbar({
             </button>
           </div>
         )}
+
+        {/* Market / Shop Button */}
+        <button
+          onClick={() => {
+            sounds.playClick();
+            setMarketModalOpen(true);
+          }}
+          className="btn-icon"
+          title="doxcards market"
+          style={{
+            background: isGameActive ? 'rgba(255, 255, 255, 0.12)' : '#ffffff',
+            border: isGameActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1.5px solid #000000',
+            color: isGameActive ? '#ffffff' : '#000000',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
+          }}
+        >
+          <Store size={18} color="#ef4444" />
+        </button>
 
         {/* Room Code Badge (only when inside a room) */}
         {roomCode && (
@@ -254,7 +294,18 @@ export default function Navbar({
         onClose={() => setProfileModalOpen(false)}
         userProfile={userProfile}
         onUpdateProfile={onUpdateProfile}
+        onOpenMarket={() => setMarketModalOpen(true)}
         onLogout={onLogout}
+      />
+
+      {/* Market Modal */}
+      <MarketModal
+        isOpen={marketModalOpen}
+        onClose={() => setMarketModalOpen(false)}
+        discordUser={getDiscordUser()}
+        userProfile={userProfile}
+        appConfig={appConfig}
+        onUserUpdated={onUpdateProfile}
       />
     </>
   );

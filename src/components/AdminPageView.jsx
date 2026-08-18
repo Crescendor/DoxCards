@@ -42,7 +42,11 @@ import {
   ShieldAlert,
   Ban,
   CheckSquare,
-  VolumeX
+  VolumeX,
+  Store,
+  ShoppingBag,
+  Eye,
+  Palette
 } from 'lucide-react';
 import doxcardsLogo from '../assets/doxcards.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
@@ -68,6 +72,7 @@ import { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
 import TagBadge from './TagBadge';
 import TagEditModal from './TagEditModal';
+import ThemeEditModal from './ThemeEditModal';
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
 
@@ -250,6 +255,135 @@ export default function AdminPageView({ onBack, discordUser }) {
     const currentTags = appConfig.customTags || DEFAULT_CONFIG.customTags || [];
     const updatedTags = currentTags.filter(t => t.id.toLowerCase() !== tagIdToDelete.toLowerCase());
     const updatedConfig = { ...appConfig, customTags: updatedTags };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  // Market Management State & Handlers
+  const [marketSubTab, setMarketSubTab] = useState('themes'); // 'themes' | 'sounds'
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
+  const [editingTheme, setEditingTheme] = useState(null);
+  const [isNewTheme, setIsNewTheme] = useState(false);
+
+  // New Market Sound form state
+  const [newMarketSoundName, setNewMarketSoundName] = useState('');
+  const [newMarketSoundCategory, setNewMarketSoundCategory] = useState('white_card');
+  const [newMarketSoundPrice, setNewMarketSoundPrice] = useState(200);
+  const [newMarketSoundUrl, setNewMarketSoundUrl] = useState('');
+
+  const handleOpenNewTheme = () => {
+    sounds.playClick();
+    setEditingTheme(null);
+    setIsNewTheme(true);
+    setThemeModalOpen(true);
+  };
+
+  const handleOpenEditTheme = (th) => {
+    sounds.playClick();
+    setEditingTheme(th);
+    setIsNewTheme(false);
+    setThemeModalOpen(true);
+  };
+
+  const handleSaveTheme = async (savedTheme) => {
+    sounds.playClick();
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const existingThemes = currentMarket.themes || [];
+
+    let updatedThemes;
+    if (isNewTheme) {
+      updatedThemes = [...existingThemes, savedTheme];
+    } else {
+      updatedThemes = existingThemes.map(t => t.id === savedTheme.id ? savedTheme : t);
+      // If it didn't exist, append
+      if (!existingThemes.some(t => t.id === savedTheme.id)) {
+        updatedThemes.push(savedTheme);
+      }
+    }
+
+    const updatedConfig = {
+      ...appConfig,
+      market: {
+        ...currentMarket,
+        themes: updatedThemes
+      }
+    };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleDeleteTheme = async (themeId) => {
+    if (themeId === 'stocks') {
+      alert('Varsayılan stok teması silinemez.');
+      return;
+    }
+    if (!window.confirm('Bu temayı marketten silmek istediğinize emin misiniz?')) return;
+    sounds.playClick();
+
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const updatedThemes = (currentMarket.themes || []).filter(t => t.id !== themeId);
+    const updatedConfig = {
+      ...appConfig,
+      market: {
+        ...currentMarket,
+        themes: updatedThemes
+      }
+    };
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleAddMarketSound = async (e) => {
+    e.preventDefault();
+    if (!newMarketSoundName.trim()) return;
+    sounds.playClick();
+
+    const newSound = {
+      id: 'sound_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      name: newMarketSoundName.trim(),
+      category: newMarketSoundCategory,
+      price: Number(newMarketSoundPrice) || 200,
+      url: newMarketSoundUrl.trim(),
+      isEnabled: true
+    };
+
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const updatedSounds = [...(currentMarket.sounds || []), newSound];
+    const updatedConfig = {
+      ...appConfig,
+      market: {
+        ...currentMarket,
+        sounds: updatedSounds
+      }
+    };
+
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setNewMarketSoundName('');
+    setNewMarketSoundUrl('');
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleDeleteMarketSound = async (soundId) => {
+    if (!window.confirm('Bu market sesini silmek istediğinize emin misiniz?')) return;
+    sounds.playClick();
+
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const updatedSounds = (currentMarket.sounds || []).filter(s => s.id !== soundId);
+    const updatedConfig = {
+      ...appConfig,
+      market: {
+        ...currentMarket,
+        sounds: updatedSounds
+      }
+    };
     setAppConfig(updatedConfig);
     await updateAppConfig(updatedConfig);
     setSaveSuccess(true);
@@ -1259,6 +1393,29 @@ export default function AdminPageView({ onBack, discordUser }) {
               }}
             >
               <Sliders size={18} /> arayüz ayarları
+            </button>
+
+            <button
+              onClick={() => { sounds.playClick(); setMainNav('market'); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                background: mainNav === 'market' ? '#FF0000' : 'transparent',
+                color: '#ffffff',
+                border: mainNav === 'market' ? '1px solid #ff3333' : '1px solid transparent',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: mainNav === 'market' ? '0 4px 14px rgba(255, 0, 0, 0.45)' : 'none',
+                textAlign: 'left'
+              }}
+            >
+              <Store size={18} /> market yönetimi
             </button>
           </nav>
         </div>
@@ -4607,6 +4764,420 @@ export default function AdminPageView({ onBack, discordUser }) {
             </div>
           </div>
         )}
+
+        {/* ----------------------------------------------------------------------- */}
+        {/* SECTION E: MARKET YÖNETİMİ (KART TEMALARI & SESLER)                     */}
+        {/* ----------------------------------------------------------------------- */}
+        {mainNav === 'market' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Header / Sub-tabs */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#1c1c1c',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Store size={22} color="#ef4444" />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#ffffff' }}>
+                    market ve tema yönetimi
+                  </h3>
+                  <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                    kart temalarını, fiyatlarını, optik animasyonlarını ve market seslerini özelleştirin
+                  </span>
+                </div>
+              </div>
+
+              {/* Sub-tabs Pills */}
+              <div style={{ display: 'flex', gap: '8px', background: '#141414', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <button
+                  onClick={() => { sounds.playClick(); setMarketSubTab('themes'); }}
+                  style={{
+                    background: marketSubTab === 'themes' ? '#ef4444' : 'transparent',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Layers size={14} /> kart temaları ({(appConfig.market?.themes || []).length})
+                </button>
+
+                <button
+                  onClick={() => { sounds.playClick(); setMarketSubTab('sounds'); }}
+                  style={{
+                    background: marketSubTab === 'sounds' ? '#ef4444' : 'transparent',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Volume2 size={14} /> özel sesler ({(appConfig.market?.sounds || []).length})
+                </button>
+              </div>
+            </div>
+
+            {/* 1. KART TEMALARI ALT SEKMESİ */}
+            {marketSubTab === 'themes' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.84rem', color: '#94a3b8' }}>
+                    Markette oyuncuların satın alabileceği kart temaları:
+                  </span>
+                  <button
+                    onClick={handleOpenNewTheme}
+                    className="btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', fontSize: '0.84rem' }}
+                  >
+                    <Plus size={16} /> yeni tema ekle
+                  </button>
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {(appConfig.market?.themes || []).map(th => (
+                    <div
+                      key={th.id}
+                      style={{
+                        background: '#1c1c1c',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '16px',
+                        padding: '18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '14px',
+                        position: 'relative'
+                      }}
+                    >
+                      {/* Theme Header & Status */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#ffffff' }}>
+                              {th.name}
+                            </h4>
+                            {th.isDefault && (
+                              <span style={{
+                                background: 'rgba(56, 189, 248, 0.15)',
+                                border: '1px solid #38bdf8',
+                                color: '#38bdf8',
+                                fontSize: '0.66rem',
+                                fontWeight: 800,
+                                padding: '2px 6px',
+                                borderRadius: '6px'
+                              }}>
+                                varsayılan
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#94a3b8' }}>
+                            {th.description || 'Açıklama girilmedi.'}
+                          </p>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(251, 191, 36, 0.12)', padding: '4px 8px', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                          <Coins size={14} color="#fbbf24" />
+                          <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#fbbf24' }}>
+                            {th.price === 0 ? 'ücretsiz' : `${th.price} coin`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 4 Cards Live Preview */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: '6px',
+                        background: '#141414',
+                        padding: '8px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(255, 255, 255, 0.04)'
+                      }}>
+                        {/* 1. Red Back */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          <div style={{
+                            width: '100%',
+                            aspectRatio: '0.68',
+                            borderRadius: '6px',
+                            backgroundImage: `url(${th.images?.redBack || '/themes/stocks/1.png'})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            border: '1px solid rgba(239, 68, 68, 0.3)'
+                          }} />
+                          <span style={{ fontSize: '0.60rem', color: '#ef4444', fontWeight: 700 }}>1. kırmızı arka</span>
+                        </div>
+
+                        {/* 2. White Back */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          <div style={{
+                            width: '100%',
+                            aspectRatio: '0.68',
+                            borderRadius: '6px',
+                            backgroundImage: `url(${th.images?.whiteBack || '/themes/stocks/2.png'})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            border: '1px solid rgba(255, 255, 255, 0.2)'
+                          }} />
+                          <span style={{ fontSize: '0.60rem', color: '#e2e8f0', fontWeight: 700 }}>2. beyaz arka</span>
+                        </div>
+
+                        {/* 3. Red Front */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          <div style={{
+                            width: '100%',
+                            aspectRatio: '0.68',
+                            borderRadius: '6px',
+                            backgroundImage: `url(${th.images?.redFront || '/themes/stocks/3.png'})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '4px'
+                          }}>
+                            <span style={{ fontSize: '0.54rem', color: th.fontColorRed || '#ffffff', fontWeight: 800, textAlign: 'center' }}>
+                              red flag
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.60rem', color: '#ef4444', fontWeight: 700 }}>3. kırmızı ön</span>
+                        </div>
+
+                        {/* 4. White Front */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          <div style={{
+                            width: '100%',
+                            aspectRatio: '0.68',
+                            borderRadius: '6px',
+                            backgroundImage: `url(${th.images?.whiteFront || '/themes/stocks/4.png'})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '4px'
+                          }}>
+                            <span style={{ fontSize: '0.54rem', color: th.fontColorWhite || '#000000', fontWeight: 800, textAlign: 'center' }}>
+                              perk
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.60rem', color: '#e2e8f0', fontWeight: 700 }}>4. beyaz ön</span>
+                        </div>
+                      </div>
+
+                      {/* Theme Meta Info (Colors, Glow, Anim) */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '0.72rem' }}>
+                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
+                          kırmızı font: <b style={{ color: th.fontColorRed || '#ffffff' }}>{th.fontColorRed || '#ffffff'}</b>
+                        </span>
+                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
+                          beyaz font: <b style={{ color: th.fontColorWhite || '#000000' }}>{th.fontColorWhite || '#000000'}</b>
+                        </span>
+                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
+                          parlama: <b>{th.glow || 'none'}</b>
+                        </span>
+                        <span style={{ background: '#242424', padding: '3px 8px', borderRadius: '6px', color: '#94a3b8' }}>
+                          animasyon: <b>{th.animation || 'none'}</b>
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditTheme(th)}
+                          style={{
+                            background: '#222222',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: '#ffffff',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Edit2 size={12} /> düzenle
+                        </button>
+                        {!th.isDefault && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTheme(th.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#f87171',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Trash2 size={12} /> sil
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2. ÖZEL SESLER ALT SEKMESİ */}
+            {marketSubTab === 'sounds' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Add Sound Card */}
+                <form onSubmit={handleAddMarketSound} style={{
+                  background: '#1c1c1c',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '16px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Plus size={15} color="#ef4444" /> markete yeni özel ses ekle
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr auto', gap: '10px', alignItems: 'flex-end' }}>
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem' }}>ses adı:</label>
+                      <input
+                        type="text"
+                        placeholder="Örn: Siber Kart Sesi"
+                        value={newMarketSoundName}
+                        onChange={e => setNewMarketSoundName(e.target.value)}
+                        className="input-box"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem' }}>kategori:</label>
+                      <select
+                        value={newMarketSoundCategory}
+                        onChange={e => setNewMarketSoundCategory(e.target.value)}
+                        className="select-box"
+                      >
+                        <option value="white_card">Beyaz Kart</option>
+                        <option value="red_card">Kırmızı Kart</option>
+                        <option value="game_win">Kazanma</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem' }}>coin fiyatı:</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newMarketSoundPrice}
+                        onChange={e => setNewMarketSoundPrice(e.target.value)}
+                        className="input-box"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.72rem' }}>ses url / dosya yolu:</label>
+                      <input
+                        type="text"
+                        placeholder="Örn: /sounds/cyber.mp3 veya https://..."
+                        value={newMarketSoundUrl}
+                        onChange={e => setNewMarketSoundUrl(e.target.value)}
+                        className="input-box"
+                      />
+                    </div>
+
+                    <button type="submit" className="btn-primary" style={{ padding: '10px 16px', fontSize: '0.82rem' }}>
+                      <Plus size={14} /> ekle
+                    </button>
+                  </div>
+                </form>
+
+                {/* Sounds Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gap: '14px'
+                }}>
+                  {(appConfig.market?.sounds || []).map(snd => (
+                    <div
+                      key={snd.id}
+                      style={{
+                        background: '#1c1c1c',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '14px',
+                        padding: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px'
+                      }}
+                    >
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
+                          {snd.name}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>{snd.category}</span>
+                          <span>•</span>
+                          <span style={{ color: '#fbbf24', fontWeight: 700 }}>{snd.price} coin</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMarketSound(snd.id)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#f87171',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Trash2 size={13} /> sil
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         </div>
       </main>
 
@@ -5109,6 +5680,17 @@ export default function AdminPageView({ onBack, discordUser }) {
           ...Object.keys(deckState.raw?.red_flags || {})
         ])).filter(Boolean)}
         onSave={handleSaveTag}
+      />
+
+      {/* ------------------------------------------------------------------- */}
+      {/* MODAL 4: KART TEMASI DÜZENLEME & OLUŞTURMA MODALI                  */}
+      {/* ------------------------------------------------------------------- */}
+      <ThemeEditModal
+        isOpen={themeModalOpen}
+        onClose={() => setThemeModalOpen(false)}
+        theme={editingTheme}
+        isNew={isNewTheme}
+        onSave={handleSaveTheme}
       />
     </div>
   );

@@ -1,8 +1,4 @@
 import React from 'react';
-import whiteCardFrontImg from '../assets/cards/card_white_front.png';
-import redCardFrontImg from '../assets/cards/card_red_front.png';
-import whiteCardBackImg from '../assets/cards/card_white_back.png';
-import redCardBackImg from '../assets/cards/card_red_back.png';
 
 export default function CardItem({
   card,
@@ -10,16 +6,51 @@ export default function CardItem({
   isSelected = false,
   onClick = null,
   disabled = false,
-  isSmall = false
+  isSmall = false,
+  theme = null,
+  appConfig = null
 }) {
   if (!card) return null;
 
   const isWhite = type === 'perk' || card.type === 'perk';
 
+  // Resolve theme object
+  const resolvedTheme = (() => {
+    if (theme && typeof theme === 'object') return theme;
+    const themeId = (typeof theme === 'string' && theme) || card.theme || card.equippedTheme || 'stocks';
+    const themes = appConfig?.market?.themes || [];
+    return themes.find(t => t.id === themeId) || null;
+  })();
+
+  const redBackUrl = resolvedTheme?.images?.redBack || '/themes/stocks/1.png';
+  const whiteBackUrl = resolvedTheme?.images?.whiteBack || '/themes/stocks/2.png';
+  const redFrontUrl = resolvedTheme?.images?.redFront || '/themes/stocks/3.png';
+  const whiteFrontUrl = resolvedTheme?.images?.whiteFront || '/themes/stocks/4.png';
+
+  const fontColor = isWhite
+    ? (resolvedTheme?.fontColorWhite || '#000000')
+    : (resolvedTheme?.fontColorRed || '#ffffff');
+
+  const animationClass = resolvedTheme?.animation && resolvedTheme.animation !== 'none'
+    ? `tag-anim-${resolvedTheme.animation}`
+    : '';
+
+  const glowShadow = (() => {
+    if (!resolvedTheme?.glow || resolvedTheme.glow === 'none') return '';
+    if (resolvedTheme.glow === 'golden') return '0 0 18px rgba(251, 191, 36, 0.6)';
+    if (resolvedTheme.glow === 'neon_purple') return '0 0 18px rgba(168, 85, 247, 0.6)';
+    if (resolvedTheme.glow === 'neon_blue') return '0 0 18px rgba(56, 189, 248, 0.6)';
+    if (resolvedTheme.glow === 'crimson') return '0 0 18px rgba(239, 68, 68, 0.6)';
+    if (resolvedTheme.glow === 'emerald') return '0 0 18px rgba(16, 185, 129, 0.6)';
+    if (resolvedTheme.glow === 'radioactive') return '0 0 18px rgba(34, 197, 94, 0.6)';
+    return '';
+  })();
+
   // Face-down Hidden Card
   if (card.hidden) {
     return (
       <div
+        className={animationClass}
         onClick={disabled ? undefined : onClick}
         onDragStart={(e) => e.preventDefault()}
         style={{
@@ -30,7 +61,7 @@ export default function CardItem({
           borderRadius: isSmall ? '14px' : '16px',
           overflow: 'hidden',
           cursor: onClick && !disabled ? 'pointer' : 'default',
-          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+          boxShadow: glowShadow ? `${glowShadow}, 0 4px 14px rgba(0, 0, 0, 0.4)` : '0 4px 14px rgba(0, 0, 0, 0.4)',
           background: isWhite ? '#ffffff' : '#ff0000',
           border: '1px solid rgba(0,0,0,0.15)',
           transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease',
@@ -40,7 +71,7 @@ export default function CardItem({
         }}
       >
         <img
-          src={isWhite ? whiteCardBackImg : redCardBackImg}
+          src={isWhite ? whiteBackUrl : redBackUrl}
           alt="doxcards back"
           draggable={false}
           onDragStart={(e) => e.preventDefault()}
@@ -60,6 +91,7 @@ export default function CardItem({
 
   return (
     <div
+      className={animationClass}
       onClick={disabled ? undefined : onClick}
       style={{
         position: 'relative',
@@ -74,9 +106,9 @@ export default function CardItem({
         cursor: onClick && !disabled ? 'pointer' : 'default',
         boxShadow: isSelected
           ? (isWhite ? '0 0 24px rgba(255, 255, 255, 0.9)' : '0 0 24px rgba(217, 4, 41, 0.95)')
-          : (isWhite
-              ? '0 6px 18px rgba(0, 0, 0, 0.4)'
-              : '0 6px 20px rgba(217, 4, 41, 0.45)'),
+          : (glowShadow
+              ? `${glowShadow}, 0 6px 18px rgba(0, 0, 0, 0.4)`
+              : (isWhite ? '0 6px 18px rgba(0, 0, 0, 0.4)' : '0 6px 20px rgba(217, 4, 41, 0.45)')),
         userSelect: 'none',
         WebkitUserDrag: 'none',
         flexShrink: 0,
@@ -94,7 +126,7 @@ export default function CardItem({
     >
       {/* Exact PNG Card Base Asset */}
       <img
-        src={isWhite ? whiteCardFrontImg : redCardFrontImg}
+        src={isWhite ? whiteFrontUrl : redFrontUrl}
         alt={isWhite ? 'white card' : 'red card'}
         draggable={false}
         onDragStart={(e) => e.preventDefault()}
@@ -124,7 +156,7 @@ export default function CardItem({
           lineHeight: 1.2,
           textAlign: 'left',
           textTransform: 'lowercase',
-          color: isWhite ? '#ff0000' : '#ffffff',
+          color: fontColor,
           letterSpacing: '-0.02em',
           wordBreak: 'break-word',
           overflow: 'hidden'
@@ -164,7 +196,7 @@ export default function CardItem({
                     display: 'inline-block',
                     width: '28px',
                     height: '2px',
-                    background: isWhite ? '#FF0000' : '#ffffff',
+                    background: fontColor,
                     margin: '0 2px',
                     verticalAlign: 'middle',
                     borderRadius: '1px',

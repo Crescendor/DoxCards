@@ -4,13 +4,14 @@ import CardItem from './CardItem';
 import FillBlankModal, { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
 import { socket } from '../services/socket';
+import { fetchAppConfig, DEFAULT_CONFIG } from '../services/userService';
 import redCardBackImg from '../assets/cards/card_red_back.png';
 import whiteCardBackImg from '../assets/cards/card_white_back.png';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import doxcardsLogoImg from '../assets/doxcards.png';
 
 // Dynamic Fanned Card Backs for matchmaker player desks
-function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
+function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConfig = null }) {
   const safeRed = Math.max(0, Number(redCount) || 0);
   const safeWhite = Math.max(0, Number(whiteCount) || 0);
   const total = safeRed + safeWhite;
@@ -18,6 +19,17 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
   if (total === 0) {
     return <div style={{ height: '76px', minHeight: '76px' }} />;
   }
+
+  // Resolve player theme
+  const resolvedTheme = (() => {
+    if (theme && typeof theme === 'object') return theme;
+    const themeId = (typeof theme === 'string' && theme) || 'stocks';
+    const themes = appConfig?.market?.themes || [];
+    return themes.find(t => t.id === themeId) || null;
+  })();
+
+  const whiteBackUrl = resolvedTheme?.images?.whiteBack || whiteCardBackImg;
+  const redBackUrl = resolvedTheme?.images?.redBack || redCardBackImg;
 
   // Create card array with red cards first, then white cards
   const cards = [];
@@ -65,7 +77,7 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4 }) {
             }}
           >
             <img
-              src={isWhiteBack ? whiteCardBackImg : redCardBackImg}
+              src={isWhiteBack ? whiteBackUrl : redBackUrl}
               alt="card back"
               draggable={false}
               onDragStart={(e) => e.preventDefault()}
@@ -89,7 +101,10 @@ function TableSlotsRow({
   canDropWhite,
   canDropRed,
   activeDrag,
-  onDropCard
+  onDropCard,
+  deskPlayerTheme = null,
+  saboteurTheme = null,
+  appConfig = null
 }) {
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -226,7 +241,7 @@ function TableSlotsRow({
         style={whiteSlotStyle(!!white1, isSlotActiveHover(0), isMySlots && canDropWhite && isMyTurn)}
       >
         {white1 ? (
-          <CardItem card={white1} type="perk" isSmall={true} />
+          <CardItem card={white1} type="perk" isSmall={true} theme={deskPlayerTheme || candidate?.equippedTheme} appConfig={appConfig} />
         ) : (
           <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '1. beyaz' : ''}
@@ -246,7 +261,7 @@ function TableSlotsRow({
         style={whiteSlotStyle(!!white2, isSlotActiveHover(1), isMySlots && canDropWhite && isMyTurn)}
       >
         {white2 ? (
-          <CardItem card={white2} type="perk" isSmall={true} />
+          <CardItem card={white2} type="perk" isSmall={true} theme={deskPlayerTheme || candidate?.equippedTheme} appConfig={appConfig} />
         ) : (
           <span style={{ fontSize: '0.84rem', color: isMySlots && canDropWhite && isMyTurn ? '#ffffff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
             {isMySlots ? '2. beyaz' : ''}
@@ -266,7 +281,7 @@ function TableSlotsRow({
         style={redSlotStyle(!!redFlag, isSlotActiveHover(2), isTarget && canDropRed && isMyTurn)}
       >
         {redFlag ? (
-          <CardItem card={redFlag} type="redflag" isSmall={true} />
+          <CardItem card={redFlag} type="redflag" isSmall={true} theme={saboteurTheme || candidate?.saboteurTheme} appConfig={appConfig} />
         ) : (
           <span style={{ fontSize: '0.84rem', color: isTarget && canDropRed && isMyTurn ? '#f87171' : 'rgba(248, 113, 113, 0.4)', fontWeight: 700 }}>
             {isTarget && canDropRed ? (isMyTurn ? 'kırmızı koy' : 'sabotaj') : ''}
@@ -305,6 +320,13 @@ export default function TabletopView({
 
   const players = room.players || [];
   const myCandidate = candidates[player.id];
+
+  const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
+  useEffect(() => {
+    fetchAppConfig().then(cfg => {
+      if (cfg) setAppConfig(cfg);
+    });
+  }, []);
 
   // Fill blank modal state
   const [fillModalState, setFillModalState] = useState({ isOpen: false, card: null, onConfirm: null });
@@ -863,21 +885,31 @@ export default function TabletopView({
             <DynamicHandFanned
               redCount={pCounts.red}
               whiteCount={pCounts.white}
+              theme={deskPlayer?.equippedTheme}
+              appConfig={appConfig}
             />
 
             {/* 3 Table Slots */}
-            <TableSlotsRow
-              candidate={candidateObj}
-              deskPlayerId={deskPlayer.id}
-              isMySlots={isMe}
-              isTarget={isTarget}
-              phase={phase}
-              isMyTurn={isMyTurn}
-              canDropWhite={isMe && canDropWhite}
-              canDropRed={isTarget && canDropRed}
-              activeDrag={activeDrag}
-              onDropCard={handleDropCard}
-            />
+            {(() => {
+              const saboteurPlayer = players.find(p => p.id === candidateObj?.sabotagedBy);
+              return (
+                <TableSlotsRow
+                  candidate={candidateObj}
+                  deskPlayerId={deskPlayer.id}
+                  isMySlots={isMe}
+                  isTarget={isTarget}
+                  phase={phase}
+                  isMyTurn={isMyTurn}
+                  canDropWhite={isMe && canDropWhite}
+                  canDropRed={isTarget && canDropRed}
+                  activeDrag={activeDrag}
+                  onDropCard={handleDropCard}
+                  deskPlayerTheme={deskPlayer?.equippedTheme}
+                  saboteurTheme={saboteurPlayer?.equippedTheme || candidateObj?.saboteurTheme}
+                  appConfig={appConfig}
+                />
+              );
+            })()}
           </>
         )}
       </div>
@@ -1152,6 +1184,8 @@ export default function TabletopView({
                     card={card}
                     type="perk"
                     isSelected={isHovered}
+                    theme={player?.equippedTheme}
+                    appConfig={appConfig}
                   />
                 </div>
               );
@@ -1194,6 +1228,8 @@ export default function TabletopView({
                     card={card}
                     type="redflag"
                     isSelected={isHovered}
+                    theme={player?.equippedTheme}
+                    appConfig={appConfig}
                   />
                 </div>
               );
@@ -1224,6 +1260,8 @@ export default function TabletopView({
             card={activeDrag.card}
             type={activeDrag.type}
             isSelected={true}
+            theme={player?.equippedTheme}
+            appConfig={appConfig}
           />
         </div>
       )}
@@ -1233,6 +1271,10 @@ export default function TabletopView({
         if (!info || !info.isDragging) return null;
 
         const isWhite = info.cardType === 'perk';
+        const rPlayer = players.find(p => p.id === rPlayerId);
+        const rTheme = (appConfig?.market?.themes || []).find(t => t.id === rPlayer?.equippedTheme) || null;
+        const rWhiteBackUrl = rTheme?.images?.whiteBack || whiteCardBackImg;
+        const rRedBackUrl = rTheme?.images?.redBack || redCardBackImg;
 
         return (
           <div
@@ -1283,7 +1325,7 @@ export default function TabletopView({
               border: '1.5px solid rgba(0,0,0,0.35)'
             }}>
               <img
-                src={isWhite ? whiteCardBackImg : redCardBackImg}
+                src={isWhite ? rWhiteBackUrl : rRedBackUrl}
                 alt="remote card"
                 style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
               />

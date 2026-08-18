@@ -17,6 +17,129 @@ const globalRooms = new Map();
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
 
+export const DEFAULT_CARD_THEMES = [
+  {
+    id: 'stocks',
+    name: 'Klasik Stok Tema',
+    description: 'DoxCards orijinal klasik kart teması.',
+    price: 0,
+    isDefault: true,
+    isEnabled: true,
+    fontColorRed: '#ffffff',
+    fontColorWhite: '#000000',
+    glow: 'none',
+    animation: 'none',
+    images: {
+      redBack: '/themes/stocks/1.png',
+      whiteBack: '/themes/stocks/2.png',
+      redFront: '/themes/stocks/3.png',
+      whiteFront: '/themes/stocks/4.png'
+    }
+  },
+  {
+    id: 'doxcards',
+    name: 'DoxCards Özel Tema',
+    description: 'Özel DoxCards tasarım hatlarına sahip parlak kart teması.',
+    price: 350,
+    isDefault: false,
+    isEnabled: true,
+    fontColorRed: '#ffffff',
+    fontColorWhite: '#1e293b',
+    glow: 'golden',
+    animation: 'gold_radiance',
+    images: {
+      redBack: '/themes/doxcards/1.png',
+      whiteBack: '/themes/doxcards/2.png',
+      redFront: '/themes/doxcards/3.png',
+      whiteFront: '/themes/doxcards/4.png'
+    }
+  },
+  {
+    id: 'gc',
+    name: 'Galaksi Siber Tema (GC)',
+    description: 'Derin uzay, altın ve siber enerji tonlarında fütüristik tema.',
+    price: 600,
+    isDefault: false,
+    isEnabled: true,
+    fontColorRed: '#ffffff',
+    fontColorWhite: '#0f172a',
+    glow: 'neon_purple',
+    animation: 'cosmic_pulse',
+    images: {
+      redBack: '/themes/gc/1.png',
+      whiteBack: '/themes/gc/2.png',
+      redFront: '/themes/gc/3.png',
+      whiteFront: '/themes/gc/4.png'
+    }
+  },
+  {
+    id: 'gul',
+    name: 'Kızıl Gül Aşkı (GÜL)',
+    description: 'Romantik yakut kırmızısı ve zarafet detaylı özel kart teması.',
+    price: 750,
+    isDefault: false,
+    isEnabled: true,
+    fontColorRed: '#ffe4e6',
+    fontColorWhite: '#881337',
+    glow: 'crimson',
+    animation: 'crimson_flare',
+    images: {
+      redBack: '/themes/gul/1.png',
+      whiteBack: '/themes/gul/2.png',
+      redFront: '/themes/gul/3.png',
+      whiteFront: '/themes/gul/4.png'
+    }
+  },
+  {
+    id: 'hl',
+    name: 'Holografik Neon (HL)',
+    description: 'Yüksek voltajlı neon ışıkları ve siber lazer dalgaları teması.',
+    price: 1000,
+    isDefault: false,
+    isEnabled: true,
+    fontColorRed: '#ffffff',
+    fontColorWhite: '#0284c7',
+    glow: 'neon_blue',
+    animation: 'cyber_scan',
+    images: {
+      redBack: '/themes/hl/1.png',
+      whiteBack: '/themes/hl/2.png',
+      redFront: '/themes/hl/3.png',
+      whiteFront: '/themes/hl/4.png'
+    }
+  }
+];
+
+export const DEFAULT_MARKET_SOUNDS = [
+  {
+    id: 'sound_cyber_deal',
+    name: 'Siber Kart Dağıtımı',
+    category: 'white_card',
+    price: 200,
+    type: 'synth',
+    url: '',
+    isEnabled: true
+  },
+  {
+    id: 'sound_thunder_sabotage',
+    name: 'Şimşekli Sabotaj',
+    category: 'red_card',
+    price: 300,
+    type: 'synth',
+    url: '',
+    isEnabled: true
+  },
+  {
+    id: 'sound_epic_win',
+    name: 'Destansı Zafer Trompeti',
+    category: 'game_win',
+    price: 500,
+    type: 'synth',
+    url: '',
+    isEnabled: true
+  }
+];
+
 const DEFAULT_CONFIG = {
   guestDecks: ['Ana Deste'],
   discordDecks: ['Ana Deste', 'Ek Paket'],
@@ -58,6 +181,7 @@ const DEFAULT_CONFIG = {
       permissions: {
         customSounds: true,
         allDecks: true,
+        unlockedDecks: ['all'],
         adminAccess: true,
         multiplier: 30
       }
@@ -73,7 +197,8 @@ const DEFAULT_CONFIG = {
       animation: 'neon_pulse',
       permissions: {
         customSounds: true,
-        allDecks: false,
+        allDecks: true,
+        unlockedDecks: ['all'],
         adminAccess: false,
         multiplier: 30
       }
@@ -90,11 +215,16 @@ const DEFAULT_CONFIG = {
       permissions: {
         customSounds: true,
         allDecks: false,
+        unlockedDecks: ['Ana Deste', 'Ek Paket', 'Nerd Paket'],
         adminAccess: false,
         multiplier: 20
       }
     }
-  ]
+  ],
+  market: {
+    themes: DEFAULT_CARD_THEMES,
+    sounds: DEFAULT_MARKET_SOUNDS
+  }
 };
 
 // Durable Object class for 100% synchronized stateful multiplayer rooms
@@ -241,6 +371,9 @@ export class GameRoomDO {
           user.displayName = displayName || user.displayName;
           if (avatar) user.avatar = avatar;
           if (user.coins === undefined) user.coins = 0;
+          if (!Array.isArray(user.ownedThemes)) user.ownedThemes = ['stocks'];
+          if (!user.equippedTheme) user.equippedTheme = 'stocks';
+          if (!Array.isArray(user.ownedSounds)) user.ownedSounds = [];
           if (isMainAdmin && !user.tags.includes('admin')) {
             user.tags = ['admin', ...user.tags];
           }
@@ -255,6 +388,9 @@ export class GameRoomDO {
             totalScore: 0,
             tags: isMainAdmin ? ['admin'] : [],
             unlockedDecks: isMainAdmin ? [...config.allDecks] : [...config.discordDecks],
+            ownedThemes: ['stocks'],
+            equippedTheme: 'stocks',
+            ownedSounds: [],
             createdAt: Date.now(),
             updatedAt: Date.now()
           };
@@ -273,7 +409,7 @@ export class GameRoomDO {
       // 3. Update user profile by Admin or User
       if (url.pathname === '/api/users/update' && request.method === 'POST') {
         const body = await request.json();
-        const { userId, tags, unlockedDecks, totalScore, coins, customSounds, ...rest } = body;
+        const { userId, tags, unlockedDecks, totalScore, coins, customSounds, ownedThemes, equippedTheme, ownedSounds, ...rest } = body;
         if (!userId || !usersMap[userId]) {
           return Response.json({ error: 'User not found' }, { status: 404, headers: corsHeaders });
         }
@@ -284,6 +420,9 @@ export class GameRoomDO {
         if (typeof totalScore === 'number') user.totalScore = totalScore;
         if (typeof coins === 'number') user.coins = coins;
         if (customSounds !== undefined) user.customSounds = customSounds;
+        if (Array.isArray(ownedThemes)) user.ownedThemes = ownedThemes;
+        if (typeof equippedTheme === 'string') user.equippedTheme = equippedTheme;
+        if (Array.isArray(ownedSounds)) user.ownedSounds = ownedSounds;
         Object.assign(user, rest);
         user.updatedAt = Date.now();
 
@@ -313,6 +452,84 @@ export class GameRoomDO {
           }
         }
         return Response.json({ success: true }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // Market Database API (/api/market)
+    if (url.pathname.startsWith('/api/market')) {
+      let usersMap = {};
+      if (this.state?.storage) {
+        usersMap = (await this.state.storage.get('users_map')) || {};
+      }
+
+      // Buy Market Item (Theme or Sound)
+      if (url.pathname === '/api/market/buy' && request.method === 'POST') {
+        const body = await request.json();
+        const { userId, itemType, itemId, price } = body;
+
+        if (!userId || !usersMap[userId]) {
+          return Response.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404, headers: corsHeaders });
+        }
+
+        const user = usersMap[userId];
+        const cost = Number(price) || 0;
+
+        if ((user.coins || 0) < cost) {
+          return Response.json({ error: 'Yetersiz coin bakiyesi.' }, { status: 400, headers: corsHeaders });
+        }
+
+        user.coins = (user.coins || 0) - cost;
+
+        if (itemType === 'theme') {
+          user.ownedThemes = Array.isArray(user.ownedThemes) ? user.ownedThemes : ['stocks'];
+          if (!user.ownedThemes.includes(itemId)) {
+            user.ownedThemes.push(itemId);
+          }
+          user.equippedTheme = itemId;
+        } else if (itemType === 'sound') {
+          user.ownedSounds = Array.isArray(user.ownedSounds) ? user.ownedSounds : [];
+          if (!user.ownedSounds.includes(itemId)) {
+            user.ownedSounds.push(itemId);
+          }
+        }
+
+        user.updatedAt = Date.now();
+        usersMap[userId] = user;
+        if (this.state?.storage) {
+          await this.state.storage.put('users_map', usersMap);
+        }
+
+        return Response.json({ success: true, user }, {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Equip Card Theme
+      if (url.pathname === '/api/market/equip' && request.method === 'POST') {
+        const body = await request.json();
+        const { userId, themeId } = body;
+
+        if (!userId || !usersMap[userId]) {
+          return Response.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404, headers: corsHeaders });
+        }
+
+        const user = usersMap[userId];
+        user.ownedThemes = Array.isArray(user.ownedThemes) ? user.ownedThemes : ['stocks'];
+
+        if (!user.ownedThemes.includes(themeId) && themeId !== 'stocks') {
+          return Response.json({ error: 'Bu temaya sahip değilsiniz.' }, { status: 403, headers: corsHeaders });
+        }
+
+        user.equippedTheme = themeId;
+        user.updatedAt = Date.now();
+        usersMap[userId] = user;
+        if (this.state?.storage) {
+          await this.state.storage.put('users_map', usersMap);
+        }
+
+        return Response.json({ success: true, user }, {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }

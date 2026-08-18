@@ -15,11 +15,14 @@ import {
   Save,
   Check,
   Lock,
-  Music
+  Music,
+  ShoppingBag,
+  Layers,
+  Coins
 } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
-import { fetchAppConfig, updateUser, saveLocalUserProfile, DEFAULT_CONFIG } from '../services/userService';
+import { fetchAppConfig, updateUser, equipTheme, saveLocalUserProfile, DEFAULT_CONFIG } from '../services/userService';
 import { socket } from '../services/socket';
 import TagBadge from './TagBadge';
 
@@ -28,11 +31,13 @@ export default function ProfileModal({
   onClose,
   userProfile,
   onUpdateProfile,
+  onOpenMarket,
   onLogout
 }) {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'audio_theme'
   const [customMuted, setCustomMuted] = useState(sounds.customMuted);
   const [appConfig, setAppConfig] = useState(DEFAULT_CONFIG);
+  const [equippingThemeId, setEquippingThemeId] = useState(null);
 
   // Custom sounds configuration for VIP / Premium users
   const [appSounds, setAppSounds] = useState([]);
@@ -636,52 +641,162 @@ export default function ProfileModal({
                 )}
               </div>
 
-              {/* 3. Theme Display Indicator */}
+              {/* 3. Kart Temalarım Bölümü */}
               <div style={{
                 background: '#202020',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '14px',
-                padding: '14px 16px',
+                padding: '16px',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px'
+                flexDirection: 'column',
+                gap: '12px',
+                textAlign: 'left'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left' }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'radial-gradient(circle, #ff0000 0%, #1c1c1c 90%)',
-                    border: '1px solid rgba(255, 0, 0, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Palette size={18} color="#ffffff" />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Layers size={16} color="#ef4444" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
+                      kart temalarım
+                    </span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#ffffff' }}>
-                      tema görünümü
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                      karanlık kırmızı (doxcards koyu teması)
-                    </div>
-                  </div>
+
+                  {onOpenMarket && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        onClose();
+                        onOpenMarket();
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(245, 158, 11, 0.2))',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#fca5a5',
+                        borderRadius: '8px',
+                        padding: '4px 10px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <ShoppingBag size={12} /> yeni tema al (market)
+                    </button>
+                  )}
                 </div>
 
-                <span style={{
-                  background: 'rgba(255, 0, 0, 0.15)',
-                  border: '1px solid rgba(255, 0, 0, 0.35)',
-                  color: '#fca5a5',
-                  padding: '4px 10px',
-                  borderRadius: '9999px',
-                  fontSize: '0.72rem',
-                  fontWeight: 800
-                }}>
-                  aktif tema
-                </span>
+                {/* Themes Grid */}
+                {(() => {
+                  const allThemes = appConfig?.market?.themes || [];
+                  const ownedThemeIds = Array.isArray(userProfile?.ownedThemes) ? userProfile.ownedThemes : ['stocks'];
+                  const activeEquippedId = userProfile?.equippedTheme || 'stocks';
+
+                  const myThemes = allThemes.filter(t => ownedThemeIds.includes(t.id) || t.isDefault);
+
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                      {myThemes.map(th => {
+                        const isEquipped = activeEquippedId === th.id;
+                        return (
+                          <div
+                            key={th.id}
+                            style={{
+                              background: '#181818',
+                              border: isEquipped ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.06)',
+                              borderRadius: '12px',
+                              padding: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '12px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              {/* 2 Mini Face Previews */}
+                              <div style={{ display: 'flex', gap: '4px' }}>
+                                <div style={{
+                                  width: '28px',
+                                  height: '40px',
+                                  borderRadius: '4px',
+                                  backgroundImage: `url(${th.images?.redBack || '/themes/stocks/1.png'})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)'
+                                }} />
+                                <div style={{
+                                  width: '28px',
+                                  height: '40px',
+                                  borderRadius: '4px',
+                                  backgroundImage: `url(${th.images?.whiteBack || '/themes/stocks/2.png'})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                                }} />
+                              </div>
+
+                              <div>
+                                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ffffff' }}>
+                                  {th.name}
+                                </div>
+                                <div style={{ fontSize: '0.70rem', color: '#94a3b8' }}>
+                                  {th.description}
+                                </div>
+                              </div>
+                            </div>
+
+                            {isEquipped ? (
+                              <span style={{
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                border: '1px solid #10b981',
+                                color: '#34d399',
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                <Check size={12} /> aktif tema
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  sounds.playClick();
+                                  setEquippingThemeId(th.id);
+                                  if (userProfile?.id) {
+                                    const res = await equipTheme(userProfile.id, th.id);
+                                    if (res?.success && res.user) {
+                                      if (onUpdateProfile) onUpdateProfile(res.user);
+                                    }
+                                  }
+                                  setEquippingThemeId(null);
+                                }}
+                                disabled={equippingThemeId === th.id}
+                                style={{
+                                  background: 'rgba(56, 189, 248, 0.15)',
+                                  border: '1px solid #38bdf8',
+                                  color: '#38bdf8',
+                                  padding: '5px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                {equippingThemeId === th.id ? 'aktif ediliyor...' : 'aktif et'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

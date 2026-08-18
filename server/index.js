@@ -130,6 +130,9 @@ app.post('/api/users/sync', (req, res) => {
     user.displayName = displayName || user.displayName;
     if (avatar) user.avatar = avatar;
     if (user.coins === undefined) user.coins = 0;
+    if (!Array.isArray(user.ownedThemes)) user.ownedThemes = ['stocks'];
+    if (!user.equippedTheme) user.equippedTheme = 'stocks';
+    if (!Array.isArray(user.ownedSounds)) user.ownedSounds = [];
     user.updatedAt = Date.now();
   } else {
     user = {
@@ -141,6 +144,9 @@ app.post('/api/users/sync', (req, res) => {
       totalScore: 0,
       tags: id === '269639754675519489' ? ['admin'] : [],
       unlockedDecks: id === '269639754675519489' ? [...localConfig.allDecks] : [...localConfig.discordDecks],
+      ownedThemes: ['stocks'],
+      equippedTheme: 'stocks',
+      ownedSounds: [],
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -156,6 +162,40 @@ app.post('/api/users/update', (req, res) => {
   if (typeof totalScore === 'number') localUsersMap[userId].totalScore = totalScore;
   Object.assign(localUsersMap[userId], rest, { updatedAt: Date.now() });
   res.json({ success: true, user: localUsersMap[userId] });
+});
+
+// Market API
+app.post('/api/market/buy', (req, res) => {
+  const { userId, itemType, itemId, price } = req.body;
+  if (!userId || !localUsersMap[userId]) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+  const user = localUsersMap[userId];
+  const cost = Number(price) || 0;
+  if ((user.coins || 0) < cost) return res.status(400).json({ error: 'Yetersiz coin bakiyesi.' });
+
+  user.coins = (user.coins || 0) - cost;
+  if (itemType === 'theme') {
+    user.ownedThemes = Array.isArray(user.ownedThemes) ? user.ownedThemes : ['stocks'];
+    if (!user.ownedThemes.includes(itemId)) user.ownedThemes.push(itemId);
+    user.equippedTheme = itemId;
+  } else if (itemType === 'sound') {
+    user.ownedSounds = Array.isArray(user.ownedSounds) ? user.ownedSounds : [];
+    if (!user.ownedSounds.includes(itemId)) user.ownedSounds.push(itemId);
+  }
+  user.updatedAt = Date.now();
+  res.json({ success: true, user });
+});
+
+app.post('/api/market/equip', (req, res) => {
+  const { userId, themeId } = req.body;
+  if (!userId || !localUsersMap[userId]) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+  const user = localUsersMap[userId];
+  user.ownedThemes = Array.isArray(user.ownedThemes) ? user.ownedThemes : ['stocks'];
+  if (!user.ownedThemes.includes(themeId) && themeId !== 'stocks') {
+    return res.status(403).json({ error: 'Bu temaya sahip değilsiniz.' });
+  }
+  user.equippedTheme = themeId;
+  user.updatedAt = Date.now();
+  res.json({ success: true, user });
 });
 
 // Suggestions API
