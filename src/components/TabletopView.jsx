@@ -1079,13 +1079,12 @@ export default function TabletopView({
           overflow: 'hidden'
         }}
       >
-        {/* Pull Tab Bar */}
+        {/* Drawer Pull Tab Bar Header */}
         <div
           onClick={() => setIsHandDrawerOpen(prev => !prev)}
           style={{
-            width: '100%',
+            position: 'relative',
             height: '46px',
-            minHeight: '46px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1098,7 +1097,8 @@ export default function TabletopView({
             borderTopRightRadius: '22px'
           }}
         >
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%' }}>
+          {/* Left: Destem badge & counters */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', height: '100%', zIndex: 2 }}>
             <span style={{
               fontSize: '0.9rem',
               fontWeight: 800,
@@ -1145,20 +1145,29 @@ export default function TabletopView({
             </span>
           </div>
 
-          {/* Middle Action Hint */}
+          {/* Middle Action Hint - ALWAYS ABSOLUTELY CENTERED */}
           <div style={{
-            fontSize: '0.76rem',
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '0.78rem',
             fontWeight: 700,
             color: isMyTurn ? '#34d399' : '#94a3b8',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            justifyContent: 'center',
+            gap: '6px',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            zIndex: 1
           }}>
             {isMyTurn && phase === 'PERKS' && <span>kartını masana sürükle veya tıkla</span>}
             {isMyTurn && phase === 'SABOTAGE' && <span>kırmızı kartını hedef masaya sürükle</span>}
             {isSingle && (phase === 'VOTING' || phase === 'REVEAL') && <span>kazanan masayı seçmek için üzerine tıkla</span>}
           </div>
 
+          {/* Right: Drawer toggle control */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -1166,7 +1175,8 @@ export default function TabletopView({
             color: (!activeDrag && isHandDrawerOpen) ? '#94a3b8' : '#ffffff',
             fontSize: '0.8rem',
             fontWeight: 700,
-            lineHeight: 1
+            lineHeight: 1,
+            zIndex: 2
           }}>
             {(!activeDrag && isHandDrawerOpen) ? (
               <>
