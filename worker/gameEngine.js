@@ -1,5 +1,5 @@
 // Game Engine for Red Flags (DoxCards) - Turn-Based Tabletop Engine with Instant Card Visibility & No Time Limit
-import { getDeck } from './cards.js';
+import { getDeck, shuffleArray, stratifiedDeckShuffle } from './cards.js';
 
 export const PHASES = {
   LOBBY: 'LOBBY',
@@ -63,8 +63,8 @@ export class GameEngine {
       attempts++;
       if (!this.deck[type] || this.deck[type].length === 0) {
         if (this.discardPiles && this.discardPiles[type] && this.discardPiles[type].length > 0) {
-          // Reshuffle discard pile back into draw pile
-          this.deck[type] = shuffleArray(this.discardPiles[type]);
+          // Reshuffle discard pile back into draw pile with fair stratified deck shuffle
+          this.deck[type] = stratifiedDeckShuffle(this.discardPiles[type]);
           this.discardPiles[type] = [];
         } else {
           // Draw pile and discard pile both empty -> draw fresh deck excluding cards currently in active hands
@@ -78,7 +78,7 @@ export class GameEngine {
             });
           });
           const available = (fresh[type] || []).filter(c => !currentInHands.has(c.id) && !currentInHands.has(c.text));
-          this.deck[type] = shuffleArray(available.length > 0 ? available : (fresh[type] || []));
+          this.deck[type] = stratifiedDeckShuffle(available.length > 0 ? available : (fresh[type] || []));
         }
       }
 
