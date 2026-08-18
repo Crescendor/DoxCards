@@ -910,6 +910,9 @@ export class GameRoomDO {
             this.room.players[existingIdx].color = player.color;
             this.room.players[existingIdx].connected = true;
             if (player.avatar) this.room.players[existingIdx].avatar = player.avatar;
+            if (player.equippedTheme) this.room.players[existingIdx].equippedTheme = player.equippedTheme;
+            if (player.customSounds) this.room.players[existingIdx].customSounds = player.customSounds;
+            if (player.tags) this.room.players[existingIdx].tags = player.tags;
           } else {
             if (this.room.players.length >= (this.room.settings?.maxPlayers || 6)) {
               sendAck({ error: 'oda dolu (maksimum 6 oyuncu).' });

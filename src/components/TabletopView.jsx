@@ -17,7 +17,7 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
   const total = safeRed + safeWhite;
 
   if (total === 0) {
-    return <div style={{ height: '76px', minHeight: '76px' }} />;
+    return <div style={{ height: '115px', minHeight: '115px' }} />;
   }
 
   // Resolve player theme
@@ -30,24 +30,33 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
 
   const whiteBackUrl = resolvedTheme?.images?.whiteBack || whiteCardBackImg;
   const redBackUrl = resolvedTheme?.images?.redBack || redCardBackImg;
+  const themeAnim = resolvedTheme?.animation || 'none';
+  const themeGlow = resolvedTheme?.glow || 'none';
 
   // Create card array with red cards first, then white cards
   const cards = [];
   for (let r = 0; r < safeRed; r++) cards.push('red');
   for (let w = 0; w < safeWhite; w++) cards.push('white');
 
-  const cardWidth = 64;
-  const step = Math.min(26, Math.max(14, 210 / Math.max(1, cards.length)));
+  const cardWidth = 94; // Significantly larger (was 64)
+  const step = Math.min(34, Math.max(16, 280 / Math.max(1, cards.length)));
   const totalWidth = (cards.length - 1) * step + cardWidth;
   const centerIdx = (cards.length - 1) / 2;
+
+  const glowShadow = themeGlow === 'crimson' ? '0 8px 24px rgba(239, 68, 68, 0.45)' :
+                     themeGlow === 'golden' ? '0 8px 24px rgba(251, 191, 36, 0.45)' :
+                     themeGlow === 'neon_purple' ? '0 8px 24px rgba(168, 85, 247, 0.45)' :
+                     themeGlow === 'neon_blue' ? '0 8px 24px rgba(56, 189, 248, 0.45)' :
+                     themeGlow === 'emerald' ? '0 8px 24px rgba(52, 211, 153, 0.45)' :
+                     '0 8px 22px rgba(0, 0, 0, 0.85)';
 
   return (
     <div style={{
       position: 'relative',
       width: `${totalWidth}px`,
-      height: '82px',
-      minHeight: '82px',
-      margin: '4px auto 8px auto',
+      height: '125px',
+      minHeight: '125px',
+      margin: '6px auto 10px auto',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -55,24 +64,25 @@ function DynamicHandFanned({ redCount = 3, whiteCount = 4, theme = null, appConf
     }}>
       {cards.map((type, i) => {
         const offset = i - centerIdx;
-        const rot = offset * 4.4;
-        const translateY = Math.abs(offset) * 3.2;
+        const rot = offset * 4.6;
+        const translateY = Math.abs(offset) * 3.8;
         const isWhiteBack = type === 'white';
 
         return (
           <div
             key={i}
+            className={`tag-anim-${themeAnim}`}
             style={{
               position: 'absolute',
               left: `${i * step}px`,
               width: `${cardWidth}px`,
               aspectRatio: '5 / 7',
-              borderRadius: '11px',
+              borderRadius: '13px',
               overflow: 'hidden',
-              boxShadow: '0 6px 18px rgba(0, 0, 0, 0.85)',
+              boxShadow: glowShadow,
               transform: `rotate(${rot}deg) translateY(${translateY}px)`,
               zIndex: i,
-              border: '1.5px solid rgba(0, 0, 0, 0.35)',
+              border: isWhiteBack ? '1.5px solid rgba(255, 255, 255, 0.4)' : '1.5px solid rgba(239, 68, 68, 0.5)',
               transition: 'all 0.25s ease'
             }}
           >
@@ -806,54 +816,77 @@ export default function TabletopView({
             justifyContent: 'space-between',
             padding: '2px 0 2px 0'
           }}>
-            {/* Large 3D Layered Deck */}
-            <div style={{
-              position: 'relative',
-              width: 'clamp(88px, 7.5vw, 124px)',
-              height: 'clamp(124px, 17vh, 174px)',
-              aspectRatio: '5 / 7',
-              margin: 'auto auto'
-            }}>
-              {/* Layer 3 */}
-              <div style={{
-                position: 'absolute',
-                inset: '5px -5px -5px 5px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                border: '1px solid #cbd5e1',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                opacity: 0.85
-              }} />
-              {/* Layer 2 */}
-              <div style={{
-                position: 'absolute',
-                inset: '2.5px -2.5px -2.5px 2.5px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                border: '1px solid #cbd5e1',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                opacity: 0.95
-              }} />
-              {/* Top Card */}
-              <div style={{
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(245, 158, 11, 0.35)',
-                border: '2px solid rgba(245, 158, 11, 0.6)',
-                zIndex: 3
-              }}>
-                <img
-                  src={redCardBackImg}
-                  alt="bekar destesi"
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                  style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
-                />
-              </div>
-            </div>
+            {/* Large 3D Layered Deck with Player Equipped Theme */}
+            {(() => {
+              const bekTheme = (() => {
+                const tId = deskPlayer?.equippedTheme || 'stocks';
+                const themes = appConfig?.market?.themes || [];
+                return themes.find(t => t.id === tId) || null;
+              })();
+              const bekRedBack = bekTheme?.images?.redBack || redCardBackImg;
+              const bekGlow = bekTheme?.glow || 'golden';
+              const bekAnim = bekTheme?.animation || 'none';
+
+              const glowBoxShadow = bekGlow === 'crimson' ? '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(239, 68, 68, 0.45)' :
+                                   bekGlow === 'golden' ? '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(245, 158, 11, 0.45)' :
+                                   bekGlow === 'neon_purple' ? '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(168, 85, 247, 0.45)' :
+                                   bekGlow === 'neon_blue' ? '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(56, 189, 248, 0.45)' :
+                                   bekGlow === 'emerald' ? '0 8px 24px rgba(0,0,0,0.7), 0 0 25px rgba(52, 211, 153, 0.45)' :
+                                   '0 8px 24px rgba(0,0,0,0.7), 0 0 20px rgba(245, 158, 11, 0.35)';
+
+              return (
+                <div style={{
+                  position: 'relative',
+                  width: 'clamp(96px, 8.5vw, 136px)',
+                  height: 'clamp(134px, 18vh, 190px)',
+                  aspectRatio: '5 / 7',
+                  margin: 'auto auto'
+                }}>
+                  {/* Layer 3 */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: '5px -5px -5px 5px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                    opacity: 0.85
+                  }} />
+                  {/* Layer 2 */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: '2.5px -2.5px -2.5px 2.5px',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                    opacity: 0.95
+                  }} />
+                  {/* Top Card */}
+                  <div
+                    className={`tag-anim-${bekAnim}`}
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      boxShadow: glowBoxShadow,
+                      border: '2px solid rgba(255, 255, 255, 0.35)',
+                      zIndex: 3
+                    }}
+                  >
+                    <img
+                      src={bekRedBack}
+                      alt="bekar destesi"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserDrag: 'none' }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Bekâr Status Message (Anchored at Bottom of Desk) */}
             <div style={{

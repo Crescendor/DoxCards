@@ -171,6 +171,7 @@ export default function App() {
     tags: userProfile?.tags || (userProfile?.id === '269639754675519489' ? ['admin'] : (player.tags || [])),
     discordId: userProfile?.id || player.discordId,
     avatar: userProfile?.avatar || player.avatar,
+    equippedTheme: userProfile?.equippedTheme || player.equippedTheme || 'stocks',
     customSounds: userProfile?.customSounds || player.customSounds || null
   });
 
@@ -404,7 +405,12 @@ export default function App() {
           soundMuted={soundMuted}
           onToggleSound={handleToggleSound}
           userProfile={userProfile}
-          onUpdateProfile={(updated) => setUserProfile(updated)}
+          onUpdateProfile={(updated) => {
+            setUserProfile(updated);
+            if (updated?.equippedTheme) {
+              setPlayer(prev => ({ ...prev, equippedTheme: updated.equippedTheme }));
+            }
+          }}
           onLogout={handleLogout}
         />
       )}
