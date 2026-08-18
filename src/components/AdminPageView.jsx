@@ -70,6 +70,7 @@ import {
 } from '../services/userService';
 import { isBlankCard } from './FillBlankModal';
 import { sounds } from '../services/soundEffects';
+import { socket } from '../services/socket';
 import TagBadge from './TagBadge';
 import TagEditModal from './TagEditModal';
 import ThemeEditModal from './ThemeEditModal';
@@ -174,6 +175,8 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [editUserRedSound, setEditUserRedSound] = useState('');
   const [editUserWinSound, setEditUserWinSound] = useState('');
   const [editUserCoins, setEditUserCoins] = useState(0);
+  const [editUserOwnedThemes, setEditUserOwnedThemes] = useState(['stocks']);
+  const [editUserOwnedSounds, setEditUserOwnedSounds] = useState([]);
 
   const [banningUser, setBanningUser] = useState(null);
   const [banReasonInput, setBanReasonInput] = useState('');
@@ -271,7 +274,12 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [newMarketSoundName, setNewMarketSoundName] = useState('');
   const [newMarketSoundCategory, setNewMarketSoundCategory] = useState('white_card');
   const [newMarketSoundPrice, setNewMarketSoundPrice] = useState(200);
+  const [newMarketSoundSourceType, setNewMarketSoundSourceType] = useState('file'); // 'file' | 'youtube'
   const [newMarketSoundUrl, setNewMarketSoundUrl] = useState('');
+  const [newMarketSoundYtUrl, setNewMarketSoundYtUrl] = useState('');
+  const [newMarketSoundStartSec, setNewMarketSoundStartSec] = useState('0');
+  const [newMarketSoundEndSec, setNewMarketSoundEndSec] = useState('3');
+  const [newMarketSoundCoverImage, setNewMarketSoundCoverImage] = useState('');
 
   const handleOpenNewTheme = () => {
     sounds.playClick();
@@ -341,15 +349,42 @@ export default function AdminPageView({ onBack, discordUser }) {
 
   const handleAddMarketSound = async (e) => {
     e.preventDefault();
-    if (!newMarketSoundName.trim()) return;
+    if (!newMarketSoundName.trim()) {
+      alert('Lütfen bir ses adı girin.');
+      return;
+    }
     sounds.playClick();
+
+    let finalUrl = newMarketSoundUrl.trim();
+    let ytId = '';
+
+    if (newMarketSoundSourceType === 'youtube') {
+      ytId = sounds.extractYouTubeId ? sounds.extractYouTubeId(newMarketSoundYtUrl) : '';
+      if (!ytId) {
+        // Fallback simple regex
+        const match = newMarketSoundYtUrl.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+        ytId = (match && match[2].length === 11) ? match[2] : newMarketSoundYtUrl.trim();
+      }
+      if (!ytId) {
+        alert('Lütfen geçerli bir YouTube linki girin.');
+        return;
+      }
+    } else if (!finalUrl) {
+      alert('Lütfen bir ses dosya yolu veya web URL bağlantısı girin.');
+      return;
+    }
 
     const newSound = {
       id: 'sound_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       name: newMarketSoundName.trim(),
       category: newMarketSoundCategory,
+      type: newMarketSoundSourceType,
       price: Number(newMarketSoundPrice) || 200,
-      url: newMarketSoundUrl.trim(),
+      url: finalUrl,
+      ytId: ytId,
+      startSec: Number(newMarketSoundStartSec) || 0,
+      endSec: Number(newMarketSoundEndSec) || 3,
+      coverImage: newMarketSoundCoverImage.trim(),
       isEnabled: true
     };
 
@@ -367,6 +402,10 @@ export default function AdminPageView({ onBack, discordUser }) {
     await updateAppConfig(updatedConfig);
     setNewMarketSoundName('');
     setNewMarketSoundUrl('');
+    setNewMarketSoundYtUrl('');
+    setNewMarketSoundCoverImage('');
+    setNewMarketSoundStartSec('0');
+    setNewMarketSoundEndSec('3');
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
   };
@@ -400,6 +439,8 @@ export default function AdminPageView({ onBack, discordUser }) {
       setEditUserRedSound(editingUser.customSounds?.redCardSoundId || '');
       setEditUserWinSound(editingUser.customSounds?.gameWinSoundId || '');
       setEditUserCoins(editingUser.coins !== undefined ? editingUser.coins : 0);
+      setEditUserOwnedThemes(Array.isArray(editingUser.ownedThemes) ? editingUser.ownedThemes : ['stocks']);
+      setEditUserOwnedSounds(Array.isArray(editingUser.ownedSounds) ? editingUser.ownedSounds : []);
     }
   }, [editingUser]);
 
@@ -977,6 +1018,8 @@ export default function AdminPageView({ onBack, discordUser }) {
       tags: editUserTags,
       unlockedDecks: editUserDecks,
       coins: Math.max(0, Number(editUserCoins) || 0),
+      ownedThemes: editUserOwnedThemes,
+      ownedSounds: editUserOwnedSounds,
       customSounds: {
         whiteCardSoundId: editUserWhiteSound || null,
         redCardSoundId: editUserRedSound || null,
@@ -987,6 +1030,14 @@ export default function AdminPageView({ onBack, discordUser }) {
     if (res) {
       setUsersList(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...updatedData } : u));
     }
+    try {
+      socket.emit('admin_notify_coin_update', {
+        userId: editingUser.id,
+        coins: Math.max(0, Number(editUserCoins) || 0),
+        ownedThemes: editUserOwnedThemes,
+        ownedSounds: editUserOwnedSounds
+      });
+    } catch (e) {}
     setUserSavingId(null);
     setEditingUser(null);
     setSaveSuccess(true);
@@ -1226,6 +1277,12 @@ export default function AdminPageView({ onBack, discordUser }) {
     if (updated) {
       setUsersList(prev => prev.map(u => u.id === userId ? { ...u, coins: isNaN(amount) ? 0 : amount } : u));
     }
+    try {
+      socket.emit('admin_notify_coin_update', {
+        userId,
+        coins: isNaN(amount) ? 0 : amount
+      });
+    } catch (e) {}
     setSavingUserCoinId(null);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
@@ -5061,21 +5118,22 @@ export default function AdminPageView({ onBack, discordUser }) {
                   background: '#1c1c1c',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '16px',
-                  padding: '18px',
+                  padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px'
+                  gap: '14px'
                 }}>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={15} color="#ef4444" /> markete yeni özel ses ekle
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Plus size={16} color="#ef4444" /> markete yeni özel ses / müzik efekti ekle
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr auto', gap: '10px', alignItems: 'flex-end' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    {/* Ses Adı */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.72rem' }}>ses adı:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem' }}>ses adı:</label>
                       <input
                         type="text"
-                        placeholder="Örn: Siber Kart Sesi"
+                        placeholder="Örn: Siber Kart Dağıtımı"
                         value={newMarketSoundName}
                         onChange={e => setNewMarketSoundName(e.target.value)}
                         className="input-box"
@@ -5083,21 +5141,23 @@ export default function AdminPageView({ onBack, discordUser }) {
                       />
                     </div>
 
+                    {/* Kategori */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.72rem' }}>kategori:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem' }}>kategori:</label>
                       <select
                         value={newMarketSoundCategory}
                         onChange={e => setNewMarketSoundCategory(e.target.value)}
                         className="select-box"
                       >
-                        <option value="white_card">Beyaz Kart</option>
-                        <option value="red_card">Kırmızı Kart</option>
-                        <option value="game_win">Kazanma</option>
+                        <option value="white_card">Beyaz Kart Dağıtımı</option>
+                        <option value="red_card">Kırmızı Kart Sabotajı</option>
+                        <option value="game_win">Oyun / Tur Zaferi</option>
                       </select>
                     </div>
 
+                    {/* Coin Fiyatı */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.72rem' }}>coin fiyatı:</label>
+                      <label className="form-label" style={{ fontSize: '0.74rem' }}>coin fiyatı:</label>
                       <input
                         type="number"
                         min="0"
@@ -5107,19 +5167,86 @@ export default function AdminPageView({ onBack, discordUser }) {
                       />
                     </div>
 
+                    {/* Kaynak Türü */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '0.72rem' }}>ses url / dosya yolu:</label>
-                      <input
-                        type="text"
-                        placeholder="Örn: /sounds/cyber.mp3 veya https://..."
-                        value={newMarketSoundUrl}
-                        onChange={e => setNewMarketSoundUrl(e.target.value)}
-                        className="input-box"
-                      />
+                      <label className="form-label" style={{ fontSize: '0.74rem' }}>ses kaynağı:</label>
+                      <select
+                        value={newMarketSoundSourceType}
+                        onChange={e => setNewMarketSoundSourceType(e.target.value)}
+                        className="select-box"
+                      >
+                        <option value="file">Dosya Yolu / MP3 Web Linki</option>
+                        <option value="youtube">YouTube Video / Klip Linki</option>
+                      </select>
                     </div>
+                  </div>
 
-                    <button type="submit" className="btn-primary" style={{ padding: '10px 16px', fontSize: '0.82rem' }}>
-                      <Plus size={14} /> ekle
+                  {/* URL Inputs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: newMarketSoundSourceType === 'youtube' ? '2fr 1fr 1fr' : '1fr 1fr', gap: '12px' }}>
+                    {newMarketSoundSourceType === 'youtube' ? (
+                      <>
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.74rem' }}>youtube video linki:</label>
+                          <input
+                            type="text"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            value={newMarketSoundYtUrl}
+                            onChange={e => setNewMarketSoundYtUrl(e.target.value)}
+                            className="input-box"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.74rem' }}>başlangıç (sn):</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={newMarketSoundStartSec}
+                            onChange={e => setNewMarketSoundStartSec(e.target.value)}
+                            className="input-box"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.74rem' }}>bitiş (sn):</label>
+                          <input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={newMarketSoundEndSec}
+                            onChange={e => setNewMarketSoundEndSec(e.target.value)}
+                            className="input-box"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.74rem' }}>ses url / dosya yolu:</label>
+                          <input
+                            type="text"
+                            placeholder="Örn: /sounds/deal.mp3 veya https://...mp3"
+                            value={newMarketSoundUrl}
+                            onChange={e => setNewMarketSoundUrl(e.target.value)}
+                            className="input-box"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.74rem' }}>kare kapak görseli url (opsiyonel):</label>
+                          <input
+                            type="text"
+                            placeholder="Örn: https://.../square.png"
+                            value={newMarketSoundCoverImage}
+                            onChange={e => setNewMarketSoundCoverImage(e.target.value)}
+                            className="input-box"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                    <button type="submit" className="btn-primary" style={{ padding: '10px 22px', fontSize: '0.84rem' }}>
+                      <Plus size={15} /> market sesini kaydet
                     </button>
                   </div>
                 </form>
@@ -5144,14 +5271,48 @@ export default function AdminPageView({ onBack, discordUser }) {
                         gap: '12px'
                       }}
                     >
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
-                          {snd.name}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>{snd.category}</span>
-                          <span>•</span>
-                          <span style={{ color: '#fbbf24', fontWeight: 700 }}>{snd.price} coin</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {snd.coverImage ? (
+                          <img
+                            src={snd.coverImage}
+                            alt={snd.name}
+                            style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sounds.playClick();
+                              sounds.playCustomAudio(snd);
+                            }}
+                            style={{
+                              width: '38px',
+                              height: '38px',
+                              borderRadius: '10px',
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#ef4444',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                            title="Dinle / Test Et"
+                          >
+                            <Play size={14} />
+                          </button>
+                        )}
+
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
+                            {snd.name}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{snd.category}</span>
+                            <span>•</span>
+                            <span style={{ color: '#fbbf24', fontWeight: 700 }}>{snd.price} coin</span>
+                            {snd.type === 'youtube' && <span style={{ color: '#ef4444', fontWeight: 700 }}>• YouTube</span>}
+                          </div>
                         </div>
                       </div>
 
@@ -5449,7 +5610,128 @@ export default function AdminPageView({ onBack, discordUser }) {
               </div>
             </div>
 
-            {/* 4. Coin Bakiyesi */}
+            {/* 4. Sahip Olunan Kart Temaları */}
+            <div style={{
+              background: '#222222',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={14} color="#ef4444" /> 4. sahip olunan kart temaları ({editUserOwnedThemes.length} aktif)
+                </span>
+                <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                  oyuncunun kuşanabileceği temalar
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {(appConfig.market?.themes || []).map(th => {
+                  const isChecked = editUserOwnedThemes.includes(th.id) || th.id === 'stocks';
+                  return (
+                    <button
+                      key={th.id}
+                      type="button"
+                      disabled={th.id === 'stocks'}
+                      onClick={() => {
+                        sounds.playClick();
+                        setEditUserOwnedThemes(prev => {
+                          if (prev.includes(th.id)) {
+                            return prev.filter(id => id !== th.id);
+                          } else {
+                            return [...prev, th.id];
+                          }
+                        });
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        cursor: th.id === 'stocks' ? 'default' : 'pointer',
+                        border: isChecked ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: isChecked ? 'rgba(239, 68, 68, 0.2)' : '#181818',
+                        color: isChecked ? '#ffffff' : '#64748b',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {isChecked ? <Check size={12} color="#ef4444" /> : <Plus size={12} />}
+                      {th.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 5. Sahip Olunan Özel Sesler */}
+            <div style={{
+              background: '#222222',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Volume2 size={14} color="#38bdf8" /> 5. sahip olunan özel sesler ({editUserOwnedSounds.length} aktif)
+                </span>
+                <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                  oyuncunun sahip olduğu market sesleri
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {(appConfig.market?.sounds || []).map(snd => {
+                  const isChecked = editUserOwnedSounds.includes(snd.id);
+                  return (
+                    <button
+                      key={snd.id}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setEditUserOwnedSounds(prev => {
+                          if (prev.includes(snd.id)) {
+                            return prev.filter(id => id !== snd.id);
+                          } else {
+                            return [...prev, snd.id];
+                          }
+                        });
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '10px',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        border: isChecked ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: isChecked ? 'rgba(56, 189, 248, 0.2)' : '#181818',
+                        color: isChecked ? '#ffffff' : '#64748b',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {isChecked ? <Check size={12} color="#38bdf8" /> : <Plus size={12} />}
+                      {snd.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 6. Coin Bakiyesi */}
             <div style={{
               background: '#222222',
               padding: '16px',
@@ -5679,6 +5961,8 @@ export default function AdminPageView({ onBack, discordUser }) {
           ...Object.keys(deckState.raw?.perks || {}),
           ...Object.keys(deckState.raw?.red_flags || {})
         ])).filter(Boolean)}
+        availableThemes={appConfig.market?.themes || []}
+        availableSounds={appConfig.market?.sounds || []}
         onSave={handleSaveTag}
       />
 

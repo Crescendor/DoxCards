@@ -292,6 +292,10 @@ io.on('connection', (socket) => {
     socket.emit('pong', { time: Date.now() });
   });
 
+  socket.on('admin_notify_coin_update', (data) => {
+    io.emit('user_profile_updated', data);
+  });
+
   // Create Room
   socket.on('create_room', ({ player, settings }, callback) => {
     try {

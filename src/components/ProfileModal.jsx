@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import defaultAvatarImg from '../assets/default_avatar.png';
 import { sounds } from '../services/soundEffects';
-import { fetchAppConfig, updateUser, equipTheme, saveLocalUserProfile, DEFAULT_CONFIG } from '../services/userService';
+import { fetchAppConfig, updateUser, equipTheme, saveLocalUserProfile, getUserUnlockedThemes, getUserUnlockedSounds, DEFAULT_CONFIG } from '../services/userService';
 import { socket } from '../services/socket';
 import TagBadge from './TagBadge';
 
@@ -690,7 +690,7 @@ export default function ProfileModal({
                 {/* Themes Grid */}
                 {(() => {
                   const allThemes = appConfig?.market?.themes || [];
-                  const ownedThemeIds = Array.isArray(userProfile?.ownedThemes) ? userProfile.ownedThemes : ['stocks'];
+                  const ownedThemeIds = getUserUnlockedThemes(userProfile, appConfig?.customTags);
                   const activeEquippedId = userProfile?.equippedTheme || 'stocks';
 
                   const myThemes = allThemes.filter(t => ownedThemeIds.includes(t.id) || t.isDefault);

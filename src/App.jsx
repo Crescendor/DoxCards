@@ -115,6 +115,30 @@ export default function App() {
       setGameState(null);
     });
 
+    socket.on('user_profile_updated', (updatedData) => {
+      if (!updatedData) return;
+      const cached = getLocalUserProfile();
+      const myId = cached?.id || player?.discordId || player?.id;
+      const targetId = updatedData.userId || updatedData.id;
+
+      if (myId && targetId && (String(myId) === String(targetId))) {
+        const newCoins = updatedData.coins !== undefined ? updatedData.coins : (cached ? cached.coins : 0);
+        const updated = {
+          ...(cached || {}),
+          ...updatedData,
+          coins: newCoins
+        };
+        saveLocalUserProfile(updated);
+        setUserProfile(updated);
+        setPlayer(prev => ({
+          ...prev,
+          coins: newCoins,
+          equippedTheme: updatedData.equippedTheme || prev.equippedTheme
+        }));
+        sounds.playReaction();
+      }
+    });
+
     socket.on('kicked_from_room', ({ reason }) => {
       alert(reason || 'Oda kurucusu tarafından odadan çıkarıldınız.');
       window.location.replace(window.location.origin + window.location.pathname);
@@ -126,6 +150,7 @@ export default function App() {
       socket.off('game_state_update');
       socket.off('play_sound_event');
       socket.off('game_reset_to_lobby');
+      socket.off('user_profile_updated');
       socket.off('kicked_from_room');
     };
   }, []);

@@ -118,6 +118,7 @@ export const DEFAULT_MARKET_SOUNDS = [
     price: 200,
     type: 'synth',
     url: '',
+    coverImage: '',
     isEnabled: true
   },
   {
@@ -127,15 +128,37 @@ export const DEFAULT_MARKET_SOUNDS = [
     price: 300,
     type: 'synth',
     url: '',
+    coverImage: '',
     isEnabled: true
   },
   {
     id: 'sound_epic_win',
-    name: 'Destansı Zafer Trompeti',
+    name: 'Destansı Zafer Fanfarı',
     category: 'game_win',
     price: 500,
     type: 'synth',
     url: '',
+    coverImage: '',
+    isEnabled: true
+  },
+  {
+    id: 'sound_vine_boom',
+    name: 'Dramatik Boom Sabotajı',
+    category: 'red_card',
+    price: 350,
+    type: 'synth',
+    url: '',
+    coverImage: '',
+    isEnabled: true
+  },
+  {
+    id: 'sound_arcade_win',
+    name: 'Retro Arcade Zaferi',
+    category: 'game_win',
+    price: 450,
+    type: 'synth',
+    url: '',
+    coverImage: '',
     isEnabled: true
   }
 ];
@@ -807,6 +830,12 @@ export class GameRoomDO {
           try {
             serverWs.send(JSON.stringify({ event: 'pong', data: { time: Date.now() } }));
           } catch (e) {}
+          return;
+        }
+
+        // 0.1 Admin Live Coin Update Notification Broadcast
+        if (evt === 'admin_notify_coin_update') {
+          this.broadcast('user_profile_updated', data);
           return;
         }
 
@@ -1599,8 +1628,8 @@ export default {
       }
     }
 
-    // 3. Database API Routing (/api/deck, /api/users, /api/config, /api/suggestions)
-    if (url.pathname.startsWith('/api/deck') || url.pathname.startsWith('/api/users') || url.pathname.startsWith('/api/config') || url.pathname.startsWith('/api/suggestions')) {
+    // 3. Database API Routing (/api/deck, /api/users, /api/config, /api/suggestions, /api/market)
+    if (url.pathname.startsWith('/api/deck') || url.pathname.startsWith('/api/users') || url.pathname.startsWith('/api/config') || url.pathname.startsWith('/api/suggestions') || url.pathname.startsWith('/api/market')) {
       if (env && env.GAME_ROOMS) {
         const id = env.GAME_ROOMS.idFromName('GLOBAL_CARDS_STORAGE');
         const storageObj = env.GAME_ROOMS.get(id);

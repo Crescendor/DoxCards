@@ -51,6 +51,7 @@ export default function ThemeEditModal({
   const [themeId, setThemeId] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState(500);
+  const [coverImage, setCoverImage] = useState('');
   const [fontColorRed, setFontColorRed] = useState('#ffffff');
   const [fontColorWhite, setFontColorWhite] = useState('#000000');
   const [glow, setGlow] = useState('none');
@@ -69,6 +70,7 @@ export default function ThemeEditModal({
       setThemeId(theme.id || '');
       setDescription(theme.description || '');
       setPrice(Number(theme.price) || 0);
+      setCoverImage(theme.coverImage || '');
       setFontColorRed(theme.fontColorRed || '#ffffff');
       setFontColorWhite(theme.fontColorWhite || '#000000');
       setGlow(theme.glow || 'none');
@@ -84,6 +86,7 @@ export default function ThemeEditModal({
       setThemeId('');
       setDescription('');
       setPrice(500);
+      setCoverImage('');
       setFontColorRed('#ffffff');
       setFontColorWhite('#000000');
       setGlow('none');
@@ -112,6 +115,7 @@ export default function ThemeEditModal({
       name: name.trim(),
       description: description.trim(),
       price: Number(price) || 0,
+      coverImage: coverImage.trim(),
       fontColorRed,
       fontColorWhite,
       glow,
@@ -320,6 +324,17 @@ export default function ThemeEditModal({
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Örn: Derin uzay ve siber enerji tonlarında tema"
+              className="input-box"
+            />
+          </div>
+
+          <div>
+            <label className="form-label">kare kapak / vitrin görseli url (opsiyonel):</label>
+            <input
+              type="text"
+              value={coverImage}
+              onChange={e => setCoverImage(e.target.value)}
+              placeholder="Örn: /themes/gc/cover.png veya kare görsel linki (https://...)"
               className="input-box"
             />
           </div>

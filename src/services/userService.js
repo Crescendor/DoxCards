@@ -105,6 +105,7 @@ export const DEFAULT_MARKET_SOUNDS = [
     price: 200,
     type: 'synth',
     url: '',
+    coverImage: '',
     isEnabled: true
   },
   {
@@ -114,18 +115,69 @@ export const DEFAULT_MARKET_SOUNDS = [
     price: 300,
     type: 'synth',
     url: '',
+    coverImage: '',
     isEnabled: true
   },
   {
     id: 'sound_epic_win',
-    name: 'Destansı Zafer Trompeti',
+    name: 'Destansı Zafer Fanfarı',
     category: 'game_win',
     price: 500,
     type: 'synth',
     url: '',
+    coverImage: '',
+    isEnabled: true
+  },
+  {
+    id: 'sound_vine_boom',
+    name: 'Dramatik Boom Sabotajı',
+    category: 'red_card',
+    price: 350,
+    type: 'synth',
+    url: '',
+    coverImage: '',
+    isEnabled: true
+  },
+  {
+    id: 'sound_arcade_win',
+    name: 'Retro Arcade Zaferi',
+    category: 'game_win',
+    price: 450,
+    type: 'synth',
+    url: '',
+    coverImage: '',
     isEnabled: true
   }
 ];
+
+export function getUserUnlockedThemes(user, customTags = []) {
+  const themes = new Set(Array.isArray(user?.ownedThemes) ? user.ownedThemes : ['stocks']);
+  themes.add('stocks');
+  (user?.tags || []).forEach(tagId => {
+    const tagObj = (customTags || []).find(t =>
+      t.id?.toLowerCase() === String(tagId).toLowerCase() ||
+      t.name?.toLowerCase() === String(tagId).toLowerCase()
+    );
+    if (Array.isArray(tagObj?.autoGrantedThemes)) {
+      tagObj.autoGrantedThemes.forEach(th => themes.add(th));
+    }
+  });
+  return Array.from(themes);
+}
+
+export function getUserUnlockedSounds(user, customTags = []) {
+  const soundIds = new Set(Array.isArray(user?.ownedSounds) ? user.ownedSounds : []);
+  (user?.tags || []).forEach(tagId => {
+    const tagObj = (customTags || []).find(t =>
+      t.id?.toLowerCase() === String(tagId).toLowerCase() ||
+      t.name?.toLowerCase() === String(tagId).toLowerCase()
+    );
+    if (Array.isArray(tagObj?.autoGrantedSounds)) {
+      tagObj.autoGrantedSounds.forEach(snd => soundIds.add(snd));
+    }
+  });
+  return Array.from(soundIds);
+}
 
 export const DEFAULT_CONFIG = {
   guestDecks: ['Ana Deste'],

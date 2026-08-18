@@ -106,6 +106,8 @@ export default function TagEditModal({
   tag,
   isNew = false,
   availableDecks = [],
+  availableThemes = [],
+  availableSounds = [],
   onSave
 }) {
   const effectiveDecks = (Array.isArray(availableDecks) && availableDecks.length > 0)
@@ -127,6 +129,8 @@ export default function TagEditModal({
   const [permUnlockedDecks, setPermUnlockedDecks] = useState(['Ana Deste']);
   const [permAdminAccess, setPermAdminAccess] = useState(false);
   const [permMultiplier, setPermMultiplier] = useState(10);
+  const [autoGrantedThemes, setAutoGrantedThemes] = useState([]);
+  const [autoGrantedSounds, setAutoGrantedSounds] = useState([]);
 
   useEffect(() => {
     if (tag) {
@@ -149,6 +153,8 @@ export default function TagEditModal({
       );
       setPermAdminAccess(!!perms.adminAccess);
       setPermMultiplier(Number(perms.multiplier) || 10);
+      setAutoGrantedThemes(Array.isArray(tag.autoGrantedThemes) ? tag.autoGrantedThemes : []);
+      setAutoGrantedSounds(Array.isArray(tag.autoGrantedSounds) ? tag.autoGrantedSounds : []);
     } else {
       setName('');
       setTagId('');
@@ -163,6 +169,8 @@ export default function TagEditModal({
       setPermUnlockedDecks(['Ana Deste']);
       setPermAdminAccess(false);
       setPermMultiplier(10);
+      setAutoGrantedThemes([]);
+      setAutoGrantedSounds([]);
     }
   }, [tag, isOpen]);
 
@@ -194,6 +202,8 @@ export default function TagEditModal({
       borderColor,
       glow,
       animation,
+      autoGrantedThemes,
+      autoGrantedSounds,
       permissions: {
         customSounds: permCustomSounds,
         allDecks: permAllDecks,
@@ -561,6 +571,113 @@ export default function TagEditModal({
                   })}
                 </div>
               )}
+            </div>
+
+            {/* Otomatik Verilecek Market Ürünleri (Temalar ve Sesler) */}
+            <div style={{
+              marginTop: '6px',
+              padding: '12px',
+              background: '#181818',
+              borderRadius: '10px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={13} color="#fbbf24" /> bu etikete otomatik verilecek market ürünleri
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                  {autoGrantedThemes.length + autoGrantedSounds.length} ürün seçili
+                </span>
+              </div>
+
+              {/* Temalar */}
+              <div>
+                <span style={{ fontSize: '0.70rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '6px', display: 'block' }}>
+                  otomatik açılan kart temaları:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {(availableThemes || []).map(th => {
+                    const isChecked = autoGrantedThemes.includes(th.id);
+                    return (
+                      <button
+                        key={th.id}
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          if (isChecked) {
+                            setAutoGrantedThemes(prev => prev.filter(id => id !== th.id));
+                          } else {
+                            setAutoGrantedThemes(prev => [...prev, th.id]);
+                          }
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: isChecked ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                          background: isChecked ? 'rgba(239, 68, 68, 0.2)' : '#222222',
+                          color: isChecked ? '#ffffff' : '#94a3b8',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {isChecked && <Check size={11} color="#ef4444" />}
+                        {th.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sesler */}
+              <div>
+                <span style={{ fontSize: '0.70rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '6px', display: 'block' }}>
+                  otomatik açılan özel sesler:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {(availableSounds || []).map(snd => {
+                    const isChecked = autoGrantedSounds.includes(snd.id);
+                    return (
+                      <button
+                        key={snd.id}
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          if (isChecked) {
+                            setAutoGrantedSounds(prev => prev.filter(id => id !== snd.id));
+                          } else {
+                            setAutoGrantedSounds(prev => [...prev, snd.id]);
+                          }
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: isChecked ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                          background: isChecked ? 'rgba(56, 189, 248, 0.2)' : '#222222',
+                          color: isChecked ? '#ffffff' : '#94a3b8',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {isChecked && <Check size={11} color="#38bdf8" />}
+                        {snd.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

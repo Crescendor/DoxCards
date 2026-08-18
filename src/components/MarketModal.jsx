@@ -18,7 +18,7 @@ import {
   Flame
 } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
-import { buyMarketItem, equipTheme } from '../services/userService';
+import { buyMarketItem, equipTheme, getUserUnlockedThemes, getUserUnlockedSounds } from '../services/userService';
 
 export default function MarketModal({
   isOpen,
@@ -31,9 +31,7 @@ export default function MarketModal({
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'themes' | 'sounds'
   const [buyingId, setBuyingId] = useState(null);
   const [equippingId, setEquippingId] = useState(null);
-  const [previewThemeId, setPreviewThemeId] = useState(null);
   const [playingSoundId, setPlayingSoundId] = useState(null);
-  const [audioObj, setAudioObj] = useState(null);
   const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
 
   if (!isOpen) return null;
@@ -42,9 +40,9 @@ export default function MarketModal({
   const themesList = appConfig?.market?.themes || [];
   const soundsList = appConfig?.market?.sounds || [];
 
-  const ownedThemes = Array.isArray(userProfile?.ownedThemes) ? userProfile.ownedThemes : ['stocks'];
+  const ownedThemes = getUserUnlockedThemes(userProfile, appConfig?.customTags);
   const equippedTheme = userProfile?.equippedTheme || 'stocks';
-  const ownedSounds = Array.isArray(userProfile?.ownedSounds) ? userProfile.ownedSounds : [];
+  const ownedSounds = getUserUnlockedSounds(userProfile, appConfig?.customTags);
 
   const showNotification = (type, text) => {
     setMessage({ type, text });
@@ -73,14 +71,14 @@ export default function MarketModal({
       });
 
       if (res?.success && res.user) {
-        sounds.playFanfare();
+        sounds.playWin();
         showNotification('success', `"${item.name}" başarıyla satın alındı!`);
         if (onUserUpdated) onUserUpdated(res.user);
       } else {
         showNotification('error', res?.error || 'Satın alma başarısız oldu.');
       }
     } catch (err) {
-      showNotification('error', 'Bir hata oluştu.');
+      showNotification('error', 'Satın alma sırasında bir hata oluştu.');
     } finally {
       setBuyingId(null);
     }
@@ -100,36 +98,26 @@ export default function MarketModal({
         showNotification('error', res?.error || 'Tema aktif edilemedi.');
       }
     } catch (err) {
-      showNotification('error', 'Bir hata oluştu.');
+      showNotification('error', 'Tema aktif edilirken bir hata oluştu.');
     } finally {
       setEquippingId(null);
     }
   };
 
   const handlePlaySound = (sound) => {
-    if (audioObj) {
-      audioObj.pause();
-      setAudioObj(null);
-    }
-
     if (playingSoundId === sound.id) {
       setPlayingSoundId(null);
       return;
     }
 
-    if (sound.url) {
-      const a = new Audio(sound.url);
-      a.play().catch(e => console.warn('Audio play failed', e));
-      setAudioObj(a);
-      setPlayingSoundId(sound.id);
-      a.onended = () => setPlayingSoundId(null);
-    } else {
-      if (sound.category === 'white_card') sounds.playCardDeal();
-      else if (sound.category === 'red_card') sounds.playRedSabotage();
-      else sounds.playFanfare();
-      setPlayingSoundId(sound.id);
-      setTimeout(() => setPlayingSoundId(null), 1200);
-    }
+    sounds.playClick();
+    setPlayingSoundId(sound.id);
+    sounds.playCustomAudio(sound);
+
+    const duration = ((Number(sound.endSec) || 3) - (Number(sound.startSec) || 0)) * 1000;
+    setTimeout(() => {
+      setPlayingSoundId(null);
+    }, Math.max(1200, duration));
   };
 
   return (
@@ -138,9 +126,11 @@ export default function MarketModal({
         className="modal-content"
         onClick={e => e.stopPropagation()}
         style={{
-          width: '900px',
-          maxWidth: '95vw',
-          maxHeight: '90vh',
+          width: '980px',
+          maxWidth: '94vw',
+          height: '82vh',
+          maxHeight: '700px',
+          minHeight: '540px',
           background: '#141414',
           border: '1px solid rgba(255, 255, 255, 0.12)',
           borderRadius: '24px',
@@ -158,7 +148,8 @@ export default function MarketModal({
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
@@ -232,7 +223,8 @@ export default function MarketModal({
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexShrink: 0
           }}>
             {message.type === 'success' ? <Check size={16} /> : <Info size={16} />}
             {message.text}
@@ -240,10 +232,12 @@ export default function MarketModal({
         )}
 
         {/* Main Body (Sidebar + Content) */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%' }}>
           {/* Left Navigation Sidebar */}
           <div style={{
             width: '210px',
+            minWidth: '210px',
+            flexShrink: 0,
             background: '#171717',
             borderRight: '1px solid rgba(255, 255, 255, 0.08)',
             padding: '16px 12px',
@@ -613,7 +607,15 @@ export default function MarketModal({
                           gap: '12px'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {sound.coverImage ? (
+                            <img
+                              src={sound.coverImage}
+                              alt={sound.name}
+                              style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover', border: '1px solid rgba(255, 255, 255, 0.12)' }}
+                            />
+                          ) : null}
+
                           <button
                             onClick={() => handlePlaySound(sound)}
                             style={{
