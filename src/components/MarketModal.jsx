@@ -38,7 +38,9 @@ export default function MarketModal({
 
   const currentCoins = userProfile?.coins || 0;
   const themesList = appConfig?.market?.themes || [];
-  const soundsList = appConfig?.market?.sounds || [];
+  const soundsList = Array.isArray(appConfig?.customSounds)
+    ? appConfig.customSounds
+    : (Array.isArray(appConfig?.market?.sounds) ? appConfig.market.sounds : []);
 
   const ownedThemes = getUserUnlockedThemes(userProfile, appConfig?.customTags);
   const equippedTheme = userProfile?.equippedTheme || 'stocks';
@@ -588,7 +590,12 @@ export default function MarketModal({
                   gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                   gap: '14px'
                 }}>
-                  {soundsList.map(sound => {
+                  {soundsList.length === 0 ? (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '0.86rem' }}>
+                      Henüz markete ses efekti eklenmedi.
+                    </div>
+                  ) : (
+                    soundsList.map(sound => {
                     const isOwned = ownedSounds.includes(sound.id);
                     const canAfford = currentCoins >= sound.price;
                     const isPlaying = playingSoundId === sound.id;
@@ -687,7 +694,7 @@ export default function MarketModal({
                         )}
                       </div>
                     );
-                  })}
+                  }))}
                 </div>
               </div>
             )}

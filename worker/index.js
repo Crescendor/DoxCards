@@ -110,58 +110,8 @@ export const DEFAULT_CARD_THEMES = [
   }
 ];
 
-export const DEFAULT_MARKET_SOUNDS = [
-  {
-    id: 'sound_cyber_deal',
-    name: 'Siber Kart Dağıtımı',
-    category: 'white_card',
-    price: 200,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_thunder_sabotage',
-    name: 'Şimşekli Sabotaj',
-    category: 'red_card',
-    price: 300,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_epic_win',
-    name: 'Destansı Zafer Fanfarı',
-    category: 'game_win',
-    price: 500,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_vine_boom',
-    name: 'Dramatik Boom Sabotajı',
-    category: 'red_card',
-    price: 350,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_arcade_win',
-    name: 'Retro Arcade Zaferi',
-    category: 'game_win',
-    price: 450,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  }
-];
+// Default Market Sounds empty by default (loaded from database)
+export const DEFAULT_MARKET_SOUNDS = [];
 
 const DEFAULT_CONFIG = {
   guestDecks: ['Ana Deste'],
@@ -344,7 +294,17 @@ export class GameRoomDO {
         if (this.state?.storage) {
           config = await this.state.storage.get('app_config');
         }
-        return Response.json(config || DEFAULT_CONFIG, {
+        if (!config) config = DEFAULT_CONFIG;
+
+        // Unify customSounds and market.sounds
+        const unifiedSounds = Array.isArray(config.customSounds)
+          ? config.customSounds
+          : (Array.isArray(config.market?.sounds) ? config.market.sounds : []);
+        config.customSounds = unifiedSounds;
+        if (!config.market) config.market = { themes: [], sounds: [] };
+        config.market.sounds = unifiedSounds;
+
+        return Response.json(config, {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
@@ -352,6 +312,17 @@ export class GameRoomDO {
         const body = await request.json();
         const currentConfig = (this.state?.storage ? await this.state.storage.get('app_config') : null) || DEFAULT_CONFIG;
         const newConfig = { ...currentConfig, ...body };
+
+        // If customSounds or market.sounds changed, synchronize both
+        if (Array.isArray(body.customSounds)) {
+          newConfig.customSounds = body.customSounds;
+          if (!newConfig.market) newConfig.market = { themes: [], sounds: [] };
+          newConfig.market.sounds = body.customSounds;
+        } else if (Array.isArray(body.market?.sounds)) {
+          newConfig.customSounds = body.market.sounds;
+          newConfig.market.sounds = body.market.sounds;
+        }
+
         if (this.state?.storage) {
           await this.state.storage.put('app_config', newConfig);
         }

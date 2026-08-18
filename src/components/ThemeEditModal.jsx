@@ -328,15 +328,73 @@ export default function ThemeEditModal({
             />
           </div>
 
-          <div>
-            <label className="form-label">kare kapak / vitrin görseli url (opsiyonel):</label>
-            <input
-              type="text"
-              value={coverImage}
-              onChange={e => setCoverImage(e.target.value)}
-              placeholder="Örn: /themes/gc/cover.png veya kare görsel linki (https://...)"
-              className="input-box"
-            />
+          {/* Cover Image */}
+          <div style={{
+            background: '#202020',
+            padding: '12px 14px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label className="form-label" style={{ margin: 0 }}>
+                kare kapak / vitrin görseli (opsiyonel):
+              </label>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                link girin veya bilgisayarınızdan yükleyin
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {coverImage && (
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  backgroundImage: `url(${coverImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  flexShrink: 0
+                }} />
+              )}
+              <input
+                type="text"
+                value={coverImage}
+                onChange={e => setCoverImage(e.target.value)}
+                placeholder="Örn: https://...kare.png veya /themes/gc/cover.png"
+                className="input-box"
+                style={{ flex: 1 }}
+              />
+              <label style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: '#2c2c2c',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                flexShrink: 0
+              }}>
+                Dosya Seç
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setCoverImage(ev.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
           </div>
 
           {/* Color & Typography Customization */}
@@ -423,52 +481,129 @@ export default function ThemeEditModal({
             </div>
           </div>
 
-          {/* Image URLs / Paths */}
+          {/* Image URLs / Paths & Uploads */}
           <div style={{
             background: '#191919',
-            padding: '12px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
+            padding: '14px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: '10px'
           }}>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#94a3b8' }}>
-              kart görsel dosya yolları (1: Kırmızı Arka, 2: Beyaz Arka, 3: Kırmızı Ön, 4: Beyaz Ön):
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <input
-                type="text"
-                value={redBack}
-                onChange={e => setRedBack(e.target.value)}
-                placeholder="1. Kırmızı Arka Yolu"
-                className="input-box"
-                style={{ fontSize: '0.74rem' }}
-              />
-              <input
-                type="text"
-                value={whiteBack}
-                onChange={e => setWhiteBack(e.target.value)}
-                placeholder="2. Beyaz Arka Yolu"
-                className="input-box"
-                style={{ fontSize: '0.74rem' }}
-              />
-              <input
-                type="text"
-                value={redFront}
-                onChange={e => setRedFront(e.target.value)}
-                placeholder="3. Kırmızı Ön Yolu"
-                className="input-box"
-                style={{ fontSize: '0.74rem' }}
-              />
-              <input
-                type="text"
-                value={whiteFront}
-                onChange={e => setWhiteFront(e.target.value)}
-                placeholder="4. Beyaz Ön Yolu"
-                className="input-box"
-                style={{ fontSize: '0.74rem' }}
-              />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#e2e8f0' }}>
+                kartın 4 yüzü (link girin veya görsel yükleyin):
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                1: Kırmızı Arka, 2: Beyaz Arka, 3: Kırmızı Ön, 4: Beyaz Ön
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {/* 1. Kırmızı Arka */}
+              <div>
+                <label className="form-label" style={{ fontSize: '0.7rem', color: '#ef4444' }}>1. kırmızı arka:</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    value={redBack}
+                    onChange={e => setRedBack(e.target.value)}
+                    placeholder="Link (https://...) veya /themes/..."
+                    className="input-box"
+                    style={{ fontSize: '0.74rem', flex: 1 }}
+                  />
+                  <label style={{ padding: '6px 10px', borderRadius: '6px', background: '#2c2c2c', color: '#fff', fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0 }}>
+                    Seç
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setRedBack(ev.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }} style={{ display: 'none' }} />
+                  </label>
+                </div>
+              </div>
+
+              {/* 2. Beyaz Arka */}
+              <div>
+                <label className="form-label" style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>2. beyaz arka:</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    value={whiteBack}
+                    onChange={e => setWhiteBack(e.target.value)}
+                    placeholder="Link (https://...) veya /themes/..."
+                    className="input-box"
+                    style={{ fontSize: '0.74rem', flex: 1 }}
+                  />
+                  <label style={{ padding: '6px 10px', borderRadius: '6px', background: '#2c2c2c', color: '#fff', fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0 }}>
+                    Seç
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setWhiteBack(ev.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }} style={{ display: 'none' }} />
+                  </label>
+                </div>
+              </div>
+
+              {/* 3. Kırmızı Ön */}
+              <div>
+                <label className="form-label" style={{ fontSize: '0.7rem', color: '#ef4444' }}>3. kırmızı ön (kart yüzü):</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    value={redFront}
+                    onChange={e => setRedFront(e.target.value)}
+                    placeholder="Link (https://...) veya /themes/..."
+                    className="input-box"
+                    style={{ fontSize: '0.74rem', flex: 1 }}
+                  />
+                  <label style={{ padding: '6px 10px', borderRadius: '6px', background: '#2c2c2c', color: '#fff', fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0 }}>
+                    Seç
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setRedFront(ev.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }} style={{ display: 'none' }} />
+                  </label>
+                </div>
+              </div>
+
+              {/* 4. Beyaz Ön */}
+              <div>
+                <label className="form-label" style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>4. beyaz ön (kart yüzü):</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    value={whiteFront}
+                    onChange={e => setWhiteFront(e.target.value)}
+                    placeholder="Link (https://...) veya /themes/..."
+                    className="input-box"
+                    style={{ fontSize: '0.74rem', flex: 1 }}
+                  />
+                  <label style={{ padding: '6px 10px', borderRadius: '6px', background: '#2c2c2c', color: '#fff', fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0 }}>
+                    Seç
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setWhiteFront(ev.target.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }} style={{ display: 'none' }} />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 

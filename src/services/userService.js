@@ -97,58 +97,8 @@ export const DEFAULT_CARD_THEMES = [
   }
 ];
 
-export const DEFAULT_MARKET_SOUNDS = [
-  {
-    id: 'sound_cyber_deal',
-    name: 'Siber Kart Dağıtımı',
-    category: 'white_card',
-    price: 200,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_thunder_sabotage',
-    name: 'Şimşekli Sabotaj',
-    category: 'red_card',
-    price: 300,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_epic_win',
-    name: 'Destansı Zafer Fanfarı',
-    category: 'game_win',
-    price: 500,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_vine_boom',
-    name: 'Dramatik Boom Sabotajı',
-    category: 'red_card',
-    price: 350,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  },
-  {
-    id: 'sound_arcade_win',
-    name: 'Retro Arcade Zaferi',
-    category: 'game_win',
-    price: 450,
-    type: 'synth',
-    url: '',
-    coverImage: '',
-    isEnabled: true
-  }
-];
+// Default Market Sounds empty by default (loaded from database)
+export const DEFAULT_MARKET_SOUNDS = [];
 
 export function getUserUnlockedThemes(user, customTags = []) {
   const themes = new Set(Array.isArray(user?.ownedThemes) ? user.ownedThemes : ['stocks']);
@@ -331,12 +281,17 @@ export async function fetchAppConfig() {
     const res = await fetch(`${SERVER_URL}/api/config`);
     if (res.ok) {
       const data = await res.json();
+      const unifiedSounds = Array.isArray(data?.customSounds)
+        ? data.customSounds
+        : (Array.isArray(data?.market?.sounds) ? data.market.sounds : (DEFAULT_CONFIG.customSounds || []));
+
       return {
         ...DEFAULT_CONFIG,
         ...data,
+        customSounds: unifiedSounds,
         market: {
-          themes: (data?.market?.themes && data.market.themes.length > 0) ? data.market.themes : DEFAULT_CARD_THEMES,
-          sounds: (data?.market?.sounds && data.market.sounds.length > 0) ? data.market.sounds : DEFAULT_MARKET_SOUNDS
+          themes: (Array.isArray(data?.market?.themes) && data.market.themes.length > 0) ? data.market.themes : DEFAULT_CARD_THEMES,
+          sounds: unifiedSounds
         }
       };
     }
@@ -348,10 +303,24 @@ export async function fetchAppConfig() {
 
 export async function updateAppConfig(newConfig) {
   try {
+    // Keep customSounds and market.sounds in exact sync
+    const unifiedSounds = Array.isArray(newConfig?.customSounds)
+      ? newConfig.customSounds
+      : (Array.isArray(newConfig?.market?.sounds) ? newConfig.market.sounds : []);
+
+    const payload = {
+      ...newConfig,
+      customSounds: unifiedSounds,
+      market: {
+        ...(newConfig?.market || {}),
+        sounds: unifiedSounds
+      }
+    };
+
     const res = await fetch(`${SERVER_URL}/api/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newConfig)
+      body: JSON.stringify(payload)
     });
     if (res.ok) {
       const data = await res.json();

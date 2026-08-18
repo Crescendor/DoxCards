@@ -74,6 +74,7 @@ import { socket } from '../services/socket';
 import TagBadge from './TagBadge';
 import TagEditModal from './TagEditModal';
 import ThemeEditModal from './ThemeEditModal';
+import SoundEditModal from './SoundEditModal';
 
 export const ADMIN_DISCORD_ID = '269639754675519489';
 
@@ -270,6 +271,49 @@ export default function AdminPageView({ onBack, discordUser }) {
   const [editingTheme, setEditingTheme] = useState(null);
   const [isNewTheme, setIsNewTheme] = useState(false);
 
+  // Sound Edit Modal State
+  const [soundModalOpen, setSoundModalOpen] = useState(false);
+  const [editingSoundModalItem, setEditingSoundModalItem] = useState(null);
+
+  const handleOpenNewSoundModal = () => {
+    sounds.playClick();
+    setEditingSoundModalItem(null);
+    setSoundModalOpen(true);
+  };
+
+  const handleOpenEditSoundModal = (snd) => {
+    sounds.playClick();
+    setEditingSoundModalItem(snd);
+    setSoundModalOpen(true);
+  };
+
+  const handleSaveSoundModal = async (savedSound) => {
+    sounds.playClick();
+    const currentSounds = appConfig.customSounds || [];
+    const existingIdx = currentSounds.findIndex(s => s.id === savedSound.id);
+    let updatedSounds;
+    if (existingIdx !== -1) {
+      updatedSounds = currentSounds.map((s, idx) => idx === existingIdx ? savedSound : s);
+    } else {
+      updatedSounds = [...currentSounds, savedSound];
+    }
+
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const updatedConfig = {
+      ...appConfig,
+      customSounds: updatedSounds,
+      market: {
+        ...currentMarket,
+        sounds: updatedSounds
+      }
+    };
+
+    setAppConfig(updatedConfig);
+    await updateAppConfig(updatedConfig);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
   // New Market Sound form state
   const [newMarketSoundName, setNewMarketSoundName] = useState('');
   const [newMarketSoundCategory, setNewMarketSoundCategory] = useState('white_card');
@@ -381,17 +425,21 @@ export default function AdminPageView({ onBack, discordUser }) {
       type: newMarketSoundSourceType,
       price: Number(newMarketSoundPrice) || 200,
       url: finalUrl,
+      ytUrl: newMarketSoundSourceType === 'youtube' ? newMarketSoundYtUrl.trim() : '',
       ytId: ytId,
       startSec: Number(newMarketSoundStartSec) || 0,
       endSec: Number(newMarketSoundEndSec) || 3,
       coverImage: newMarketSoundCoverImage.trim(),
+      isDefault: false,
       isEnabled: true
     };
 
+    const currentSounds = appConfig.customSounds || [];
+    const updatedSounds = [...currentSounds, newSound];
     const currentMarket = appConfig.market || { themes: [], sounds: [] };
-    const updatedSounds = [...(currentMarket.sounds || []), newSound];
     const updatedConfig = {
       ...appConfig,
+      customSounds: updatedSounds,
       market: {
         ...currentMarket,
         sounds: updatedSounds
@@ -411,13 +459,15 @@ export default function AdminPageView({ onBack, discordUser }) {
   };
 
   const handleDeleteMarketSound = async (soundId) => {
-    if (!window.confirm('Bu market sesini silmek istediğinize emin misiniz?')) return;
+    if (!window.confirm('Bu sesi silmek istediğinize emin misiniz?')) return;
     sounds.playClick();
 
+    const currentSounds = appConfig.customSounds || [];
+    const updatedSounds = currentSounds.filter(s => s.id !== soundId);
     const currentMarket = appConfig.market || { themes: [], sounds: [] };
-    const updatedSounds = (currentMarket.sounds || []).filter(s => s.id !== soundId);
     const updatedConfig = {
       ...appConfig,
+      customSounds: updatedSounds,
       market: {
         ...currentMarket,
         sounds: updatedSounds
@@ -1204,10 +1254,18 @@ export default function AdminPageView({ onBack, discordUser }) {
   };
 
   const handleDeleteSound = async (soundId) => {
-    if (window.confirm('bu ses efektini silmek istediğinize emin misiniz?')) {
+    if (window.confirm('Bu ses efektini silmek istediğinize emin misiniz?')) {
       sounds.playClick();
       const updatedSounds = (appConfig.customSounds || []).filter(s => s.id !== soundId);
-      const updatedConfig = { ...appConfig, customSounds: updatedSounds };
+      const currentMarket = appConfig.market || { themes: [], sounds: [] };
+      const updatedConfig = {
+        ...appConfig,
+        customSounds: updatedSounds,
+        market: {
+          ...currentMarket,
+          sounds: updatedSounds
+        }
+      };
       setAppConfig(updatedConfig);
       await updateAppConfig(updatedConfig);
       setSaveSuccess(true);
@@ -1226,7 +1284,15 @@ export default function AdminPageView({ onBack, discordUser }) {
       return s;
     });
 
-    const updatedConfig = { ...appConfig, customSounds: updatedSounds };
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const updatedConfig = {
+      ...appConfig,
+      customSounds: updatedSounds,
+      market: {
+        ...currentMarket,
+        sounds: updatedSounds
+      }
+    };
     setAppConfig(updatedConfig);
     await updateAppConfig(updatedConfig);
     setSaveSuccess(true);
@@ -1238,11 +1304,19 @@ export default function AdminPageView({ onBack, discordUser }) {
     sounds.playClick();
     const updatedSounds = (appConfig.customSounds || []).map(s => {
       if (s.id === soundId) {
-        return { ...s, name: editingSoundName.trim().toLowerCase() };
+        return { ...s, name: editingSoundName.trim() };
       }
       return s;
     });
-    const updatedConfig = { ...appConfig, customSounds: updatedSounds };
+    const currentMarket = appConfig.market || { themes: [], sounds: [] };
+    const updatedConfig = {
+      ...appConfig,
+      customSounds: updatedSounds,
+      market: {
+        ...currentMarket,
+        sounds: updatedSounds
+      }
+    };
     setAppConfig(updatedConfig);
     await updateAppConfig(updatedConfig);
     setEditingSoundId(null);
@@ -3958,10 +4032,9 @@ export default function AdminPageView({ onBack, discordUser }) {
                   henüz ses efekti eklenmedi. yukarıdaki formdan ilk sesinizi ekleyebilirsiniz.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {appConfig.customSounds.map((sound) => {
                     const isPlaying = playingSoundId === sound.id;
-                    const isEditing = editingSoundId === sound.id;
 
                     const catBadge =
                       sound.category === 'white_card' ? { label: 'beyaz kart', bg: '#ffffff', color: '#000000' } :
@@ -3975,22 +4048,22 @@ export default function AdminPageView({ onBack, discordUser }) {
                         style={{
                           background: '#242424',
                           border: sound.isDefault ? '1.5px solid #FF0000' : '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '12px',
-                          padding: '12px 16px',
+                          borderRadius: '14px',
+                          padding: '12px 18px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '12px'
+                          gap: '14px'
                         }}
                       >
-                        {/* Left: Play button + Title */}
+                        {/* Left: Play button + Cover + Details */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
                           <button
                             type="button"
                             onClick={() => handleTestPlay(sound)}
                             style={{
-                              width: '36px',
-                              height: '36px',
+                              width: '38px',
+                              height: '38px',
                               borderRadius: '50%',
                               background: isPlaying ? '#FF0000' : 'rgba(255, 255, 255, 0.1)',
                               border: 'none',
@@ -4001,57 +4074,35 @@ export default function AdminPageView({ onBack, discordUser }) {
                               cursor: 'pointer',
                               flexShrink: 0
                             }}
-                            title="Çal"
+                            title="Çal / Test Et"
                           >
                             {isPlaying ? <Square size={14} fill="#ffffff" /> : <Play size={14} fill="#ffffff" />}
                           </button>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                            {isEditing ? (
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <input
-                                  type="text"
-                                  value={editingSoundName}
-                                  onChange={(e) => setEditingSoundName(e.target.value)}
-                                  className="form-input"
-                                  style={{ padding: '4px 8px', fontSize: '0.85rem', width: '220px' }}
-                                  autoFocus
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleSaveSoundEdit(sound.id)}
-                                  style={{ background: '#22c55e', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                                >
-                                  kaydet
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingSoundId(null)}
-                                  style={{ background: '#333333', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
-                                >
-                                  iptal
-                                </button>
-                              </div>
-                            ) : (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#ffffff' }}>
-                                  {sound.name}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingSoundId(sound.id);
-                                    setEditingSoundName(sound.name);
-                                  }}
-                                  style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                  title="İsmi düzenle"
-                                >
-                                  <Edit2 size={12} />
-                                </button>
-                              </div>
-                            )}
+                          {sound.coverImage && (
+                            <img
+                              src={sound.coverImage}
+                              alt={sound.name}
+                              style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
+                            />
+                          )}
 
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, textAlign: 'left' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontWeight: 800, fontSize: '0.94rem', color: '#ffffff' }}>
+                                {sound.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditSoundModal(sound)}
+                                style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
+                                title="Sesi ve YouTube linkini düzenle"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                               <span style={{
                                 background: catBadge.bg,
                                 color: catBadge.color,
@@ -4061,6 +4112,18 @@ export default function AdminPageView({ onBack, discordUser }) {
                                 fontWeight: 800
                               }}>
                                 {catBadge.label}
+                              </span>
+
+                              <span style={{
+                                background: 'rgba(251, 191, 36, 0.15)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                padding: '1px 6px',
+                                borderRadius: '5px',
+                                fontSize: '0.68rem',
+                                fontWeight: 800
+                              }}>
+                                {sound.price || 200} coin
                               </span>
 
                               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
@@ -4087,7 +4150,16 @@ export default function AdminPageView({ onBack, discordUser }) {
                         </div>
 
                         {/* Right: Actions */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditSoundModal(sound)}
+                            className="btn-secondary"
+                            style={{ padding: '6px 12px', fontSize: '0.76rem', height: '32px' }}
+                          >
+                            <Edit2 size={12} /> düzenle
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => handleToggleSoundDefault(sound.id, sound.category)}
@@ -4099,7 +4171,8 @@ export default function AdminPageView({ onBack, discordUser }) {
                               borderRadius: '8px',
                               fontSize: '0.74rem',
                               fontWeight: 700,
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              height: '32px'
                             }}
                           >
                             {sound.isDefault ? 'varsayılan' : 'varsayılan yap'}
@@ -4112,13 +4185,19 @@ export default function AdminPageView({ onBack, discordUser }) {
                               background: 'rgba(239, 68, 68, 0.15)',
                               border: '1px solid rgba(239, 68, 68, 0.3)',
                               color: '#f87171',
-                              padding: '6px',
+                              padding: '6px 10px',
                               borderRadius: '8px',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              height: '32px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700
                             }}
                             title="Sesi Sil"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} /> sil
                           </button>
                         </div>
                       </div>
@@ -5290,83 +5369,108 @@ export default function AdminPageView({ onBack, discordUser }) {
                   gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                   gap: '14px'
                 }}>
-                  {(appConfig.market?.sounds || []).map(snd => (
-                    <div
-                      key={snd.id}
-                      style={{
-                        background: '#1c1c1c',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '14px',
-                        padding: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '12px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {snd.coverImage ? (
-                          <img
-                            src={snd.coverImage}
-                            alt={snd.name}
-                            style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              sounds.playClick();
-                              sounds.playCustomAudio(snd);
-                            }}
-                            style={{
-                              width: '38px',
-                              height: '38px',
-                              borderRadius: '10px',
-                              background: 'rgba(239, 68, 68, 0.15)',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                              color: '#ef4444',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer'
-                            }}
-                            title="Dinle / Test Et"
-                          >
-                            <Play size={14} />
-                          </button>
-                        )}
-
-                        <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
-                            {snd.name}
-                          </div>
-                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>{snd.category}</span>
-                            <span>•</span>
-                            <span style={{ color: '#fbbf24', fontWeight: 700 }}>{snd.price} coin</span>
-                            {snd.type === 'youtube' && <span style={{ color: '#ef4444', fontWeight: 700 }}>• YouTube</span>}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteMarketSound(snd.id)}
+                  {(!appConfig.customSounds || appConfig.customSounds.length === 0) ? (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '0.88rem' }}>
+                      henüz market için ses efekti eklenmedi. yukarıdaki formdan ilk sesinizi ekleyebilirsiniz.
+                    </div>
+                  ) : (
+                    appConfig.customSounds.map(snd => (
+                      <div
+                        key={snd.id}
                         style={{
-                          background: 'rgba(239, 68, 68, 0.15)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
-                          color: '#f87171',
-                          padding: '6px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          cursor: 'pointer'
+                          background: '#1c1c1c',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '14px',
+                          padding: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px'
                         }}
                       >
-                        <Trash2 size={13} /> sil
-                      </button>
-                    </div>
-                  ))}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {snd.coverImage ? (
+                            <img
+                              src={snd.coverImage}
+                              alt={snd.name}
+                              style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleTestPlay(snd)}
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '10px',
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#ef4444',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                              title="Dinle / Test Et"
+                            >
+                              <Play size={14} />
+                            </button>
+                          )}
+
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
+                              {snd.name}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{snd.category}</span>
+                              <span>•</span>
+                              <span style={{ color: '#fbbf24', fontWeight: 700 }}>{snd.price || 200} coin</span>
+                              {snd.type === 'youtube' && <span style={{ color: '#ef4444', fontWeight: 700 }}>• YouTube</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditSoundModal(snd)}
+                            className="btn-secondary"
+                            style={{
+                              padding: '6px 10px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              borderRadius: '8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Edit2 size={13} /> düzenle
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMarketSound(snd.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#f87171',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Trash2 size={13} /> sil
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -6008,6 +6112,18 @@ export default function AdminPageView({ onBack, discordUser }) {
         theme={editingTheme}
         isNew={isNewTheme}
         onSave={handleSaveTheme}
+      />
+
+      {/* ------------------------------------------------------------------- */}
+      {/* MODAL 5: ÖZEL SES DÜZENLEME & OLUŞTURMA MODALI                     */}
+      {/* ------------------------------------------------------------------- */}
+      <SoundEditModal
+        isOpen={soundModalOpen}
+        sound={editingSoundModalItem}
+        onClose={() => setSoundModalOpen(false)}
+        onSave={handleSaveSoundModal}
+        onTestPlay={handleTestPlay}
+        isPlaying={playingSoundId === (editingSoundModalItem?.id || 'preview')}
       />
     </div>
   );
