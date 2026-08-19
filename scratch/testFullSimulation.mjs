@@ -1,7 +1,6 @@
-// Turkish Cards Database for Red Flags (DoxCards) - Complete Cards Edition
-import rawDeckJson from './defaultDeck.json';
+import fs from 'fs';
 
-export function standardizeBlankTokens(text) {
+function standardizeBlankTokens(text) {
   if (!text) return '';
   return text
     .replace(/([_\s]*_{2,}[_\s]*)|\[blank\]|\{blank\}/gi, ' [boşluk] ')
@@ -9,7 +8,7 @@ export function standardizeBlankTokens(text) {
     .trim();
 }
 
-export function buildCardsFromRaw(jsonData) {
+function buildCardsFromRaw(jsonData) {
   const whiteCards = [];
   const redCards = [];
   let wIndex = 1;
@@ -18,9 +17,9 @@ export function buildCardsFromRaw(jsonData) {
   const hasInputPerks = jsonData?.Perks || jsonData?.perks;
   const hasInputRedFlags = jsonData?.['Red Flags'] || jsonData?.red_flags || jsonData?.redFlags;
 
-  const perks = hasInputPerks ? (jsonData.Perks || jsonData.perks) : (rawDeckJson?.Perks || {});
-  const redFlags = hasInputRedFlags ? (jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags) : (rawDeckJson?.['Red Flags'] || {});
-  const deckNotes = jsonData?.deckNotes || jsonData?.DeckNotes || rawDeckJson?.deckNotes || {};
+  const perks = hasInputPerks ? (jsonData.Perks || jsonData.perks) : {};
+  const redFlags = hasInputRedFlags ? (jsonData['Red Flags'] || jsonData.red_flags || jsonData.redFlags) : {};
+  const deckNotes = jsonData?.deckNotes || jsonData?.DeckNotes || {};
 
   Object.entries(perks).forEach(([category, list]) => {
     if (Array.isArray(list)) {
@@ -63,24 +62,7 @@ export function buildCardsFromRaw(jsonData) {
   return { whiteCards, redCards };
 }
 
-let activeRawDeck = rawDeckJson;
-let activeParsed = buildCardsFromRaw(rawDeckJson);
-
-export function getActiveRawDeck() {
-  return activeRawDeck;
-}
-
-export function updateGlobalDeck(newRawDeck) {
-  if (!newRawDeck) return;
-  activeRawDeck = newRawDeck;
-  activeParsed = buildCardsFromRaw(newRawDeck);
-}
-
-export const WHITE_CARDS = () => activeParsed.whiteCards;
-export const RED_CARDS = () => activeParsed.redCards;
-
-// Multi-pass Fisher-Yates shuffle for maximum entropy and truly uniform distribution
-export function shuffleArray(array) {
+function shuffleArray(array) {
   if (!Array.isArray(array) || array.length <= 1) return array ? [...array] : [];
   const arr = [...array];
   for (let pass = 0; pass < 4; pass++) {
@@ -94,7 +76,7 @@ export function shuffleArray(array) {
   return arr;
 }
 
-export function normalizeDeckName(name) {
+function normalizeDeckName(name) {
   if (!name) return '';
   return name
     .toString()
@@ -105,7 +87,7 @@ export function normalizeDeckName(name) {
     .trim();
 }
 
-export function isCardInSelectedDecks(card, selectedDecks) {
+function isCardInSelectedDecks(card, selectedDecks) {
   if (!Array.isArray(selectedDecks) || selectedDecks.length === 0) return true;
   const cardCat = (card.category || card.deckName || '').trim();
   const cardNorm = normalizeDeckName(cardCat);
@@ -117,21 +99,15 @@ export function isCardInSelectedDecks(card, selectedDecks) {
     const selNorm = normalizeDeckName(selStr);
     const selLow = selStr.toLocaleLowerCase('tr-TR');
 
-    // 1. Direct lowercase exact match
     if (cardLow === selLow) return true;
-    // 2. Normalized clean match (e.g. "Aktanfell Paket" === "Aktanfell")
     if (cardNorm && selNorm && cardNorm === selNorm) return true;
   }
   return false;
 }
 
-// Truly uniform, proportional, and stratified distribution:
-// Spreads cards from all selected categories uniformly throughout the entire draw pile,
-// so that from the very first draw to the last, every selected deck appears with true randomness and fair proportion!
-export function fairStratifiedDeckShuffle(cards) {
+function fairStratifiedDeckShuffle(cards) {
   if (!Array.isArray(cards) || cards.length <= 1) return cards ? [...cards] : [];
 
-  // 1. Group cards by deck/category
   const groups = {};
   cards.forEach(card => {
     const key = (card.category || card.deckName || 'Genel').trim();
@@ -144,27 +120,22 @@ export function fairStratifiedDeckShuffle(cards) {
     return shuffleArray(cards);
   }
 
-  // 2. Deep shuffle each group internally with multi-pass Fisher-Yates
   groupKeys.forEach(k => {
     groups[k] = shuffleArray(groups[k]);
   });
 
-  // 3. Target slots array
   const totalCards = cards.length;
   const slots = new Array(totalCards);
 
-  // For each category, distribute cards uniformly across indices [0 .. totalCards - 1]
   groupKeys.forEach(k => {
     const catCards = groups[k];
     const n = catCards.length;
     const step = totalCards / n;
 
     catCards.forEach((c, idx) => {
-      // Calculate ideal position with random jitter
       const idealPos = (idx + Math.random() * 0.95) * step;
       let targetIdx = Math.floor(idealPos) % totalCards;
 
-      // Find nearest empty slot
       let offset = 0;
       while (offset < totalCards) {
         const checkPlus = (targetIdx + offset) % totalCards;
@@ -185,10 +156,8 @@ export function fairStratifiedDeckShuffle(cards) {
   return slots.filter(Boolean);
 }
 
-export const stratifiedDeckShuffle = fairStratifiedDeckShuffle;
-
-export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = null) {
-  const parsed = customRawDeck ? buildCardsFromRaw(customRawDeck) : activeParsed;
+function getDeck(rawDeck, selectedDecks = null) {
+  const parsed = buildCardsFromRaw(rawDeck);
   const allWhite = [...parsed.whiteCards];
   const allRed = [...parsed.redCards];
 
@@ -198,12 +167,8 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
   if (Array.isArray(selectedDecks) && selectedDecks.length > 0) {
     selectedWhite = allWhite.filter(c => isCardInSelectedDecks(c, selectedDecks));
     selectedRed = allRed.filter(c => isCardInSelectedDecks(c, selectedDecks));
-  } else if (deckType && deckType !== 'all') {
-    selectedWhite = allWhite.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
-    selectedRed = allRed.filter(c => (c.category || '').toLowerCase().includes(deckType.toLowerCase()));
   }
 
-  // Fallbacks: If a pool is empty (e.g. selected deck only has perks or only has red flags)
   if (selectedWhite.length === 0) {
     const coreWhite = allWhite.filter(c => (c.category || '').toLowerCase().includes('ana'));
     selectedWhite = coreWhite.length > 0 ? coreWhite : allWhite;
@@ -220,4 +185,36 @@ export function getDeck(deckType = 'all', customRawDeck = null, selectedDecks = 
   };
 }
 
+const rawDeck = JSON.parse(fs.readFileSync('worker/defaultDeck.json', 'utf8'));
+const deck = getDeck(rawDeck, ['Ana Deste', 'Sekso Paket', 'Nerd Paket', 'Kara Paket']);
 
+console.log('White cards pool size:', deck.white.length);
+console.log('Red cards pool size:', deck.red.length);
+
+console.log('\n--- SIMULATING 5 PLAYERS DRAWING PERKS (4 cards each on round 1, 2 cards in later rounds) ---');
+for (let r = 1; r <= 6; r++) {
+  const count = r === 1 ? 20 : 10;
+  const drawn = [];
+  for (let i = 0; i < count; i++) {
+    if (deck.white.length > 0) drawn.push(deck.white.pop());
+  }
+  const counts = {};
+  drawn.forEach(c => {
+    counts[c.category] = (counts[c.category] || 0) + 1;
+  });
+  console.log(`Round ${r} (${count} cards):`, counts);
+}
+
+console.log('\n--- SIMULATING 5 PLAYERS DRAWING RED FLAGS (3 cards each on round 1, 1 card in later rounds) ---');
+for (let r = 1; r <= 6; r++) {
+  const count = r === 1 ? 15 : 5;
+  const drawn = [];
+  for (let i = 0; i < count; i++) {
+    if (deck.red.length > 0) drawn.push(deck.red.pop());
+  }
+  const counts = {};
+  drawn.forEach(c => {
+    counts[c.category] = (counts[c.category] || 0) + 1;
+  });
+  console.log(`Round ${r} (${count} cards):`, counts);
+}
